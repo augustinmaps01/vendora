@@ -1,0 +1,30 @@
+{
+  "name": "vendora",
+  "version": "1.0.0",
+  "description": "Vendora - Multi-tenant POS and E-commerce Platform",
+  "private": true,
+  "scripts": {
+    "dev": "npx concurrently -n \"SERVER,CLIENT\" -c \"green,blue\" \"npm run dev:server\" \"npm run dev:client\"",
+    "dev:server": "cd server && php artisan serve --host=127.0.0.1 --port=8000",
+    "dev:client": "cd client-side && npm run dev",
+    "install:all": "npm install && cd server && composer install && cd ../client-side && npm install",
+    "setup": "npm run install:all && npm run setup:env && npm run migrate",
+    "setup:env": "cd server && (if not exist .env copy .env.example .env) && php artisan key:generate",
+    "build:client": "cd client-side && npm run build",
+    "start:client": "cd client-side && npm run start",
+    "migrate": "cd server && php artisan migrate",
+    "migrate:fresh": "cd server && php artisan migrate:fresh",
+    "migrate:seed": "cd server && php artisan migrate:fresh --seed",
+    "test:server": "cd server && php artisan test",
+    "lint:client": "cd client-side && npm run lint",
+    "server": "cd server && php artisan serve --host=127.0.0.1 --port=8000",
+    "client": "cd client-side && npm run dev"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1"
+  },
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=9.0.0"
+  }
+}

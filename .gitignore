@@ -1,0 +1,14 @@
+# System files
+.DS_Store
+Thumbs.db
+
+# IDE / Editor configs
+.vscode/
+.idea/
+
+# Global log files
+*.log
+
+# Ignore project overview folder
+project overview/
+.qodo/
