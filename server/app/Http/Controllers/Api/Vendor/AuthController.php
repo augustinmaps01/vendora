@@ -38,11 +38,10 @@ class AuthController extends BaseAuthController
                 'status' => 'active',
             ]);
 
-            $token = $this->authService->createEmailVerificationToken($vendor);
-
+            // For development: Email verification is disabled in login, so users can login immediately
             $responseData = [
                 'user' => $vendor->only(['id', 'business_name', 'email', 'subscription_plan', 'subscription_status', 'status']),
-                'message' => 'Registration successful. Please complete payment to activate your account.',
+                'message' => 'Registration successful. You can now login with your credentials.',
             ];
 
             return $this->successResponse($responseData, 'Vendor account created successfully', 201);
@@ -93,13 +92,14 @@ class AuthController extends BaseAuthController
             return $this->errorResponse('Invalid credentials', 401);
         }
 
-        if (!$vendor->is_email_verified) {
-            return $this->errorResponse(
-                'Email not verified. Please check your email.',
-                403,
-                ['requires_email_verification' => true]
-            );
-        }
+        // Email verification check disabled for development
+        // if (!$vendor->is_email_verified) {
+        //     return $this->errorResponse(
+        //         'Email not verified. Please check your email.',
+        //         403,
+        //         ['requires_email_verification' => true]
+        //     );
+        // }
 
         if ($vendor->two_factor_enabled) {
             session(['2fa_email' => $vendor->email, '2fa_user_type' => 'vendor']);
