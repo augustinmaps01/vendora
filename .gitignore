@@ -9,10 +9,16 @@
 !.yarn/plugins
 !.yarn/releases
 !.yarn/versions
-
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 # testing
 /coverage
-
+.vscode/
+.idea/
 # next.js
 /.next/
 /out/
@@ -39,3 +45,5 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+.vercel
