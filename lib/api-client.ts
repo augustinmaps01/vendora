@@ -4,11 +4,17 @@
  * Centralized Axios configuration for API calls to Laravel backend
  */
 
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse, AxiosError } from "axios"
+import axios, {
+  AxiosInstance,
+  AxiosRequestConfig,
+  AxiosResponse,
+  AxiosError,
+  AxiosProgressEvent,
+} from "axios"
 import { env } from "@/config/env"
 
 // Types
-export interface ApiResponse<T = any> {
+export interface ApiResponse<T = unknown> {
   success: boolean
   data?: T
   message?: string
@@ -18,6 +24,11 @@ export interface ApiResponse<T = any> {
 export interface ApiError {
   message: string
   status?: number
+  errors?: Record<string, string[]>
+}
+
+type ApiErrorResponseData = {
+  message?: string
   errors?: Record<string, string[]>
 }
 
@@ -143,7 +154,7 @@ const createApiClient = (): AxiosInstance => {
  * Format API error for consistent error handling
  */
 const formatApiError = (error: AxiosError): ApiError => {
-  const response = error.response?.data as any
+  const response = error.response?.data as ApiErrorResponseData | undefined
 
   return {
     message: response?.message || error.message || "An error occurred",
@@ -203,7 +214,7 @@ const refreshAuthToken = async (): Promise<string | null> => {
     const { token, refresh_token } = response.data.data
     setAuthTokens(token, refresh_token)
     return token
-  } catch (error) {
+  } catch {
     return null
   }
 }
@@ -219,7 +230,7 @@ export const api = {
   /**
    * GET request
    */
-  get: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+  get: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const response = await apiClient.get<ApiResponse<T>>(url, config)
     return response.data.data as T
   },
@@ -227,9 +238,9 @@ export const api = {
   /**
    * POST request
    */
-  post: async <T = any>(
+  post: async <T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> => {
     const response = await apiClient.post<ApiResponse<T>>(url, data, config)
@@ -239,9 +250,9 @@ export const api = {
   /**
    * PUT request
    */
-  put: async <T = any>(
+  put: async <T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> => {
     const response = await apiClient.put<ApiResponse<T>>(url, data, config)
@@ -251,9 +262,9 @@ export const api = {
   /**
    * PATCH request
    */
-  patch: async <T = any>(
+  patch: async <T = unknown>(
     url: string,
-    data?: any,
+    data?: unknown,
     config?: AxiosRequestConfig
   ): Promise<T> => {
     const response = await apiClient.patch<ApiResponse<T>>(url, data, config)
@@ -263,7 +274,7 @@ export const api = {
   /**
    * DELETE request
    */
-  delete: async <T = any>(url: string, config?: AxiosRequestConfig): Promise<T> => {
+  delete: async <T = unknown>(url: string, config?: AxiosRequestConfig): Promise<T> => {
     const response = await apiClient.delete<ApiResponse<T>>(url, config)
     return response.data.data as T
   },
@@ -271,10 +282,10 @@ export const api = {
   /**
    * Upload file(s)
    */
-  upload: async <T = any>(
+  upload: async <T = unknown>(
     url: string,
     formData: FormData,
-    onUploadProgress?: (progressEvent: any) => void
+    onUploadProgress?: (progressEvent: AxiosProgressEvent) => void
   ): Promise<T> => {
     const response = await apiClient.post<ApiResponse<T>>(url, formData, {
       headers: {

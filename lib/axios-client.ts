@@ -175,7 +175,9 @@ axiosClient.interceptors.response.use(
       tokenManager.clearTokens()
       const userType = tokenManager.getUserType() || 'admin'
       if (typeof window !== 'undefined') {
-        window.location.href = `/${userType}/auth/login`
+        // Map vendor to pos for correct route
+        const loginPath = userType === 'vendor' ? '/pos/auth/login' : '/admin/auth/login'
+        window.location.href = loginPath
       }
       return Promise.reject(error)
     }

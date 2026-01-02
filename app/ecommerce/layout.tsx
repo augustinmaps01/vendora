@@ -4,6 +4,7 @@ import { Navbar } from "@/components/ecommerce/Navbar"
 import { Footer } from "@/components/ecommerce/Footer"
 import { CartSheet } from "@/components/ecommerce/CartSheet"
 import { usePathname } from "next/navigation"
+import { Toaster } from "sonner"
 
 export default function EcommerceLayout({
     children,
@@ -24,6 +25,7 @@ export default function EcommerceLayout({
             <main className="flex-1">{children}</main>
             <Footer />
             <CartSheet />
+            <Toaster position="top-right" richColors />
         </div>
     )
 }

@@ -50,6 +50,12 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [userData, setUserData] = useState<{ business_name?: string; email?: string } | null>(null)
+  const [mounted, setMounted] = useState(false)
+
+  // Set mounted state
+  useEffect(() => {
+    setMounted(true)
+  }, [])
 
   // Fetch user data
   useEffect(() => {
@@ -62,10 +68,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       }
     }
 
-    if (!pathname?.startsWith("/pos/auth")) {
+    if (mounted && !pathname?.startsWith("/pos/auth")) {
       fetchUserData()
     }
-  }, [pathname])
+  }, [pathname, mounted])
 
   // Get first letter of business name for avatar
   const avatarLetter = userData?.business_name?.charAt(0).toUpperCase() || 'V'
@@ -78,6 +84,11 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // If it's an auth page, just render children without sidebar/nav
   if (isAuthPage) {
     return <>{children}</>
+  }
+
+  // Prevent hydration mismatch by not rendering until mounted
+  if (!mounted) {
+    return null
   }
 
   // For non-auth pages, render with sidebar and navigation

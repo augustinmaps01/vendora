@@ -47,3 +47,10 @@ yarn-error.log*
 next-env.d.ts
 
 .vercel
+
+# Claude Code
+.claude/
+
+# Temporary files
+login.png
+nul

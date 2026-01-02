@@ -40,12 +40,10 @@ export const useCartStore = create<CartState>()(
                   ? { ...item, quantity: item.quantity + 1 }
                   : item
               ),
-              isOpen: true, // Open cart when adding item
             }
           }
           return {
             items: [...state.items, { ...product, quantity: 1 }],
-            isOpen: true,
           }
         }),
       removeItem: (productId) =>

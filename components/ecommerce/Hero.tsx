@@ -5,6 +5,7 @@ import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext
 import { Button } from "@/components/ui/button"
 import { ArrowRight, Package, Shield, Headphones, Star, Badge } from "lucide-react"
 import Image from "next/image"
+import Link from "next/link"
 import { useRef, useState, useEffect } from "react"
 
 export function Hero() {
@@ -110,20 +111,24 @@ export function Hero() {
 
                                             {/* CTA Buttons */}
                                             <div className="flex flex-wrap items-center gap-4 pt-2">
-                                                <Button
-                                                    size="lg"
-                                                    className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
-                                                >
-                                                    Shop Now
-                                                    <ArrowRight className="ml-2 w-5 h-5" />
-                                                </Button>
-                                                <Button
-                                                    size="lg"
-                                                    variant="outline"
-                                                    className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-full px-8 h-12 text-base font-semibold transition-all"
-                                                >
-                                                    View Deals
-                                                </Button>
+                                                <Link href="/ecommerce/products">
+                                                    <Button
+                                                        size="lg"
+                                                        className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                                                    >
+                                                        Shop Now
+                                                        <ArrowRight className="ml-2 w-5 h-5" />
+                                                    </Button>
+                                                </Link>
+                                                <Link href="/ecommerce/deals">
+                                                    <Button
+                                                        size="lg"
+                                                        variant="outline"
+                                                        className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-full px-8 h-12 text-base font-semibold transition-all"
+                                                    >
+                                                        View Deals
+                                                    </Button>
+                                                </Link>
                                             </div>
 
                                             {/* Trust Indicators */}
@@ -207,16 +212,16 @@ export function Hero() {
                             </div>
 
                             {/* Mobile Layout */}
-                            <div className={`lg:hidden relative bg-gradient-to-br ${slide.bgGradient} pb-8`}>
-                                <div className="container mx-auto px-4">
+                            <div className={`lg:hidden relative bg-gradient-to-br ${slide.bgGradient} pb-6 sm:pb-8`}>
+                                <div className="container mx-auto px-4 sm:px-6">
                                     {/* Product Image */}
-                                    <div className="relative w-full aspect-square max-w-md mx-auto mb-8 pt-8">
-                                        <div className="absolute top-12 right-4 z-10">
-                                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
+                                    <div className="relative w-full aspect-square max-w-sm mx-auto mb-6 sm:mb-8 pt-6 sm:pt-8">
+                                        <div className="absolute top-8 sm:top-12 right-2 sm:right-4 z-10">
+                                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg">
                                                 {slide.discount}
                                             </div>
                                         </div>
-                                        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white shadow-xl">
+                                        <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-xl">
                                             <Image
                                                 src={slide.productImage}
                                                 alt={slide.productName}
@@ -229,30 +234,60 @@ export function Hero() {
                                     </div>
 
                                     {/* Content */}
-                                    <div className="space-y-6 text-center">
-                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 bg-white/80 backdrop-blur-sm rounded-full shadow-sm">
-                                            <Badge className="w-3.5 h-3.5 text-gray-700" />
-                                            <span className="text-xs font-semibold text-gray-700">
+                                    <div className="space-y-4 sm:space-y-6 text-center px-2">
+                                        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
+                                            <Badge className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
+                                            <span className="text-xs sm:text-sm font-semibold text-gray-700">
                                                 {slide.badge}
                                             </span>
                                         </div>
 
-                                        <h1 className="text-3xl font-bold text-gray-900 leading-tight">
+                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-tight px-2">
                                             {slide.title}
                                         </h1>
 
-                                        <p className="text-base text-gray-600 leading-relaxed">
+                                        <p className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-lg mx-auto">
                                             {slide.subtitle}
                                         </p>
 
-                                        <div className="pt-2">
-                                            <Button
-                                                size="lg"
-                                                className="w-full bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 text-base font-semibold shadow-lg"
-                                            >
-                                                Shop Now
-                                                <ArrowRight className="ml-2 w-5 h-5" />
-                                            </Button>
+                                        {/* Mobile CTA Buttons */}
+                                        <div className="pt-2 sm:pt-4 space-y-3 sm:flex sm:flex-row sm:space-y-0 sm:gap-3 sm:justify-center">
+                                            <Link href="/ecommerce/products" className="block sm:inline-block">
+                                                <Button
+                                                    size="lg"
+                                                    className="w-full sm:w-auto sm:min-w-40 bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 sm:h-13 text-base font-semibold shadow-lg active:scale-95 transition-transform"
+                                                >
+                                                    Shop Now
+                                                    <ArrowRight className="ml-2 w-5 h-5" />
+                                                </Button>
+                                            </Link>
+                                            <Link href="/ecommerce/deals" className="hidden sm:inline-block">
+                                                <Button
+                                                    size="lg"
+                                                    variant="outline"
+                                                    className="w-full sm:w-auto sm:min-w-40 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-full h-12 sm:h-13 text-base font-semibold active:scale-95 transition-transform"
+                                                >
+                                                    View Deals
+                                                </Button>
+                                            </Link>
+                                        </div>
+
+                                        {/* Mobile Trust Indicators */}
+                                        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-4 text-xs sm:text-sm">
+                                            <div className="flex items-center gap-1.5 text-gray-600">
+                                                <Package className="w-4 h-4 text-gray-700" />
+                                                <span className="font-medium">Free Ship $50+</span>
+                                            </div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                            <div className="flex items-center gap-1.5 text-gray-600">
+                                                <Shield className="w-4 h-4 text-gray-700" />
+                                                <span className="font-medium">Secure</span>
+                                            </div>
+                                            <div className="w-1 h-1 rounded-full bg-gray-300" />
+                                            <div className="flex items-center gap-1.5 text-gray-600">
+                                                <Headphones className="w-4 h-4 text-gray-700" />
+                                                <span className="font-medium">24/7 Support</span>
+                                            </div>
                                         </div>
                                     </div>
                                 </div>
@@ -285,15 +320,15 @@ export function Hero() {
                 </div>
 
                 {/* Mobile Dots */}
-                <div className="flex lg:hidden justify-center items-center gap-2 py-6">
+                <div className="flex lg:hidden justify-center items-center gap-2 py-4 sm:py-6">
                     {slides.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => api?.scrollTo(index)}
-                            className={`transition-all duration-300 rounded-full ${
+                            className={`transition-all duration-300 rounded-full active:scale-90 ${
                                 current === index
-                                    ? "w-6 h-2 bg-gray-900"
-                                    : "w-2 h-2 bg-gray-400"
+                                    ? "w-8 h-2.5 bg-gray-900"
+                                    : "w-2.5 h-2.5 bg-gray-400 hover:bg-gray-600"
                             }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />
