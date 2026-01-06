@@ -1,0 +1,85 @@
+"use client"
+
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
+import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts"
+import { Eye } from "lucide-react"
+import { Button } from "@/components/ui/button"
+
+const products = [
+  { name: "Premium Rice 5kg", units: 84, revenue: 21000 },
+  { name: "Cooking Oil 1L", units: 75, revenue: 18000 },
+  { name: "Instant Noodles", units: 68, revenue: 16000 },
+  { name: "Canned Goods", units: 62, revenue: 14500 },
+  { name: "Soap Bar Pack", units: 55, revenue: 13500 },
+]
+
+export function TopSellingProducts() {
+  // Calculate max revenue for percentage calculations
+  const maxRevenue = Math.max(...products.map(p => p.revenue))
+
+  return (
+    <Card>
+      <CardHeader className="flex flex-row items-center justify-between">
+        <div>
+          <CardTitle className="text-lg font-semibold">Top Selling Products</CardTitle>
+          <p className="text-sm text-gray-500">Units and revenue</p>
+        </div>
+        <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50">
+          <Eye className="w-4 h-4 mr-1" />
+          View
+        </Button>
+      </CardHeader>
+      <CardContent>
+        {/* Bar Chart */}
+        <div className="mb-6">
+          <ResponsiveContainer width="100%" height={200}>
+            <BarChart data={products}>
+              <XAxis dataKey="name" hide />
+              <YAxis hide />
+              <Tooltip
+                formatter={(value, name) => {
+                  if (name === 'revenue') return [`₱${value.toLocaleString()}`, 'Revenue']
+                  return [value, 'Units']
+                }}
+              />
+              <Legend
+                iconType="circle"
+                wrapperStyle={{ fontSize: '12px' }}
+              />
+              <Bar dataKey="revenue" fill="#a78bfa" radius={[4, 4, 0, 0]} name="Revenue" />
+              <Bar dataKey="units" fill="#7c3aed" radius={[4, 4, 0, 0]} name="Units" />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+
+        {/* Product List with Visual Bars */}
+        <div className="space-y-3">
+          {products.map((product, index) => {
+            const revenuePercentage = (product.revenue / maxRevenue) * 100
+
+            return (
+              <div key={index} className="space-y-1">
+                <div className="flex items-center justify-between text-sm">
+                  <span className="text-gray-700 font-medium">{product.name}</span>
+                  <div className="flex gap-3 text-xs">
+                    <span className="text-gray-500">{product.units} units</span>
+                    <span className="font-semibold text-purple-600 min-w-[80px] text-right">
+                      ₱{product.revenue.toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+                {/* Revenue Bar */}
+                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                  <div
+                    className="bg-gradient-to-r from-purple-600 to-purple-400 h-2 rounded-full transition-all duration-500"
+                    style={{ width: `${revenuePercentage}%` }}
+                  />
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      </CardContent>
+    </Card>
+  )
+}
