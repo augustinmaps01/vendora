@@ -23,7 +23,6 @@ import {
   X,
   LogOut,
   User,
-  Bell,
   Search,
   ChevronDown,
   Store,
@@ -36,6 +35,7 @@ import {
   Megaphone,
   Calculator
 } from "lucide-react"
+import { NotificationPanel } from "@/components/pos/NotificationPanel"
 
 // Sidebar menu structure based on data.docx
 const sidebarSections = [
@@ -152,21 +152,22 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       {/* Sidebar */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 bg-white border-r border-gray-200 z-40
+          fixed top-0 left-0 h-full w-64 border-r border-purple-900 z-40
           transform transition-transform duration-300 ease-in-out
           md:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
         `}
+        style={{ backgroundColor: '#110228' }}
       >
         {/* Logo */}
-        <div className="h-16 flex items-center px-6 border-b border-gray-200">
+        <div className="h-16 flex items-center px-6 border-b border-white/20">
           <div className="flex items-center gap-2">
-            <div className="w-8 h-8 bg-gray-900 rounded flex items-center justify-center">
-              <span className="text-white font-bold text-sm">V</span>
+            <div className="w-8 h-8 rounded flex items-center justify-center">
+              <img src="/logos/logo.png" alt="Vendora Logo" className="w-full h-full object-contain" />
             </div>
             <div>
-              <h1 className="text-lg font-bold text-gray-900">Vendora</h1>
-              <p className="text-xs text-gray-500">Vendor Dashboard</p>
+              <h1 className="text-lg font-bold text-white">Vendora</h1>
+              <p className="text-xs text-white/80">Vendor Dashboard</p>
             </div>
           </div>
         </div>
@@ -174,11 +175,11 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         {/* Search */}
         <div className="p-4">
           <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-white/60" />
             <input
               type="text"
               placeholder="Search menu"
-              className="w-full pl-10 pr-4 py-2 text-sm border border-gray-200 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-300 focus:border-transparent"
+              className="w-full pl-10 pr-4 py-2 text-sm bg-white/10 border border-white/20 rounded-lg text-white placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent backdrop-blur-sm"
             />
           </div>
         </div>
@@ -189,7 +190,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             {sidebarSections.map((section, sectionIndex) => (
               <div key={sectionIndex}>
                 {/* Section Title */}
-                <h3 className="px-3 mb-2 text-xs font-semibold text-gray-400 uppercase tracking-wider">
+                <h3 className="px-3 mb-2 text-xs font-semibold text-white/70 uppercase tracking-wider">
                   {section.title}
                 </h3>
 
@@ -206,11 +207,11 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                           onClick={() => setSidebarOpen(false)}
                           className={`
                             flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                            transition-colors duration-200
+                            transition-all duration-200
                             ${
                               isActive
-                                ? "bg-gray-100 text-gray-900 font-medium"
-                                : "text-gray-600 hover:bg-gray-50 hover:text-gray-900"
+                                ? "bg-white text-purple-700 font-medium shadow-lg"
+                                : "text-white/90 hover:bg-white/10 hover:text-white backdrop-blur-sm"
                             }
                           `}
                         >
@@ -230,20 +231,20 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main className="min-h-screen transition-all duration-300 md:ml-64 bg-gray-50">
         {/* Header */}
-        <header className="h-16 border-b bg-white flex items-center px-6 sticky top-0 z-30">
+        <header className="h-16 border-b flex items-center px-6 sticky top-0 z-30" style={{ backgroundColor: '#2e0f5f', borderColor: '#1f0a3d' }}>
           <div className="flex-1 flex items-center justify-between">
             {/* Left Side - Title & Search */}
             <div className="flex items-center gap-4 flex-1">
               <div className="w-10 md:hidden" /> {/* Spacer for mobile menu button */}
-              <h2 className="text-xl font-semibold text-gray-900 hidden md:block">POS System</h2>
+              <h2 className="text-xl font-semibold text-white hidden md:block">POS System</h2>
 
               {/* Search Bar */}
-              <div className="hidden lg:flex items-center gap-2 bg-gray-100 rounded-lg px-4 py-2 w-full max-w-md ml-4">
-                <Search className="h-4 w-4 text-gray-400" />
+              <div className="hidden lg:flex items-center gap-2 bg-white/10 backdrop-blur-sm rounded-lg px-4 py-2 w-full max-w-md ml-4 border border-white/20">
+                <Search className="h-4 w-4 text-white/70" />
                 <input
                   type="text"
                   placeholder="Search products, customers..."
-                  className="bg-transparent border-none outline-none text-sm w-full text-gray-900 placeholder:text-gray-400"
+                  className="bg-transparent border-none outline-none text-sm w-full text-white placeholder:text-white/60"
                 />
               </div>
             </div>
@@ -251,32 +252,25 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             {/* Right Side - Notifications & User Profile */}
             <div className="flex items-center gap-3">
               {/* Notifications */}
-              <Button
-                variant="ghost"
-                size="icon"
-                className="relative hover:bg-gray-100 text-gray-700"
-              >
-                <Bell className="h-5 w-5" />
-                <span className="absolute top-1 right-1 h-2 w-2 bg-red-500 rounded-full"></span>
-              </Button>
+              <NotificationPanel />
 
               {/* User Profile Dropdown */}
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button
                     variant="ghost"
-                    className="flex items-center gap-3 hover:bg-gray-100 px-3 py-2 h-auto"
+                    className="flex items-center gap-3 hover:bg-white/10 px-3 py-2 h-auto"
                   >
                     {/* Avatar */}
-                    <div className="h-9 w-9 rounded-full bg-gray-900 flex items-center justify-center text-white font-semibold">
+                    <div className="h-9 w-9 rounded-full bg-white flex items-center justify-center text-purple-700 font-semibold">
                       {avatarLetter}
                     </div>
                     {/* User Info */}
                     <div className="hidden md:flex flex-col items-start">
-                      <span className="text-sm font-semibold text-gray-900">{displayName}</span>
-                      <span className="text-xs text-gray-500">{displayEmail}</span>
+                      <span className="text-sm font-semibold text-white">{displayName}</span>
+                      <span className="text-xs text-white/70">{displayEmail}</span>
                     </div>
-                    <ChevronDown className="h-4 w-4 text-gray-600 hidden md:block" />
+                    <ChevronDown className="h-4 w-4 text-white hidden md:block" />
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end" className="w-56">

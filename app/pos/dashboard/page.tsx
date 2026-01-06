@@ -26,13 +26,13 @@ export default function POSDashboard() {
     {
       title: "Total Sales",
       value: "₱ 128,420",
-      change: "+8.4% vs previous",
+      change: "+8.4%",
       changeType: "positive" as const,
     },
     {
       title: "Total Orders",
       value: "214",
-      change: "+4.1% vs previous",
+      change: "+4.1%",
       changeType: "positive" as const,
     },
     {

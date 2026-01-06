@@ -35,9 +35,11 @@ export function DashboardStats({ stats }: DashboardStatsProps) {
                   >
                     {stat.change}
                   </span>
-                  <span className="text-xs text-gray-500">
-                    {stat.subtitle || "vs previous"}
-                  </span>
+                  {stat.subtitle && (
+                    <span className="text-xs text-gray-500">
+                      {stat.subtitle}
+                    </span>
+                  )}
                 </div>
               </div>
             </div>
