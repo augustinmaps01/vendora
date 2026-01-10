@@ -10,7 +10,7 @@ import {
   Store,
   Package,
   ShoppingCart,
-  BarChart3,
+  BarChart3 as BarChart3Icon,
   Settings,
   FileText,
   Bell,
@@ -57,7 +57,7 @@ const navItems: NavItem[] = [
   {
     title: "Analytics",
     href: "/admin/analytics",
-    icon: BarChart3,
+    icon: BarChart3Icon,
   },
   {
     title: "Payments",

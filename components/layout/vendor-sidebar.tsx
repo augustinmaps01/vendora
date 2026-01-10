@@ -8,7 +8,7 @@ import {
   ShoppingCart,
   Package,
   Users,
-  BarChart3,
+  BarChart3 as BarChart3Icon,
   Settings,
   Store,
   CreditCard,
@@ -63,7 +63,7 @@ const navItems: NavItem[] = [
   {
     title: "Reports",
     href: "/pos/reports",
-    icon: BarChart3,
+    icon: BarChart3Icon,
   },
   {
     title: "Invoices",

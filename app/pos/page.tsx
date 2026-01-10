@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation"
 
 export default function POSPage() {
-  redirect("/pos/dashboard")
+  redirect("/pos/pos-screen")
 }
