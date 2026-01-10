@@ -375,7 +375,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main className={`min-h-screen transition-all duration-300 bg-gray-50 overflow-x-hidden ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
         {/* Header */}
-        <header className="sticky top-0 z-30 flex items-center h-16 px-6 border-b" style={{ backgroundColor: '#2e0f5f', borderColor: '#1f0a3d' }}>
+        <header className="fixed top-0 left-0 right-0 z-30 flex items-center h-16 w-full px-6 border-b md:sticky md:left-auto md:right-auto md:w-auto" style={{ backgroundColor: '#2e0f5f', borderColor: '#1f0a3d' }}>
           <div className="flex items-center justify-between flex-1">
             {/* Left Side - Logo (Mobile) / Title & Search (Desktop) */}
             <div className="flex items-center flex-1 gap-4">
@@ -487,7 +487,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <div className="max-w-full p-6 pb-24 overflow-x-hidden md:pb-6">
+        <div className="max-w-full px-6 pt-24 pb-24 overflow-x-hidden md:p-6 md:pb-6">
           {children}
         </div>
 
