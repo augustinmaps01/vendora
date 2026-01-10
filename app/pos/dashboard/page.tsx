@@ -1,6 +1,7 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
+import Link from "next/link"
 import { ShoppingCart, Plus } from "lucide-react"
 import { DashboardStats } from "@/components/pos/DashboardStats"
 import { SalesTrendChart } from "@/components/pos/SalesTrendChart"
@@ -40,21 +41,18 @@ export default function POSDashboard() {
       value: "₱ 96,880",
       change: "After discount",
       changeType: "positive" as const,
-      subtitle: "After discount",
     },
     {
       title: "Average Order Value",
       value: "₱ 600",
       change: "Stable",
       changeType: "positive" as const,
-      subtitle: "Stable",
     },
     {
       title: "Items Sold",
       value: "1,248",
       change: "POS and Online",
       changeType: "positive" as const,
-      subtitle: "POS and Online",
     },
   ]
 
@@ -78,9 +76,11 @@ export default function POSDashboard() {
               <SelectItem value="custom">Custom</SelectItem>
             </SelectContent>
           </Select>
-          <Button className="bg-gray-900 hover:bg-gray-800 text-white">
-            <ShoppingCart className="mr-2 h-4 w-4" />
-            Open POS
+          <Button asChild className="bg-gray-900 hover:bg-gray-800 text-white">
+            <Link href="/pos/pos-screen">
+              <ShoppingCart className="mr-2 h-4 w-4" />
+              Open POS
+            </Link>
           </Button>
           <Button variant="outline" className="border-gray-300">
             <Plus className="mr-2 h-4 w-4" />

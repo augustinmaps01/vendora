@@ -83,12 +83,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
   const [userData, setUserData] = useState<{ business_name?: string; email?: string } | null>(null)
-  const [mounted, setMounted] = useState(false)
-
-  // Set mounted state
-  useEffect(() => {
-    setMounted(true)
-  }, [])
 
   // Fetch user data
   useEffect(() => {
@@ -100,7 +94,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           business_name: 'Bunya Retail Shop',
           email: 'vendor@bunyaretail.com'
         })
-      } catch (_error) {
+      } catch {
         // Silently fail - backend not connected yet
         setUserData({
           business_name: 'Bunya Retail Shop',
@@ -109,10 +103,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       }
     }
 
-    if (mounted && !pathname?.startsWith("/pos/auth")) {
+    if (!pathname?.startsWith("/pos/auth")) {
       fetchUserData()
     }
-  }, [pathname, mounted])
+  }, [pathname])
 
   // Get first letter of business name for avatar
   const avatarLetter = userData?.business_name?.charAt(0).toUpperCase() || 'V'
@@ -125,11 +119,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // If it's an auth page, just render children without sidebar/nav
   if (isAuthPage) {
     return <>{children}</>
-  }
-
-  // Prevent hydration mismatch by not rendering until mounted
-  if (!mounted) {
-    return null
   }
 
   // Get all menu items for mobile view
@@ -171,8 +160,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       {/* Sidebar - Mobile: Full width with hamburger toggle | Desktop: Collapsible */}
       <aside
         className={`
-          fixed top-0 left-0 h-full w-64 border-r border-purple-900 z-40
-          transform transition-all duration-300 ease-in-out overflow-x-hidden
+          fixed top-0 left-0 h-screen w-64 border-r border-purple-900 z-40
+          transform transition-all duration-300 ease-in-out overflow-hidden flex flex-col
           md:translate-x-0
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           ${sidebarCollapsed ? "md:w-20" : "md:w-64"}
@@ -180,7 +169,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         style={{ backgroundColor: '#110228' }}
       >
         {/* Logo */}
-        <div className={`flex items-center h-16 px-6 border-b border-white/20 transition-all duration-300 ${sidebarCollapsed ? 'md:px-2 md:justify-center' : ''}`}>
+        <div className={`flex items-center h-16 px-6 border-b border-white/20 transition-all duration-300 flex-shrink-0 ${sidebarCollapsed ? 'md:px-2 md:justify-center' : ''}`}>
           <div className={`flex items-center gap-2 transition-all duration-300 ${sidebarCollapsed ? 'md:justify-center md:w-full' : ''}`}>
             <div className="relative flex items-center justify-center w-8 h-8 rounded">
               <Image src="/logos/logo.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
@@ -193,7 +182,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Search - Always visible on mobile, hidden when collapsed on desktop */}
-        <div className={`p-4 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+        <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
           <div className="relative">
             <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-white/60" />
             <input
@@ -205,8 +194,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 px-3 pb-6 overflow-y-auto overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'md:px-2' : ''}`}>
-          <div className="space-y-6">
+        <nav className={`flex-1 min-h-0 px-3 pt-2 pb-4 overflow-y-auto overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'md:px-2' : ''}`}>
+          <div className="space-y-4">
             {/* Mobile: Show only Primary Menus + View More button */}
             <div className="md:hidden">
               {/* Primary Menus Section */}
@@ -321,9 +310,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             {/* Desktop: Show all sections normally */}
             <div className="hidden md:block">
               {sidebarSections.map((section, sectionIndex) => (
-                <div key={sectionIndex} className="mb-6">
+                <div key={sectionIndex} className="mb-4">
                   {/* Section Title - Hidden when collapsed on desktop */}
-                  <h3 className={`px-3 mb-2 text-xs font-semibold tracking-wider uppercase text-white/70 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+                  <h3 className={`px-3 mb-1.5 text-xs font-semibold tracking-wider uppercase text-white/70 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
                     {section.title}
                   </h3>
 
@@ -339,7 +328,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                             href={item.href}
                             onClick={() => setSidebarOpen(false)}
                             className={`
-                              relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
+                              relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm
                               transition-all duration-200 group
                               ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}
                               ${

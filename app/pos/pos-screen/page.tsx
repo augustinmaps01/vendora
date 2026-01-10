@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useCallback, useId } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -79,6 +79,8 @@ const sampleProducts: Product[] = [
   { id: 20, name: "Crackers 200g", sku: "SN-3007", barcode: "480003000007", category: "Snacks", price: 55, stock: 60, unit: "pack" }
 ]
 
+const productsByBarcode = new Map(sampleProducts.map((product) => [product.barcode, product]))
+
 const sampleCustomers: Customer[] = [
   { id: 1, name: "Walk-in Customer", email: "", phone: "", address: "", totalPurchases: 0 },
   { id: 2, name: "John Dela Cruz", email: "john.delacruz@email.com", phone: "+63 912 345 6789", address: "123 Main St, Manila", totalPurchases: 15420 },
@@ -114,10 +116,6 @@ const calculateDeliveryFee = (distance: number): number => {
   return deliveryFeeConfig.baseFee + (distance * deliveryFeeConfig.perKmFee)
 }
 
-const generateTransactionId = (): string => {
-  return `SALE-${Date.now()}`
-}
-
 const currentCashier = {
   name: "Cashier Maria",
   shift: "Shift Open"
@@ -137,8 +135,8 @@ export default function POSScreen() {
   const [cart, setCart] = useState<CartItem[]>([])
   const [notes, setNotes] = useState("")
   const [barcodeInput, setBarcodeInput] = useState("")
-  const [transactionId, setTransactionId] = useState("")
-  const [mounted, setMounted] = useState(false)
+  const reactId = useId()
+  const transactionId = `SALE-${reactId.replace(/:/g, "")}`
 
   // Fulfillment
   const [fulfillment, setFulfillment] = useState<FulfillmentType>("pickup")
@@ -164,12 +162,6 @@ export default function POSScreen() {
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [settingsOpen, setSettingsOpen] = useState(false)
 
-  // Generate transaction ID on client side only
-  useEffect(() => {
-    setMounted(true)
-    setTransactionId(generateTransactionId())
-  }, [])
-
   // Add to cart
   const addToCart = useCallback((product: typeof sampleProducts[0]) => {
     if (product.stock === 0) return
@@ -190,16 +182,23 @@ export default function POSScreen() {
     })
   }, [])
 
-  // Barcode lookup
-  useEffect(() => {
-    if (!barcodeInput.trim()) return
+  const handleBarcodeChange = useCallback((value: string) => {
+    const trimmed = value.trim()
 
-    const match = sampleProducts.find((product) => product.barcode === barcodeInput.trim())
+    if (!trimmed) {
+      setBarcodeInput(value)
+      return
+    }
+
+    const match = productsByBarcode.get(trimmed)
     if (match) {
       addToCart(match)
       setBarcodeInput("")
+      return
     }
-  }, [barcodeInput, addToCart])
+
+    setBarcodeInput(value)
+  }, [addToCart])
 
   // Filtered products
   const filteredProducts = useMemo(() => {
@@ -224,21 +223,22 @@ export default function POSScreen() {
     return filtered
   }, [selectedCategory, query])
 
-  // Change quantity
-  const changeQty = (id: number, newQty: number) => {
+  // Change quantity - Optimized with useCallback
+  const changeQty = useCallback((id: number, newQty: number) => {
     if (newQty < 1) return
-    setCart(cart.map((item) => {
-      if (item.id === id) {
-        return { ...item, quantity: Math.min(newQty, item.stock) }
-      }
-      return item
-    }))
-  }
+    setCart((prevCart) =>
+      prevCart.map((item) =>
+        item.id === id
+          ? { ...item, quantity: Math.min(newQty, item.stock) }
+          : item
+      )
+    )
+  }, [])
 
-  // Remove item
-  const removeItem = (id: number) => {
-    setCart(cart.filter((item) => item.id !== id))
-  }
+  // Remove item - Optimized with useCallback
+  const removeItem = useCallback((id: number) => {
+    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
+  }, [])
 
   // Calculations
   const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
@@ -266,13 +266,8 @@ export default function POSScreen() {
   const balance = amountDue - paidAmount
   const change = paidAmount > amountDue ? paidAmount - amountDue : 0
 
-  // Prevent hydration mismatch
-  if (!mounted) {
-    return null
-  }
-
   return (
-    <div className="min-h-screen p-4 bg-white md:p-6">
+    <div className="min-h-screen p-3 pb-24 bg-white sm:p-4 md:p-5 lg:p-6 sm:pb-6">
       {/* Header */}
       <div className="mb-4">
         <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
@@ -369,7 +364,7 @@ export default function POSScreen() {
                 <Input
                   placeholder="Scan barcode or type SKU"
                   value={barcodeInput}
-                  onChange={(e) => setBarcodeInput(e.target.value)}
+                  onChange={(e) => handleBarcodeChange(e.target.value)}
                   className="w-64 h-auto p-0 text-sm text-gray-900 bg-transparent border-none outline-none placeholder:text-gray-400 focus-visible:ring-0"
                 />
               </div>
@@ -412,10 +407,10 @@ export default function POSScreen() {
       {/* Main Content */}
       <div className="space-y-0">
         {activeTab === "sale" ? (
-          /* Three Column Layout - Sale View */
-          <div className="grid grid-cols-1 gap-6 xl:grid-cols-12">
+          /* Three Column Layout - Sale View - Mobile Optimized */
+          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2 xl:grid-cols-12">
             {/* Products Panel */}
-            <div className="space-y-4 xl:col-span-4">
+            <div className="space-y-4 col-span-1 lg:col-span-1 xl:col-span-4">
               <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
                 <h2 className="flex items-center gap-2 mb-4 text-xl font-semibold text-white">
                   <Package className="w-5 h-5" />
@@ -433,17 +428,21 @@ export default function POSScreen() {
                       className="pl-10 text-white bg-white/10 border-white/10 placeholder:text-white/40"
                     />
                   </div>
-                  <Input
-                    placeholder="Scan or enter barcode"
-                    value={barcodeInput}
-                    onChange={(e) => setBarcodeInput(e.target.value)}
-                    className="text-white bg-white/10 border-white/10 placeholder:text-white/40"
-                  />
+                    <Input
+                      placeholder="Scan or enter barcode"
+                      value={barcodeInput}
+                      onChange={(e) => handleBarcodeChange(e.target.value)}
+                      className="text-white bg-white/10 border-white/10 placeholder:text-white/40"
+                    />
                 </div>
 
                 {/* Category Dropdown */}
                 <div className="mb-3">
-                  <select className="w-full px-3 py-2 text-sm text-white border rounded-lg outline-none bg-white/5 border-white/10">
+                  <select
+                    className="w-full px-3 py-2 text-sm text-white border rounded-lg outline-none bg-white/5 border-white/10"
+                    value={selectedCategory}
+                    onChange={(e) => setSelectedCategory(e.target.value)}
+                  >
                     {categories.map((cat) => (
                       <option key={cat} value={cat}>{cat}</option>
                     ))}
@@ -464,7 +463,7 @@ export default function POSScreen() {
                 </div>
 
                 {/* Product Grid */}
-                <div className="space-y-2 max-h-[600px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[calc(50vh-180px)] sm:max-h-[calc(60vh-200px)] lg:max-h-[600px] overflow-y-auto pr-2">
                   {filteredProducts.map((product) => (
                     <div
                       key={product.id}
@@ -504,7 +503,7 @@ export default function POSScreen() {
             </div>
 
             {/* Shopping Cart */}
-            <div className="space-y-4 xl:col-span-4">
+            <div className="space-y-4 col-span-1 lg:col-span-1 xl:col-span-4">
               <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
                 <div className="mb-4">
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
@@ -515,7 +514,7 @@ export default function POSScreen() {
                 </div>
 
                 {/* Cart Items */}
-                <div className="space-y-3 mb-4 max-h-[400px] overflow-y-auto pr-2">
+                <div className="space-y-3 mb-4 max-h-[calc(40vh-120px)] sm:max-h-[calc(45vh-140px)] lg:max-h-[400px] overflow-y-auto pr-2">
                   {cart.length === 0 ? (
                     <div className="py-3 text-center border border-dashed text-white/60 border-white/10 rounded-xl bg-white/5">
                       <p>Cart is empty. Add products or scan barcode.</p>
@@ -547,15 +546,15 @@ export default function POSScreen() {
                             size="sm"
                             variant="outline"
                             onClick={() => changeQty(item.id, item.quantity - 1)}
-                            className="text-white bg-white/10 border-white/20 hover:bg-white/20"
+                            className="h-10 w-10 sm:h-9 sm:w-9 text-white bg-white/10 border-white/20 hover:bg-white/20 p-0"
                           >
-                            <Minus className="w-3 h-3" />
+                            <Minus className="w-4 h-4 sm:w-3 sm:h-3" />
                           </Button>
                           <Input
                             type="number"
                             value={item.quantity}
                             onChange={(e) => changeQty(item.id, Number(e.target.value))}
-                            className="w-20 text-center text-white bg-white/10 border-white/20"
+                            className="w-16 sm:w-20 h-10 sm:h-auto text-center text-base sm:text-sm text-white bg-white/10 border-white/20"
                             min={1}
                             max={item.stock}
                           />
@@ -564,9 +563,9 @@ export default function POSScreen() {
                             variant="outline"
                             onClick={() => changeQty(item.id, item.quantity + 1)}
                             disabled={item.quantity >= item.stock}
-                            className="text-white bg-white/10 border-white/20 hover:bg-white/20"
+                            className="h-10 w-10 sm:h-9 sm:w-9 text-white bg-white/10 border-white/20 hover:bg-white/20 p-0"
                           >
-                            <Plus className="w-3 h-3" />
+                            <Plus className="w-4 h-4 sm:w-3 sm:h-3" />
                           </Button>
                           <Badge variant="outline" className="ml-auto text-xs bg-white/10 text-white/70 border-white/20">
                             Max: {item.stock}
@@ -592,7 +591,7 @@ export default function POSScreen() {
             </div>
 
             {/* Checkout Panel */}
-            <div className="space-y-4 xl:col-span-4">
+            <div className="space-y-4 col-span-1 lg:col-span-2 xl:col-span-4">
               <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
                 <div className="mb-4">
                   <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
@@ -959,7 +958,7 @@ export default function POSScreen() {
 
       {/* Receipt Modal */}
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
-        <DialogContent className="max-w-md text-white bg-[#2b1f4a] border-white/10">
+        <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-md text-white bg-[#2b1f4a] border-white/10 rounded-lg">
           <DialogHeader>
             <DialogTitle className="text-white">Receipt</DialogTitle>
           </DialogHeader>

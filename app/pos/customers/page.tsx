@@ -29,9 +29,14 @@ export default function CustomersPage() {
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
-          <p className="text-gray-600 mt-1">Manage your customer relationships</p>
+        <div className="flex items-center gap-3">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-purple-100">
+            <Users className="h-5 w-5 text-purple-600" />
+          </div>
+          <div>
+            <h1 className="text-3xl font-bold text-gray-900">Customers</h1>
+            <p className="text-gray-600 mt-1">Manage your customer relationships</p>
+          </div>
         </div>
         <Button className="bg-purple-600 hover:bg-purple-700">
           <Plus className="w-4 h-4 mr-2" />
