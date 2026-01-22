@@ -35,7 +35,7 @@ export default function OrderSuccessPage() {
     })
 
     return (
-        <div className="min-h-screen bg-gradient-to-b from-green-50 via-white to-gray-50">
+        <div className="min-h-screen bg-[#F5F3FF]">
             {/* Confetti */}
             {showConfetti && windowSize.width > 0 && (
                 <Confetti
@@ -50,7 +50,7 @@ export default function OrderSuccessPage() {
             {/* Header */}
             <div className="bg-white border-b">
                 <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
-                    <Link href="/ecommerce" className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                    <Link href="/ecommerce" className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
                         ShopSphere
                     </Link>
                 </div>
@@ -60,7 +60,7 @@ export default function OrderSuccessPage() {
                 {/* Success Icon */}
                 <div className="text-center mb-8 sm:mb-10 animate-in fade-in zoom-in duration-500">
                     <div className="relative inline-block">
-                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-gradient-to-br from-green-400 to-green-600 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-green-500/30">
+                        <div className="w-24 h-24 sm:w-32 sm:h-32 bg-green-500 rounded-full flex items-center justify-center mx-auto shadow-2xl shadow-green-500/30">
                             <CheckCircle2 className="w-12 h-12 sm:w-16 sm:h-16 text-white" strokeWidth={2.5} />
                         </div>
                         <div className="absolute -top-2 -right-2 w-12 h-12 bg-yellow-400 rounded-full flex items-center justify-center animate-bounce">
@@ -81,7 +81,7 @@ export default function OrderSuccessPage() {
 
                 {/* Order Details Card */}
                 <div className="bg-white rounded-2xl sm:rounded-3xl shadow-xl border border-gray-200 overflow-hidden mb-6 sm:mb-8 animate-in fade-in slide-in-from-bottom duration-700 delay-200">
-                    <div className="bg-gradient-to-r from-green-500 to-emerald-600 p-5 sm:p-6">
+                    <div className="bg-green-600 p-5 sm:p-6">
                         <div className="flex items-center justify-between text-white">
                             <div>
                                 <p className="text-sm font-medium opacity-90 mb-1">Order Number</p>
@@ -141,9 +141,9 @@ export default function OrderSuccessPage() {
                 </div>
 
                 {/* Email Confirmation */}
-                <div className="bg-gradient-to-r from-indigo-50 to-purple-50 rounded-2xl p-5 sm:p-6 border border-indigo-200 mb-6 sm:mb-8 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
+                <div className="bg-purple-50 rounded-2xl p-5 sm:p-6 border border-purple-200 mb-6 sm:mb-8 animate-in fade-in slide-in-from-bottom duration-700 delay-300">
                     <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 bg-gradient-to-br from-indigo-500 to-purple-600 rounded-full flex items-center justify-center flex-shrink-0">
+                        <div className="w-12 h-12 bg-[#7C3AED] rounded-full flex items-center justify-center flex-shrink-0">
                             <Mail className="w-6 h-6 text-white" />
                         </div>
                         <div className="flex-1">
@@ -158,7 +158,7 @@ export default function OrderSuccessPage() {
                 {/* Action Buttons */}
                 <div className="grid sm:grid-cols-2 gap-3 sm:gap-4 animate-in fade-in slide-in-from-bottom duration-700 delay-500">
                     <Link href="/ecommerce/products" className="block">
-                        <Button className="w-full h-12 sm:h-14 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all group">
+                        <Button className="w-full h-12 sm:h-14 bg-[#D946EF] hover:bg-[#c026d3] text-white rounded-xl font-bold text-sm sm:text-base shadow-lg hover:shadow-xl transition-all group">
                             Continue Shopping
                             <ArrowRight className="ml-2 w-5 h-5 group-hover:translate-x-1 transition-transform" />
                         </Button>

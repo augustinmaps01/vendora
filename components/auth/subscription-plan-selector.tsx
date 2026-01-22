@@ -126,7 +126,7 @@ export function SubscriptionPlanSelector({
   return (
     <div className={cn("w-full max-w-[1400px] mx-auto px-4", className)}>
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-2 bg-linear-to-r from-green-600 to-green-500 bg-clip-text text-transparent">
+        <h2 className="text-3xl font-bold mb-2" style={{ color: '#110228' }}>
           Choose Your Plan
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
@@ -141,9 +141,10 @@ export function SubscriptionPlanSelector({
               className={cn(
                 "px-4 py-2 rounded-lg font-medium transition-all",
                 billingInterval === "monthly"
-                  ? "bg-green-600 text-white shadow-md"
+                  ? "text-white shadow-md"
                   : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
               )}
+              style={billingInterval === "monthly" ? { backgroundColor: '#110228' } : {}}
               disabled={disabled}
               aria-pressed={billingInterval === "monthly"}
             >
@@ -154,14 +155,15 @@ export function SubscriptionPlanSelector({
               className={cn(
                 "px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2",
                 billingInterval === "yearly"
-                  ? "bg-green-600 text-white shadow-md"
+                  ? "text-white shadow-md"
                   : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
               )}
+              style={billingInterval === "yearly" ? { backgroundColor: '#110228' } : {}}
               disabled={disabled}
               aria-pressed={billingInterval === "yearly"}
             >
               Yearly
-              <Badge variant="secondary" className="bg-green-100 text-green-700 text-xs">
+              <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#e8dff5', color: '#110228' }}>
                 Save up to 17%
               </Badge>
             </button>
@@ -186,16 +188,17 @@ export function SubscriptionPlanSelector({
                 aria-disabled={disabled}
                 className={cn(
                   "relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col w-full",
-                  isSelected && "border-green-600 border-2 shadow-xl ring-2 ring-green-200",
+                  isSelected && "border-2 shadow-xl ring-2",
                   !isSelected && "border-gray-200 dark:border-gray-700",
                   disabled && "opacity-60 cursor-not-allowed hover:shadow-none hover:translate-y-0"
                 )}
+                style={isSelected ? { borderColor: '#110228', '--tw-ring-color': '#e8dff5' } as React.CSSProperties : {}}
                 onClick={() => handlePlanSelect(plan.id)}
                 onKeyDown={(e) => handleKeyDown(e, plan.id)}
               >
               {plan.popular && (
                 <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <Badge className="bg-linear-to-r from-green-600 to-green-500 text-white px-3 py-1 shadow-md">
+                  <Badge className="text-white px-3 py-1 shadow-md" style={{ backgroundColor: '#110228' }}>
                     Most Popular
                   </Badge>
                 </div>
@@ -220,7 +223,7 @@ export function SubscriptionPlanSelector({
 
                 <div className="mt-4 mb-2">
                   {displayPrice === "0" ? (
-                    <span className="text-4xl font-bold text-green-600">Free</span>
+                    <span className="text-4xl font-bold" style={{ color: '#110228' }}>Free</span>
                   ) : (
                     <div className="flex flex-col items-center">
                       <div>
@@ -241,7 +244,7 @@ export function SubscriptionPlanSelector({
                 </div>
 
                 {plan.trialDays && displayPrice !== "0" && (
-                  <CardDescription className="mt-2 text-sm font-medium text-green-600">
+                  <CardDescription className="mt-2 text-sm font-medium" style={{ color: '#110228' }}>
                     {plan.trialDays}-day free trial included
                   </CardDescription>
                 )}
@@ -254,7 +257,7 @@ export function SubscriptionPlanSelector({
                     className="flex items-start gap-3 animate-in fade-in-50"
                     style={{ animationDelay: `${index * 50}ms` }}
                   >
-                    <Check className="h-5 w-5 text-green-600 shrink-0 mt-0.5" />
+                    <Check className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#110228' }} />
                     <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
                   </div>
                 ))}
@@ -265,10 +268,11 @@ export function SubscriptionPlanSelector({
                   className={cn(
                     "w-full transition-all duration-300 font-semibold",
                     isSelected
-                      ? "bg-green-600 hover:bg-green-700 text-white shadow-md"
+                      ? "text-white shadow-md hover:opacity-90"
                       : "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100",
                     loading && "opacity-70"
                   )}
+                  style={isSelected ? { backgroundColor: '#110228' } : {}}
                   onClick={(e) => {
                     e.stopPropagation()
                     handlePlanSelect(plan.id)

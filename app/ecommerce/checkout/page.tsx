@@ -107,7 +107,7 @@ export default function CheckoutPage() {
             <div className="bg-white border-b sticky top-0 z-10">
                 <div className="container mx-auto px-4 sm:px-6 py-4 sm:py-5">
                     <div className="flex items-center justify-between">
-                        <Link href="/ecommerce" className="text-xl sm:text-2xl font-bold tracking-tight bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent">
+                        <Link href="/ecommerce" className="text-xl sm:text-2xl font-bold tracking-tight text-gray-900">
                             ShopSphere
                         </Link>
                         <div className="flex items-center gap-2 text-sm text-gray-500">
@@ -134,7 +134,7 @@ export default function CheckoutPage() {
                             {/* Contact Information */}
                             <div className="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-gray-200">
                                 <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-blue-500 to-blue-600 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-[#7C3AED] rounded-full flex items-center justify-center">
                                         <Mail className="w-5 h-5 text-white" />
                                     </div>
                                     <h2 className="text-lg sm:text-xl font-bold text-gray-900">Contact Information</h2>
@@ -172,7 +172,7 @@ export default function CheckoutPage() {
                             {/* Shipping Address */}
                             <div className="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-gray-200">
                                 <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-[#D946EF] rounded-full flex items-center justify-center">
                                         <MapPin className="w-5 h-5 text-white" />
                                     </div>
                                     <h2 className="text-lg sm:text-xl font-bold text-gray-900">Shipping Address</h2>
@@ -267,7 +267,7 @@ export default function CheckoutPage() {
                             {/* Payment Method */}
                             <div className="bg-white rounded-2xl p-5 sm:p-7 shadow-sm border border-gray-200">
                                 <div className="flex items-center gap-3 mb-5 sm:mb-6">
-                                    <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-purple-600 rounded-full flex items-center justify-center">
+                                    <div className="w-10 h-10 bg-[#110228] rounded-full flex items-center justify-center">
                                         <CreditCard className="w-5 h-5 text-white" />
                                     </div>
                                     <h2 className="text-lg sm:text-xl font-bold text-gray-900">Payment Method</h2>
@@ -440,7 +440,7 @@ export default function CheckoutPage() {
                                     type="submit"
                                     onClick={handleSubmit}
                                     disabled={isProcessing}
-                                    className="w-full h-14 bg-gray-900 hover:bg-gray-800 text-white rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                                    className="w-full h-14 bg-[#D946EF] hover:bg-[#c026d3] text-white rounded-xl font-bold text-base shadow-lg hover:shadow-xl transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                                 >
                                     {isProcessing ? (
                                         <span className="flex items-center gap-2">

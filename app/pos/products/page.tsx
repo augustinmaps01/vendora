@@ -281,64 +281,64 @@ export default function ProductsPage() {
   )
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Products</h1>
-          <p className="text-gray-600 mt-1">Manage your product inventory and pricing</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Products</h1>
+          <p className="text-sm sm:text-base text-gray-600 mt-0.5 sm:mt-1">Manage your product inventory and pricing</p>
         </div>
-        <Button onClick={handleOpenAddModal} className="bg-purple-600 hover:bg-purple-700">
+        <Button onClick={handleOpenAddModal} className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">
           <Plus className="w-4 h-4 mr-2" />
           Add Product
         </Button>
       </div>
 
       {/* Search and Filters */}
-      <div className="flex flex-col gap-4 sm:flex-row">
+      <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
         <div className="flex-1 relative">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
           <Input
-            placeholder="Search products by name, SKU, barcode, brand, or category..."
+            placeholder="Search products..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-10"
           />
         </div>
-        <Button variant="outline">
+        <Button variant="outline" className="w-full sm:w-auto">
           <Filter className="w-4 h-4 mr-2" />
           Filters
         </Button>
       </div>
 
       {/* Statistics */}
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">Total Products</div>
-          <div className="text-2xl font-bold text-gray-900 mt-1">{products.length}</div>
+      <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 md:gap-6">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-xs sm:text-sm text-gray-600">Total Products</div>
+          <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{products.length}</div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">Low Stock</div>
-          <div className="text-2xl font-bold text-orange-600 mt-1">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-xs sm:text-sm text-gray-600">Low Stock</div>
+          <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-0.5 sm:mt-1">
             {products.filter(p => p.stock <= (p.minStock || 0)).length}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">Active Products</div>
-          <div className="text-2xl font-bold text-green-600 mt-1">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-xs sm:text-sm text-gray-600">Active Products</div>
+          <div className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">
             {products.filter(p => p.isActive).length}
           </div>
         </div>
-        <div className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-sm text-gray-600">Total Value</div>
-          <div className="text-2xl font-bold text-purple-600 mt-1">
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="text-xs sm:text-sm text-gray-600">Total Value</div>
+          <div className="text-lg sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">
             ₱{products.reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
           </div>
         </div>
       </div>
 
-      {/* Products Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      {/* Products Table - Desktop */}
+      <div className="hidden lg:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 border-b border-gray-200">
@@ -464,9 +464,90 @@ export default function ProductsPage() {
         </div>
       </div>
 
+      {/* Products Cards - Mobile & Tablet */}
+      <div className="lg:hidden space-y-3">
+        {filteredProducts.length === 0 ? (
+          <div className="bg-white p-8 text-center rounded-lg border border-gray-200 shadow-sm">
+            <p className="text-gray-500">
+              {searchQuery ? "No products found. Try a different search." : "No products available. Add your first product to get started."}
+            </p>
+          </div>
+        ) : (
+          filteredProducts.map((product) => (
+            <div key={product.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+              <div className="flex gap-3 mb-3">
+                <div className="flex-shrink-0 h-16 w-16 bg-gray-100 rounded overflow-hidden flex items-center justify-center">
+                  {isValidImageSource(product.image) ? (
+                    <img
+                      src={product.image}
+                      alt={product.name}
+                      className="h-16 w-16 object-cover"
+                      loading="lazy"
+                    />
+                  ) : (
+                    <Package className="h-8 w-8 text-gray-400" />
+                  )}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <h3 className="text-sm font-medium text-gray-900 truncate">{product.name}</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">SKU: {product.sku}</p>
+                  <div className="flex items-center gap-2 mt-1">
+                    <Badge variant="secondary" className="text-xs">{product.category}</Badge>
+                    <Badge variant={product.isActive ? "default" : "secondary"} className="text-xs">
+                      {product.isActive ? "Active" : "Inactive"}
+                    </Badge>
+                  </div>
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-2 text-sm mb-3">
+                <div>
+                  <span className="text-gray-500">Price:</span>
+                  <span className="text-gray-900 font-medium ml-1">₱{product.price.toLocaleString()}</span>
+                </div>
+                <div>
+                  <span className="text-gray-500">Stock:</span>
+                  <Badge variant={
+                    product.stock === 0 ? "destructive" :
+                    product.stock <= (product.minStock || 0) ? "secondary" :
+                    "default"
+                  } className="ml-1 text-xs">
+                    {product.stock} {product.unit}
+                  </Badge>
+                </div>
+                {product.brand && (
+                  <div className="col-span-2 text-xs text-gray-500">
+                    Brand: {product.brand}
+                  </div>
+                )}
+              </div>
+              <div className="flex gap-2 pt-3 border-t border-gray-100">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleOpenEditModal(product)}
+                  className="flex-1"
+                >
+                  <Edit className="h-4 w-4 mr-1" />
+                  Edit
+                </Button>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => handleOpenDeleteModal(product)}
+                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  Delete
+                </Button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+
       {/* Add Product Modal */}
       <Dialog open={isAddModalOpen} onOpenChange={setIsAddModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Plus className="w-5 h-5 text-purple-600" />
@@ -780,7 +861,7 @@ export default function ProductsPage() {
 
       {/* Edit Product Modal */}
       <Dialog open={isEditModalOpen} onOpenChange={setIsEditModalOpen}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="w-[95vw] sm:w-full max-w-2xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2">
               <Edit className="w-5 h-5 text-purple-600" />
@@ -1094,7 +1175,7 @@ export default function ProductsPage() {
 
       {/* Delete Confirmation Modal */}
       <Dialog open={isDeleteModalOpen} onOpenChange={setIsDeleteModalOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="w-[95vw] sm:w-full sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="flex items-center gap-2 text-red-600">
               <AlertTriangle className="w-5 h-5" />

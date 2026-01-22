@@ -1,1085 +1,536 @@
-"use client"
+﻿"use client"
 
-import { useState, useMemo, useCallback, useId } from "react"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Badge } from "@/components/ui/badge"
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from "@/components/ui/dialog"
-import { Textarea } from "@/components/ui/textarea"
-import { Switch } from "@/components/ui/switch"
+import React, { useMemo, useState, useEffect } from "react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import {
-  Search,
-  Plus,
-  Minus,
-  Trash2,
-  Save,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import { Switch } from "@/components/ui/switch";
+import {
   Receipt,
+  ArrowLeft,
+  FileText,
+  PauseCircle,
   Settings,
-  Package,
-  Truck,
-  ShoppingBag,
-  RotateCcw,
-  X,
-  User as UserIcon,
-} from "lucide-react"
+  Trash2,
+} from "lucide-react";
+import DesktopPOSLayout from "@/components/screens/pos-screen/DesktopPOSLayout";
+import {
+  type POSProduct,
+  type CartItem,
+  type Fulfillment,
+  type Screen,
+} from "@/components/screens/pos-screen";
 
-// Type Definitions
-interface Product {
-  id: number
-  name: string
-  sku: string
-  barcode: string
-  category: string
-  price: number
-  stock: number
-  unit: string
-  image?: string
-  description?: string
+const THEME = {
+  bg: "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]",
+  card: "bg-white/5 border border-white/10 backdrop-blur",
+  panel: "bg-white/5 border border-white/10",
+  muted: "text-white/60",
+  text: "text-white",
+};
+
+type TotalsInput = {
+  subtotal: number;
+  discountAmount: number;
+  taxEnabled: boolean;
+  taxRate: number;
+  fulfillment: Fulfillment;
+  deliveryKm: number;
+};
+
+export function calcDeliveryFee(fulfillment: Fulfillment, deliveryKm: number) {
+  if (fulfillment !== "delivery") return 0;
+  const base = 40;
+  const perKm = 12;
+  const km = Number.isFinite(Number(deliveryKm)) ? Number(deliveryKm) : 0;
+  return Math.round(base + perKm * Math.max(0, km));
 }
 
-interface CartItem extends Product {
-  quantity: number
-  notes?: string
+export function calcTotals(input: TotalsInput) {
+  const safeSubtotal = Math.max(0, Number(input.subtotal) || 0);
+  const safeDiscount = Math.max(0, Math.min(Number(input.discountAmount) || 0, safeSubtotal));
+  const deliveryFee = calcDeliveryFee(input.fulfillment, input.deliveryKm);
+
+  const taxableBase = Math.max(0, safeSubtotal - safeDiscount);
+  const tax = input.taxEnabled ? Math.round(taxableBase * Math.max(0, input.taxRate)) : 0;
+  const total = taxableBase + tax + deliveryFee;
+
+  return {
+    subtotal: safeSubtotal,
+    discount: safeDiscount,
+    tax,
+    deliveryFee,
+    total,
+  };
 }
 
-interface Customer {
-  id: number
-  name: string
-  email?: string
-  phone?: string
-  address?: string
-  totalPurchases?: number
+export function clampQty(qty: number, stock: number) {
+  const s = Math.max(0, Number(stock) || 0);
+  const q = Math.max(1, Number(qty) || 1);
+  return Math.min(q, Math.max(1, s));
 }
 
-// Sample Data
-const sampleProducts: Product[] = [
-  // Grocery Items
-  { id: 1, name: "Premium Rice 5kg", sku: "GR-1001", barcode: "480001000001", category: "Grocery", price: 1250, stock: 18, unit: "bag", description: "High-quality premium rice" },
-  { id: 2, name: "Cooking Oil 1L", sku: "GR-1002", barcode: "480001000002", category: "Grocery", price: 185, stock: 45, unit: "bottle" },
-  { id: 3, name: "All-Purpose Flour 1kg", sku: "GR-1003", barcode: "480001000003", category: "Grocery", price: 95, stock: 30, unit: "pack" },
-  { id: 4, name: "White Sugar 1kg", sku: "GR-1004", barcode: "480001000004", category: "Grocery", price: 75, stock: 50, unit: "pack" },
-  { id: 5, name: "Iodized Salt 500g", sku: "GR-1005", barcode: "480001000005", category: "Grocery", price: 25, stock: 60, unit: "pack" },
-  { id: 6, name: "Soy Sauce 750ml", sku: "GR-1006", barcode: "480001000006", category: "Grocery", price: 85, stock: 35, unit: "bottle" },
-  { id: 7, name: "Instant Noodles Pack", sku: "GR-1007", barcode: "480001000007", category: "Grocery", price: 12, stock: 100, unit: "pack" },
-  // Beverages
-  { id: 8, name: "Mineral Water 1L", sku: "BV-2001", barcode: "480002000001", category: "Beverages", price: 20, stock: 80, unit: "bottle" },
-  { id: 9, name: "Cola 1.5L", sku: "BV-2002", barcode: "480002000002", category: "Beverages", price: 65, stock: 55, unit: "bottle" },
-  { id: 10, name: "Orange Juice 1L", sku: "BV-2003", barcode: "480002000003", category: "Beverages", price: 95, stock: 40, unit: "carton" },
-  { id: 11, name: "Coffee 3-in-1 Box", sku: "BV-2004", barcode: "480002000004", category: "Beverages", price: 150, stock: 25, unit: "box" },
-  { id: 12, name: "Tea Bags 25pcs", sku: "BV-2005", barcode: "480002000005", category: "Beverages", price: 120, stock: 30, unit: "box" },
-  { id: 13, name: "Energy Drink 250ml", sku: "BV-2006", barcode: "480002000006", category: "Beverages", price: 45, stock: 70, unit: "can" },
-  // Snacks
-  { id: 14, name: "Potato Chips 150g", sku: "SN-3001", barcode: "480003000001", category: "Snacks", price: 85, stock: 48, unit: "pack" },
-  { id: 15, name: "Chocolate Bar 50g", sku: "SN-3002", barcode: "480003000002", category: "Snacks", price: 35, stock: 90, unit: "bar" },
-  { id: 16, name: "Cookies Assorted 200g", sku: "SN-3003", barcode: "480003000003", category: "Snacks", price: 95, stock: 42, unit: "pack" },
-  { id: 17, name: "Peanuts Roasted 100g", sku: "SN-3004", barcode: "480003000004", category: "Snacks", price: 45, stock: 55, unit: "pack" },
-  { id: 18, name: "Candy Mix 250g", sku: "SN-3005", barcode: "480003000005", category: "Snacks", price: 65, stock: 38, unit: "pack" },
-  { id: 19, name: "Biscuits 300g", sku: "SN-3006", barcode: "480003000006", category: "Snacks", price: 75, stock: 50, unit: "pack" },
-  { id: 20, name: "Crackers 200g", sku: "SN-3007", barcode: "480003000007", category: "Snacks", price: 55, stock: 60, unit: "pack" }
-]
-
-const productsByBarcode = new Map(sampleProducts.map((product) => [product.barcode, product]))
-
-const sampleCustomers: Customer[] = [
-  { id: 1, name: "Walk-in Customer", email: "", phone: "", address: "", totalPurchases: 0 },
-  { id: 2, name: "John Dela Cruz", email: "john.delacruz@email.com", phone: "+63 912 345 6789", address: "123 Main St, Manila", totalPurchases: 15420 },
-  { id: 3, name: "Maria Santos", email: "maria.santos@email.com", phone: "+63 923 456 7890", address: "456 Oak Ave, Quezon City", totalPurchases: 8750 },
-  { id: 4, name: "Pedro Reyes", email: "pedro.reyes@email.com", phone: "+63 934 567 8901", address: "789 Pine Rd, Makati", totalPurchases: 22300 },
-  { id: 5, name: "Anna Garcia", email: "anna.garcia@email.com", phone: "+63 945 678 9012", address: "321 Elm St, Pasig", totalPurchases: 12150 }
-]
-
-const categories = ["All", "Grocery", "Beverages", "Snacks"]
-
-const taxRates = [
-  { label: "No Tax", value: 0 },
-  { label: "VAT 12%", value: 12 },
-  { label: "Service Tax 5%", value: 5 },
-  { label: "Luxury Tax 20%", value: 20 }
-]
-
-const paymentMethods = [
-  { label: "Cash", value: "cash" },
-  { label: "Card", value: "card" },
-  { label: "Online Payment", value: "online" },
-  { label: "Split Payment", value: "split" }
-]
-
-const deliveryDistances = [2, 5, 10, 15]
-
-const deliveryFeeConfig = {
-  baseFee: 40,
-  perKmFee: 12
+function Pill({ children }: { children: React.ReactNode }) {
+  return (
+    <span className={`inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs ${THEME.muted}`}>
+      {children}
+    </span>
+  );
 }
 
-const calculateDeliveryFee = (distance: number): number => {
-  return deliveryFeeConfig.baseFee + (distance * deliveryFeeConfig.perKmFee)
+function Money({ value }: { value: number }) {
+  return <span>{"\u20B1 "}{Math.round(value).toLocaleString()}</span>;
 }
 
-const currentCashier = {
-  name: "Cashier Maria",
-  shift: "Shift Open"
+function StatRow({ label, value, strong }: { label: string; value: React.ReactNode; strong?: boolean }) {
+  return (
+    <div className={`flex items-center justify-between text-sm ${strong ? "font-semibold" : ""}`}>
+      <span className={THEME.muted}>{label}</span>
+      <span className={strong ? "text-white" : "text-white"}>{value}</span>
+    </div>
+  );
 }
 
-type DiscountMode = "amount" | "percent"
-type FulfillmentType = "pickup" | "delivery"
-type PaymentMode = "full" | "partial"
-type PaymentSplit = "single" | "split"
-type ActiveTab = "sale" | "returns"
+export default function VendoraPOS() {
+  const [screen, setScreen] = useState<Screen>("sale");
 
-export default function POSScreen() {
-  // State Management
-  const [activeTab, setActiveTab] = useState<ActiveTab>("sale")
-  const [query, setQuery] = useState("")
-  const [selectedCategory, setSelectedCategory] = useState<string>("All")
-  const [cart, setCart] = useState<CartItem[]>([])
-  const [notes, setNotes] = useState("")
-  const [barcodeInput, setBarcodeInput] = useState("")
-  const reactId = useId()
-  const transactionId = `SALE-${reactId.replace(/:/g, "")}`
+  const [query, setQuery] = useState("");
+  const [barcodeInput, setBarcodeInput] = useState("");
+  const [category, setCategory] = useState<"all" | POSProduct["category"]>("all");
 
-  // Fulfillment
-  const [fulfillment, setFulfillment] = useState<FulfillmentType>("pickup")
-  const [deliveryDistance, setDeliveryDistance] = useState(5)
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [customer, setCustomer] = useState<"walkin" | "saved1" | "saved2">("walkin");
+  const [notes, setNotes] = useState("");
 
-  // Discount
-  const [discountMode, setDiscountMode] = useState<DiscountMode>("amount")
-  const [discountValue, setDiscountValue] = useState(0)
+  const [discountMode, setDiscountMode] = useState<"amount" | "percent">("amount");
+  const [discountValue, setDiscountValue] = useState<number>(0);
 
-  // Tax
-  const [taxEnabled, setTaxEnabled] = useState(false)
-  const [taxRate, setTaxRate] = useState(0)
+  const [taxEnabled, setTaxEnabled] = useState(true);
+  const [taxRate, setTaxRate] = useState<number>(0.12);
 
-  // Payment
-  const [paymentType, setPaymentType] = useState<PaymentMode>("full")
-  const [paymentSplit, setPaymentSplit] = useState<PaymentSplit>("single")
-  const [cashPay, setCashPay] = useState(0)
-  const [cardPay, setCardPay] = useState(0)
-  const [onlinePay, setOnlinePay] = useState(0)
+  const [fulfillment, setFulfillment] = useState<Fulfillment>("pickup");
+  const [deliveryKm, setDeliveryKm] = useState<number>(3);
 
-  // Modals
-  const [holdOpen, setHoldOpen] = useState(false)
-  const [receiptOpen, setReceiptOpen] = useState(false)
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
+  const [splitPay, setSplitPay] = useState(false);
+  const [primaryMethod, setPrimaryMethod] = useState<"cash" | "card" | "online">("cash");
+  const [cashPay, setCashPay] = useState<number>(0);
+  const [cardPay, setCardPay] = useState<number>(0);
+  const [onlinePay, setOnlinePay] = useState<number>(0);
 
-  // Add to cart
-  const addToCart = useCallback((product: typeof sampleProducts[0]) => {
-    if (product.stock === 0) return
+  const [holdOpen, setHoldOpen] = useState(false);
+  const [receiptOpen, setReceiptOpen] = useState(false);
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
-    setCart((prevCart) => {
-      const existing = prevCart.find((item) => item.id === product.id)
-      if (existing) {
-        if (existing.quantity < product.stock) {
-          return prevCart.map((item) =>
-            item.id === product.id
-              ? { ...item, quantity: item.quantity + 1 }
-              : item
-          )
-        }
-        return prevCart
+  const products = useMemo<POSProduct[]>(
+    () => [
+      { id: "p1", name: "Premium Rice 5kg", sku: "GR-1001", barcode: "480001000001", price: 1250, stock: 18, category: "grocery", unit: "bag" },
+      { id: "p2", name: "Cooking Oil 1L", sku: "GR-1020", barcode: "480001000002", price: 160, stock: 40, category: "grocery", unit: "bottle" },
+      { id: "p3", name: "Laundry Detergent 1kg", sku: "GR-1201", barcode: "480001000003", price: 150, stock: 25, category: "grocery", unit: "pack" },
+      { id: "p4", name: "Cement 40kg", sku: "HW-2001", barcode: "490002000001", price: 360, stock: 70, category: "hardware", unit: "bag" },
+      { id: "p5", name: "PVC Pipe 1 inch", sku: "HW-1023", barcode: "490002000002", price: 95, stock: 6, category: "hardware", unit: "pc" },
+      { id: "p6", name: "Nails Assorted", sku: "HW-3102", barcode: "490002000003", price: 55, stock: 120, category: "hardware", unit: "pack" },
+      { id: "p7", name: "Screwdriver Set", sku: "HW-0902", barcode: "490002000004", price: 260, stock: 4, category: "hardware", unit: "set" },
+      { id: "p8", name: "General Item", sku: "GN-0001", barcode: "470003000001", price: 99, stock: 999, category: "general", unit: "pc" },
+    ],
+    []
+  );
+
+  const filtered = useMemo(() => {
+    const q = query.trim().toLowerCase();
+    return products.filter((p) => {
+      const okCat = category === "all" ? true : p.category === category;
+      const okQuery = !q ? true : `${p.name} ${p.sku} ${p.barcode}`.toLowerCase().includes(q);
+      return okCat && okQuery;
+    });
+  }, [products, query, category]);
+
+  const addToCart = (p: POSProduct, qty = 1) => {
+    setCart((prev) => {
+      const found = prev.find((x) => x.id === p.id);
+      if (found) {
+        const nextQty = clampQty(found.qty + qty, p.stock);
+        return prev.map((x) => (x.id === p.id ? { ...x, qty: nextQty } : x));
       }
-      return [...prevCart, { ...product, quantity: 1 }]
-    })
-  }, [])
+      return [
+        ...prev,
+        { id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, price: p.price, stock: p.stock, unit: p.unit, qty: clampQty(qty, p.stock) },
+      ];
+    });
+  };
 
-  const handleBarcodeChange = useCallback((value: string) => {
-    const trimmed = value.trim()
-
-    if (!trimmed) {
-      setBarcodeInput(value)
-      return
+  const applyBarcode = () => {
+    const code = barcodeInput.trim();
+    if (!code) return;
+    const found = products.find((p) => p.barcode === code || p.sku.toLowerCase() === code.toLowerCase());
+    if (found) {
+      addToCart(found, 1);
+      setBarcodeInput("");
+      return;
     }
+    alert("Product not found (demo). Add lookup in your API.");
+  };
 
-    const match = productsByBarcode.get(trimmed)
-    if (match) {
-      addToCart(match)
-      setBarcodeInput("")
-      return
-    }
+  const changeQty = (id: string, nextQty: number | string) => {
+    setCart((prev) =>
+      prev.map((x) => {
+        if (x.id !== id) return x;
+        const q = clampQty(Number(nextQty || 1), x.stock);
+        return { ...x, qty: q };
+      })
+    );
+  };
 
-    setBarcodeInput(value)
-  }, [addToCart])
+  const removeItem = (id: string) => setCart((prev) => prev.filter((x) => x.id !== id));
+  const clearCart = () => setCart([]);
 
-  // Filtered products
-  const filteredProducts = useMemo(() => {
-    let filtered = sampleProducts
+  const subtotal = useMemo(() => cart.reduce((sum, x) => sum + x.price * x.qty, 0), [cart]);
 
-    // Category filter
-    if (selectedCategory !== "All") {
-      filtered = filtered.filter((p) => p.category === selectedCategory)
-    }
+  const discountAmount = useMemo(() => {
+    const v = Math.max(0, Number(discountValue) || 0);
+    if (discountMode === "amount") return Math.min(v, subtotal);
+    const pct = Math.min(100, v);
+    return Math.round(subtotal * (pct / 100));
+  }, [discountValue, discountMode, subtotal]);
 
-    // Search filter (name, SKU, barcode)
-    if (query.trim()) {
-      const q = query.toLowerCase()
-      filtered = filtered.filter(
-        (p) =>
-          p.name.toLowerCase().includes(q) ||
-          p.sku.toLowerCase().includes(q) ||
-          p.barcode.includes(q)
-      )
-    }
+  const totals = useMemo(
+    () =>
+      calcTotals({
+        subtotal,
+        discountAmount,
+        taxEnabled,
+        taxRate,
+        fulfillment,
+        deliveryKm,
+      }),
+    [subtotal, discountAmount, taxEnabled, taxRate, fulfillment, deliveryKm]
+  );
 
-    return filtered
-  }, [selectedCategory, query])
+  const amountDue = useMemo(() => {
+    if (paymentType === "partial") return Math.round(totals.total * 0.5);
+    return totals.total;
+  }, [paymentType, totals.total]);
 
-  // Change quantity - Optimized with useCallback
-  const changeQty = useCallback((id: number, newQty: number) => {
-    if (newQty < 1) return
-    setCart((prevCart) =>
-      prevCart.map((item) =>
-        item.id === id
-          ? { ...item, quantity: Math.min(newQty, item.stock) }
-          : item
-      )
-    )
-  }, [])
+  const paid = useMemo(() => {
+    const c = Math.max(0, Number(cashPay) || 0);
+    const k = Math.max(0, Number(cardPay) || 0);
+    const o = Math.max(0, Number(onlinePay) || 0);
 
-  // Remove item - Optimized with useCallback
-  const removeItem = useCallback((id: number) => {
-    setCart((prevCart) => prevCart.filter((item) => item.id !== id))
-  }, [])
+    if (splitPay) return c + k + o;
 
-  // Calculations
-  const subtotal = cart.reduce((sum, item) => sum + item.price * item.quantity, 0)
+    if (primaryMethod === "cash") return c;
+    if (primaryMethod === "card") return k;
+    return o;
+  }, [splitPay, primaryMethod, cashPay, cardPay, onlinePay]);
 
-  const discount = useMemo(() => {
-    if (discountMode === "amount") {
-      return Math.min(discountValue, subtotal)
-    } else {
-      const percent = Math.max(0, Math.min(100, discountValue))
-      return (subtotal * percent) / 100
-    }
-  }, [discountMode, discountValue, subtotal])
+  const balance = useMemo(() => Math.max(0, amountDue - paid), [amountDue, paid]);
+  const change = useMemo(() => Math.max(0, paid - amountDue), [amountDue, paid]);
 
-  const deliveryFee = fulfillment === "delivery" ? calculateDeliveryFee(deliveryDistance) : 0
+  const canGoCheckout = useMemo(() => cart.length > 0 && totals.total > 0, [cart.length, totals.total]);
+  const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
-  const taxableBase = subtotal - discount
-  const tax = taxEnabled ? (taxableBase * taxRate) / 100 : 0
+  const [saleId, setSaleId] = useState("");
 
-  const total = subtotal - discount + tax + deliveryFee
+  useEffect(() => {
+    const base = String(Math.floor(Date.now() / 1000)).slice(-6);
+    setSaleId(`SALE-${base}`);
+  }, []);
 
-  const amountDue = paymentType === "full" ? total : total * 0.5
-  const paidAmount = paymentSplit === "single"
-    ? Math.max(cashPay, cardPay, onlinePay)
-    : cashPay + cardPay + onlinePay
-  const balance = amountDue - paidAmount
-  const change = paidAmount > amountDue ? paidAmount - amountDue : 0
+  const screenProps = {
+    screen,
+    cart,
+    query,
+    setQuery,
+    barcodeInput,
+    setBarcodeInput,
+    category,
+    setCategory,
+    customer,
+    setCustomer,
+    notes,
+    setNotes,
+    filtered,
+    addToCart,
+    applyBarcode,
+    changeQty,
+    removeItem,
+    totals,
+    discountAmount,
+    canGoCheckout,
+    setScreen,
+    discountMode,
+    setDiscountMode,
+    discountValue,
+    setDiscountValue,
+    taxEnabled,
+    setTaxEnabled,
+    taxRate,
+    setTaxRate,
+    fulfillment,
+    setFulfillment,
+    deliveryKm,
+    setDeliveryKm,
+    paymentType,
+    setPaymentType,
+    splitPay,
+    setSplitPay,
+    primaryMethod,
+    setPrimaryMethod,
+    cashPay,
+    setCashPay,
+    cardPay,
+    setCardPay,
+    onlinePay,
+    setOnlinePay,
+    amountDue,
+    paid,
+    balance,
+    change,
+    canComplete,
+    setReceiptOpen,
+    calcDeliveryFee,
+  };
+
+  const bodyHeight = "h-auto lg:h-[calc(100vh-84px)]";
 
   return (
-    <div className="min-h-screen p-3 pb-24 bg-white sm:p-4 md:p-5 lg:p-6 sm:pb-6">
-      {/* Header */}
-      <div className="mb-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div className="flex items-center gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-gray-900">Vendora POS</h1>
-              <p className="text-gray-600 text-xs mt-0.5">Retail sales and checkout</p>
+    <div className={`min-h-screen ${THEME.bg} overflow-auto lg:overflow-hidden`}>
+      <header className="border-b border-white/10 bg-[#1f1633]/70 backdrop-blur py-3 lg:h-[84px] lg:py-0">
+        <div className="px-4 sm:px-6 flex flex-col gap-3 lg:h-full lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex items-center gap-3 min-w-0 w-full lg:w-auto">
+            <div className="h-10 w-10 rounded-2xl bg-purple-500/15 flex items-center justify-center shrink-0">
+              <Receipt className="h-5 w-5 text-purple-200" />
             </div>
-            <div className="flex gap-2">
-              <Badge className="text-gray-700 bg-gray-100 border-gray-200 hover:bg-gray-100">
-                {currentCashier.name}
-              </Badge>
-              <Badge className="text-gray-700 bg-gray-100 border-gray-200 hover:bg-gray-100">
-                {currentCashier.shift}
-              </Badge>
+            <div className="leading-tight min-w-0">
+              <div className="font-semibold text-white truncate">Vendora POS</div>
+              <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : "Checkout"} - Txn {saleId}</div>
+            </div>
+            <div className="hidden lg:flex gap-2 ml-2">
+              <Pill>Cashier Maria</Pill>
+              <Pill>{customer === "walkin" ? "Walk in" : customer === "saved1" ? "Mark S." : "Liza R."}</Pill>
             </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
+            {screen === "checkout" ? (
+              <Button
+                variant="secondary"
+                className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
+                onClick={() => setScreen("sale")}
+              >
+                <ArrowLeft className="h-4 w-4 mr-2" />
+                Back
+              </Button>
+            ) : null}
+
             <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-700 bg-white border-gray-200 hover:bg-gray-50"
+              variant="secondary"
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
               onClick={() => setReceiptOpen(true)}
             >
-              <Receipt className="w-4 h-4 mr-2" />
-              Receipt
+              <FileText className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Receipt</span>
             </Button>
+
             <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-700 bg-white border-gray-200 hover:bg-gray-50"
+              variant="secondary"
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
               onClick={() => setHoldOpen(true)}
+              disabled={cart.length === 0}
             >
-              <Save className="w-4 h-4 mr-2" />
-              Hold
+              <PauseCircle className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Hold</span>
             </Button>
+
             <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-700 bg-white border-gray-200 hover:bg-gray-50"
-            >
-              <RotateCcw className="w-4 h-4 mr-2" />
-              Returns
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              className="text-gray-700 bg-white border-gray-200 hover:bg-gray-50"
+              variant="secondary"
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
               onClick={() => setSettingsOpen(true)}
             >
-              <Settings className="w-4 h-4 mr-2" />
-              Settings
+              <Settings className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Settings</span>
             </Button>
-            <Button
-              size="sm"
-              className="text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-              onClick={() => {
-                setCart([])
-                setNotes("")
-                setDiscountValue(0)
-                setCashPay(0)
-                setCardPay(0)
-                setOnlinePay(0)
-              }}
-            >
-              <X className="w-4 h-4 mr-2" />
-              Clear
+
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={clearCart}>
+              <Trash2 className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Clear</span>
             </Button>
           </div>
         </div>
-      </div>
+      </header>
 
-      {/* New Sale Section */}
-      <div className="mb-4">
-        <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
-          <div className="text-gray-900 [&_p]:!text-gray-600">
-            <h2 className="text-lg font-semibold text-gray-900">New Sale</h2>
-            <p className="text-white/60 text-xs mt-0.5">Transaction {transactionId} • UI demo</p>
-          </div>
-          <div className="flex gap-2">
-            <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
-              <UserIcon className="w-4 h-4 text-gray-400" />
-              <select className="text-sm text-gray-900 bg-transparent border-none outline-none">
-                {sampleCustomers.map((customer) => (
-                  <option key={customer.id || 0} value={customer.id || ""}>
-                    {customer.name}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-2 px-3 py-2 border border-gray-200 rounded-lg bg-gray-50">
-                <Package className="w-4 h-4 text-gray-400" />
-                <Input
-                  placeholder="Scan barcode or type SKU"
-                  value={barcodeInput}
-                  onChange={(e) => handleBarcodeChange(e.target.value)}
-                  className="w-64 h-auto p-0 text-sm text-gray-900 bg-transparent border-none outline-none placeholder:text-gray-400 focus-visible:ring-0"
-                />
-              </div>
-              <Button size="sm" className="text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800">
-                Add
-              </Button>
-            </div>
-          </div>
-        </div>
-      </div>
+      <main className={`${bodyHeight} px-4 py-4 lg:px-6 lg:overflow-hidden`}>
+        <DesktopPOSLayout {...screenProps} />
+      </main>
 
-      {/* Sale/Returns Tabs */}
-      <div className="flex gap-2 mb-4">
-        <Button
-          size="sm"
-          onClick={() => setActiveTab("sale")}
-          className={
-            activeTab === "sale"
-              ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-          }
-          variant={activeTab === "sale" ? "default" : "outline"}
-        >
-          Sale
-        </Button>
-        <Button
-          size="sm"
-          onClick={() => setActiveTab("returns")}
-          className={
-            activeTab === "returns"
-              ? "bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 text-white"
-              : "bg-white border-gray-200 text-gray-700 hover:bg-gray-50"
-          }
-          variant={activeTab === "returns" ? "default" : "outline"}
-        >
-          Returns
-        </Button>
-      </div>
-
-      {/* Main Content */}
-      <div className="space-y-0">
-        {activeTab === "sale" ? (
-          /* Three Column Layout - Sale View - Mobile Optimized */
-          <div className="grid grid-cols-1 gap-4 sm:gap-5 md:gap-6 lg:grid-cols-2 xl:grid-cols-12">
-            {/* Products Panel */}
-            <div className="space-y-4 col-span-1 lg:col-span-1 xl:col-span-4">
-              <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
-                <h2 className="flex items-center gap-2 mb-4 text-xl font-semibold text-white">
-                  <Package className="w-5 h-5" />
-                  Products
-                </h2>
-
-                {/* Search */}
-                <div className="mb-4 space-y-3">
-                  <div className="relative">
-                    <Search className="absolute w-4 h-4 -translate-y-1/2 left-3 top-1/2 text-white/40" />
-                    <Input
-                      placeholder="Search products, SKU, barcode..."
-                      value={query}
-                      onChange={(e) => setQuery(e.target.value)}
-                      className="pl-10 text-white bg-white/10 border-white/10 placeholder:text-white/40"
-                    />
-                  </div>
-                    <Input
-                      placeholder="Scan or enter barcode"
-                      value={barcodeInput}
-                      onChange={(e) => handleBarcodeChange(e.target.value)}
-                      className="text-white bg-white/10 border-white/10 placeholder:text-white/40"
-                    />
-                </div>
-
-                {/* Category Dropdown */}
-                <div className="mb-3">
-                  <select
-                    className="w-full px-3 py-2 text-sm text-white border rounded-lg outline-none bg-white/5 border-white/10"
-                    value={selectedCategory}
-                    onChange={(e) => setSelectedCategory(e.target.value)}
-                  >
-                    {categories.map((cat) => (
-                      <option key={cat} value={cat}>{cat}</option>
-                    ))}
-                  </select>
-                </div>
-
-                {/* Filter Badges */}
-                <div className="flex flex-wrap gap-2 mb-4">
-                  <Badge variant="outline" className="text-xs bg-white/5 text-white/70 border-white/20">
-                    Stock enforced
-                  </Badge>
-                  <Badge variant="outline" className="text-xs bg-white/5 text-white/70 border-white/20">
-                    Barcode ready
-                  </Badge>
-                  <Badge variant="outline" className="text-xs bg-white/5 text-white/70 border-white/20">
-                    Pricing per item
-                  </Badge>
-                </div>
-
-                {/* Product Grid */}
-                <div className="space-y-2 max-h-[calc(50vh-180px)] sm:max-h-[calc(60vh-200px)] lg:max-h-[600px] overflow-y-auto pr-2">
-                  {filteredProducts.map((product) => (
-                    <div
-                      key={product.id}
-                      className="p-4 transition-colors border bg-white/5 border-white/10 rounded-xl hover:bg-white/10"
-                    >
-                      <div className="flex items-start justify-between mb-2">
-                        <div className="flex-1">
-                          <h3 className="text-sm font-medium text-white">{product.name}</h3>
-                          <p className="mt-1 text-xs text-white/60">SKU: {product.sku}</p>
-                        </div>
-                        <Badge
-                          variant="outline"
-                          className={`ml-2 text-xs ${
-                            product.stock > 0
-                              ? "bg-white/10 text-white/70 border-white/20"
-                              : "bg-red-500/20 text-red-200 border-red-400/40"
-                          }`}
-                        >
-                          {product.stock > 0 ? `${product.stock} ${product.unit}` : "Out of stock"}
-                        </Badge>
-                      </div>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="text-lg font-bold text-white">₱{product.price}</span>
-                        <Button
-                          size="sm"
-                          onClick={() => addToCart(product)}
-                          disabled={product.stock === 0}
-                          className="text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800 disabled:bg-white/20 disabled:text-white/50"
-                        >
-                          Add
-                        </Button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Shopping Cart */}
-            <div className="space-y-4 col-span-1 lg:col-span-1 xl:col-span-4">
-              <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
-                <div className="mb-4">
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
-                    <ShoppingBag className="w-5 h-5" />
-                    Cart
-                  </h2>
-                  <p className="mt-1 text-xs text-white/60">Adjust quantity, remove items, add notes</p>
-                </div>
-
-                {/* Cart Items */}
-                <div className="space-y-3 mb-4 max-h-[calc(40vh-120px)] sm:max-h-[calc(45vh-140px)] lg:max-h-[400px] overflow-y-auto pr-2">
-                  {cart.length === 0 ? (
-                    <div className="py-3 text-center border border-dashed text-white/60 border-white/10 rounded-xl bg-white/5">
-                      <p>Cart is empty. Add products or scan barcode.</p>
-                    </div>
-                  ) : (
-                    cart.map((item) => (
-                      <div
-                        key={item.id}
-                        className="p-4 border bg-white/5 border-white/10 rounded-xl"
-                      >
-                        <div className="flex items-start justify-between mb-3">
-                          <div className="flex-1">
-                            <h4 className="text-sm font-medium text-white">{item.name}</h4>
-                            <p className="mt-1 text-xs text-white/60">
-                              ₱{item.price} × {item.quantity} = ₱{item.price * item.quantity}
-                            </p>
-                          </div>
-                          <Button
-                            size="sm"
-                            variant="ghost"
-                            onClick={() => removeItem(item.id)}
-                            className="ml-2 text-red-300 hover:text-red-200 hover:bg-red-500/10"
-                          >
-                            <Trash2 className="w-4 h-4" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => changeQty(item.id, item.quantity - 1)}
-                            className="h-10 w-10 sm:h-9 sm:w-9 text-white bg-white/10 border-white/20 hover:bg-white/20 p-0"
-                          >
-                            <Minus className="w-4 h-4 sm:w-3 sm:h-3" />
-                          </Button>
-                          <Input
-                            type="number"
-                            value={item.quantity}
-                            onChange={(e) => changeQty(item.id, Number(e.target.value))}
-                            className="w-16 sm:w-20 h-10 sm:h-auto text-center text-base sm:text-sm text-white bg-white/10 border-white/20"
-                            min={1}
-                            max={item.stock}
-                          />
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            onClick={() => changeQty(item.id, item.quantity + 1)}
-                            disabled={item.quantity >= item.stock}
-                            className="h-10 w-10 sm:h-9 sm:w-9 text-white bg-white/10 border-white/20 hover:bg-white/20 p-0"
-                          >
-                            <Plus className="w-4 h-4 sm:w-3 sm:h-3" />
-                          </Button>
-                          <Badge variant="outline" className="ml-auto text-xs bg-white/10 text-white/70 border-white/20">
-                            Max: {item.stock}
-                          </Badge>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </div>
-
-                {/* Sale Notes */}
-                <div className="mt-4">
-                  <Label className="block mb-2 text-sm text-white">Sale notes</Label>
-                  <Textarea
-                    placeholder="Optional notes for this transaction"
-                    value={notes}
-                    onChange={(e) => setNotes(e.target.value)}
-                    className="text-white resize-none bg-white/10 border-white/10 placeholder:text-white/40"
-                    rows={3}
-                  />
-                </div>
-              </div>
-            </div>
-
-            {/* Checkout Panel */}
-            <div className="space-y-4 col-span-1 lg:col-span-2 xl:col-span-4">
-              <div className="p-6 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
-                <div className="mb-4">
-                  <h2 className="flex items-center gap-2 text-xl font-semibold text-white">
-                    <Receipt className="w-5 h-5" />
-                    Checkout
-                  </h2>
-                  <p className="mt-1 text-xs text-white/60">Pickup or delivery • Tax and discounts • Full or partial payment</p>
-                </div>
-
-                {/* Fulfillment */}
-                <div className="mb-6">
-                  <Label className="block mb-3 text-sm text-white">Fulfillment</Label>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <Button
-                      variant={fulfillment === "pickup" ? "default" : "outline"}
-                      onClick={() => setFulfillment("pickup")}
-                      className={
-                        fulfillment === "pickup"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      <Package className="w-4 h-4 mr-2" />
-                      Pickup
-                    </Button>
-                    <Button
-                      variant={fulfillment === "delivery" ? "default" : "outline"}
-                      onClick={() => setFulfillment("delivery")}
-                      className={
-                        fulfillment === "delivery"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      <Truck className="w-4 h-4 mr-2" />
-                      Delivery
-                    </Button>
-                  </div>
-                  {fulfillment === "delivery" && (
-                    <div className="space-y-2">
-                      <Label className="text-xs text-white/60">Distance (km)</Label>
-                      <div className="flex gap-2">
-                        {deliveryDistances.map((km) => (
-                          <Button
-                            key={km}
-                            size="sm"
-                            variant={deliveryDistance === km ? "default" : "outline"}
-                            onClick={() => setDeliveryDistance(km)}
-                            className={
-                              deliveryDistance === km
-                                ? "bg-purple-600 hover:bg-purple-700 text-xs"
-                                : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20 text-xs"
-                            }
-                          >
-                            {km}km
-                          </Button>
-                        ))}
-                      </div>
-                      <p className="mt-2 text-xs text-white/60">
-                        Fee: ₱{deliveryFee}
-                      </p>
-                    </div>
-                  )}
-                </div>
-
-                {/* Discount */}
-                <div className="mb-6">
-                  <Label className="block mb-3 text-sm text-white">Discount</Label>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <Button
-                      variant={discountMode === "amount" ? "default" : "outline"}
-                      onClick={() => setDiscountMode("amount")}
-                      size="sm"
-                      className={
-                        discountMode === "amount"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Amount (₱)
-                    </Button>
-                    <Button
-                      variant={discountMode === "percent" ? "default" : "outline"}
-                      onClick={() => setDiscountMode("percent")}
-                      size="sm"
-                      className={
-                        discountMode === "percent"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Percent (%)
-                    </Button>
-                  </div>
-                  <Input
-                    type="number"
-                    value={discountValue}
-                    onChange={(e) => setDiscountValue(Number(e.target.value))}
-                    placeholder={discountMode === "amount" ? "Enter amount" : "Enter percent"}
-                    className="text-white bg-white/10 border-white/10 placeholder:text-white/40"
-                    min={0}
-                    max={discountMode === "percent" ? 100 : subtotal}
-                  />
-                  <p className="mt-2 text-xs text-white/60">Discount: -₱{discount.toFixed(2)}</p>
-                </div>
-
-                {/* Tax */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-sm text-white">Tax</Label>
-                    <Switch
-                      checked={taxEnabled}
-                      onCheckedChange={setTaxEnabled}
-                      className="data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-white/20"
-                    />
-                  </div>
-                  {taxEnabled && (
-                    <div className="space-y-2">
-                      <p className="mb-2 text-xs text-white/60">Enable VAT or tax on taxable amount</p>
-                      <div className="flex gap-2">
-                        <select
-                          value={taxRate}
-                          onChange={(e) => setTaxRate(Number(e.target.value))}
-                          className="flex-1 px-3 py-2 text-sm text-white border rounded-lg outline-none bg-white/10 border-white/10"
-                        >
-                          {taxRates.map((rate) => (
-                            <option key={rate.value} value={rate.value}>
-                              {rate.label}
-                            </option>
-                          ))}
-                        </select>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="text-white bg-white/10 border-white/20 hover:bg-white/20"
-                        >
-                          Rate
-                        </Button>
-                      </div>
-                    </div>
-                  )}
-                </div>
-
-                {/* Order Summary */}
-                <div className="pt-4 mb-6 space-y-2 border-t border-white/10">
-                  <div className="flex justify-between text-sm text-white/60">
-                    <span>Subtotal:</span>
-                    <span>₱{subtotal.toFixed(2)}</span>
-                  </div>
-                  {discount > 0 && (
-                    <div className="flex justify-between text-sm text-white/60">
-                      <span>Discount:</span>
-                      <span className="text-green-400">-₱{discount.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {taxEnabled && (
-                    <div className="flex justify-between text-sm text-white/60">
-                      <span>Tax ({taxRate}%):</span>
-                      <span>+₱{tax.toFixed(2)}</span>
-                    </div>
-                  )}
-                  {deliveryFee > 0 && (
-                    <div className="flex justify-between text-sm text-white/60">
-                      <span>Delivery Fee:</span>
-                      <span>+₱{deliveryFee.toFixed(2)}</span>
-                    </div>
-                  )}
-                  <div className="flex justify-between pt-2 text-xl font-bold text-white border-t border-white/10">
-                    <span>Total:</span>
-                    <span>₱{total.toFixed(2)}</span>
-                  </div>
-                </div>
-
-                {/* Payment Type */}
-                <div className="mb-6">
-                  <Label className="block mb-3 text-sm text-white">Payment Type</Label>
-                  <div className="grid grid-cols-2 gap-2">
-                    <Button
-                      variant={paymentType === "full" ? "default" : "outline"}
-                      onClick={() => setPaymentType("full")}
-                      size="sm"
-                      className={
-                        paymentType === "full"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Full Payment
-                    </Button>
-                    <Button
-                      variant={paymentType === "partial" ? "default" : "outline"}
-                      onClick={() => setPaymentType("partial")}
-                      size="sm"
-                      className={
-                        paymentType === "partial"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Partial (50%)
-                    </Button>
-                  </div>
-                  <p className="mt-2 text-xs text-white/60">
-                    Amount Due: ₱{amountDue.toFixed(2)}
-                  </p>
-                </div>
-
-                {/* Payment Split */}
-                <div className="mb-6">
-                  <div className="flex items-center justify-between mb-3">
-                    <Label className="text-sm text-white">Payment</Label>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs text-white/60">Split</span>
-                      <Switch
-                        checked={paymentSplit === "split"}
-                        onCheckedChange={(checked) => setPaymentSplit(checked ? "split" : "single")}
-                        className="data-[state=checked]:bg-purple-600 data-[state=unchecked]:bg-white/20"
-                      />
-                    </div>
-                  </div>
-                  <p className="mb-3 text-xs text-white/60">Full or partial payment with optional split</p>
-                  <div className="grid grid-cols-2 gap-2 mb-3">
-                    <Button
-                      variant={paymentType === "full" ? "default" : "outline"}
-                      onClick={() => setPaymentType("full")}
-                      size="sm"
-                      className={
-                        paymentType === "full"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Full
-                    </Button>
-                    <Button
-                      variant={paymentType === "partial" ? "default" : "outline"}
-                      onClick={() => setPaymentType("partial")}
-                      size="sm"
-                      className={
-                        paymentType === "partial"
-                          ? "bg-purple-600 hover:bg-purple-700"
-                          : "bg-white/10 border-white/20 text-white/80 hover:bg-white/20"
-                      }
-                    >
-                      Partial
-                    </Button>
-                  </div>
-
-                  {/* Method Dropdown */}
-                  <div className="space-y-3">
-                    <div>
-                      <Label className="block mb-2 text-sm text-white">Method</Label>
-                      <select className="w-full px-3 py-2 text-sm text-white border rounded-lg outline-none bg-white/10 border-white/10">
-                        {paymentMethods.map((method) => (
-                          <option key={method.value} value={method.value}>
-                            {method.label}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-
-                    {/* Amount Input */}
-                    <div>
-                      <Input
-                        type="number"
-                        value={cashPay}
-                        onChange={(e) => setCashPay(Number(e.target.value))}
-                        placeholder="0"
-                        className="text-right text-white bg-white/10 border-white/10"
-                        min={0}
-                      />
-                    </div>
-                  </div>
-                </div>
-
-                {/* Action Buttons */}
-                <div className="space-y-2">
-                  <Button
-                    className="w-full text-white bg-gradient-to-r from-purple-600 to-purple-700 hover:from-purple-700 hover:to-purple-800"
-                    size="lg"
-                    disabled={cart.length === 0 || balance > 0}
-                    onClick={() => setReceiptOpen(true)}
-                  >
-                    <Receipt className="w-5 h-5 mr-2" />
-                    Complete Sale
-                  </Button>
-                  <Button
-                    variant="outline"
-                    className="w-full text-white bg-white/10 border-white/20 hover:bg-white/20"
-                    onClick={() => {
-                      setCart([])
-                      setNotes("")
-                      setDiscountValue(0)
-                      setCashPay(0)
-                      setCardPay(0)
-                      setOnlinePay(0)
-                    }}
-                  >
-                    Clear All
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </div>
-        ) : (
-          /* Returns View */
-          <div className="min-h-[600px]">
-            <div className="p-8 border shadow-sm bg-[#2b1f4a] border-white/10 rounded-2xl">
-              <div className="mb-6">
-                <h2 className="mb-2 text-2xl font-bold text-white">Returns and Refunds</h2>
-                <p className="text-sm text-white/60">UI placeholder for MVP next steps</p>
-              </div>
-
-              <div className="p-6 mb-6 border bg-white/5 rounded-xl border-white/10">
-                <p className="mb-4 text-sm text-white/70">
-                  Add search by receipt number, select items, set reason, then process refund.
-                </p>
-
-                <div className="flex items-center justify-center py-12">
-                  <div className="inline-flex items-center justify-center p-4 border rounded-lg bg-white/10 border-white/20">
-                    <X className="w-8 h-8 text-white/40" />
-                  </div>
-                </div>
-              </div>
-
-              <div className="p-4 border bg-purple-500/10 rounded-xl border-purple-400/30">
-                <p className="text-xs text-purple-200">
-                  This is a front end only. Connect product lookup, inventory validation, payments, and receipt printing to your backend.
-                </p>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      {/* Hold Sale Modal */}
+      {/* Hold Modal */}
       <Dialog open={holdOpen} onOpenChange={setHoldOpen}>
-        <DialogContent className="bg-[#2b1f4a] border-white/10 text-white">
+        <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white">
           <DialogHeader>
-            <DialogTitle className="text-white">Hold Sale</DialogTitle>
-            <DialogDescription className="text-white/60">
-              This sale has been temporarily saved with reference: <strong className="text-purple-400">{transactionId}</strong>
-            </DialogDescription>
+            <DialogTitle>Hold this sale</DialogTitle>
+            <DialogDescription className="text-white/60">Save the cart temporarily and resume later.</DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="p-4 border rounded-lg bg-white/5 border-white/10">
-              <p className="mb-2 text-sm text-white/60">Cart Items: {cart.length}</p>
-              <p className="mb-2 text-sm text-white/60">Total: ₱{total.toFixed(2)}</p>
-              <p className="mt-3 text-xs text-white/40">
-                Note: This is a UI demo. In production, this would save to your backend.
-              </p>
-            </div>
+
+          <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
+            <div className="text-sm">Hold reference</div>
+            <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Example Counter 1" />
+            <div className={`text-xs ${THEME.muted}`}>In real flow, save to backend with cashier ID and timestamp.</div>
           </div>
-          <div className="flex gap-2">
+
+          <DialogFooter>
             <Button
+              variant="secondary"
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
               onClick={() => setHoldOpen(false)}
-              className="flex-1 bg-purple-600 hover:bg-purple-700"
             >
-              OK
+              Cancel
             </Button>
-          </div>
+            <Button
+              className="rounded-xl bg-purple-600 hover:bg-purple-700"
+              onClick={() => {
+                setHoldOpen(false);
+                alert("Sale held (demo). Implement save hold API.");
+              }}
+              disabled={cart.length === 0}
+            >
+              Hold Sale
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Receipt Modal */}
       <Dialog open={receiptOpen} onOpenChange={setReceiptOpen}>
-        <DialogContent className="w-[95vw] sm:w-[90vw] md:max-w-md text-white bg-[#2b1f4a] border-white/10 rounded-lg">
+        <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-2xl">
           <DialogHeader>
-            <DialogTitle className="text-white">Receipt</DialogTitle>
+            <DialogTitle>Receipt Preview</DialogTitle>
+            <DialogDescription className="text-white/60">Print, email, or save after payment.</DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="pb-4 text-center border-b border-white/10">
-              <h3 className="text-xl font-bold text-white">Vendora POS</h3>
-              <p className="mt-1 text-xs text-white/60">Transaction Receipt</p>
-              <p className="mt-2 text-xs text-white/40">{transactionId}</p>
-              <p className="text-xs text-white/40">{new Date().toLocaleString()}</p>
+
+          <div className={`rounded-2xl ${THEME.panel} p-4 space-y-3`}>
+            <div className="flex items-start justify-between">
+              <div>
+                <div className="font-semibold">Vendora Retail Demo</div>
+                <div className={`text-xs ${THEME.muted}`}>Transaction {saleId}</div>
+              </div>
+              <div className="text-right">
+                <div className={`text-xs ${THEME.muted}`}>Cashier</div>
+                <div className="text-sm">Maria</div>
+              </div>
             </div>
+
+            <div className="h-px bg-white/10" />
 
             <div className="space-y-2">
-              {cart.map((item) => (
-                <div key={item.id} className="flex justify-between text-sm">
-                  <span className="text-white/80">
-                    {item.name} × {item.quantity}
-                  </span>
-                  <span className="text-white">₱{(item.price * item.quantity).toFixed(2)}</span>
-                </div>
-              ))}
-            </div>
-
-            <div className="pt-3 space-y-1 border-t border-white/10">
-              <div className="flex justify-between text-sm">
-                <span className="text-white/60">Subtotal:</span>
-                <span className="text-white">₱{subtotal.toFixed(2)}</span>
-              </div>
-              {discount > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Discount:</span>
-                  <span className="text-green-400">-₱{discount.toFixed(2)}</span>
-                </div>
-              )}
-              {taxEnabled && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Tax:</span>
-                  <span className="text-white">+₱{tax.toFixed(2)}</span>
-                </div>
-              )}
-              {deliveryFee > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Delivery:</span>
-                  <span className="text-white">+₱{deliveryFee.toFixed(2)}</span>
-                </div>
-              )}
-              <div className="flex justify-between pt-2 text-lg font-bold border-t border-white/10">
-                <span className="text-white">Total:</span>
-                <span className="text-white">₱{total.toFixed(2)}</span>
-              </div>
-              <div className="flex justify-between pt-2 text-sm">
-                <span className="text-white/60">Paid:</span>
-                <span className="text-white">₱{paidAmount.toFixed(2)}</span>
-              </div>
-              {change > 0 && (
-                <div className="flex justify-between text-sm">
-                  <span className="text-white/60">Change:</span>
-                  <span className="text-green-400">₱{change.toFixed(2)}</span>
-                </div>
+              {cart.length === 0 ? (
+                <div className={`text-sm ${THEME.muted}`}>No items</div>
+              ) : (
+                cart.map((x) => (
+                  <div key={x.id} className="flex items-center justify-between text-sm">
+                    <div className="min-w-0">
+                      <div className="truncate">{x.name}</div>
+                      <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} Ã— <Money value={x.price} /></div>
+                    </div>
+                    <div className="font-medium"><Money value={x.qty * x.price} /></div>
+                  </div>
+                ))
               )}
             </div>
 
-            <div className="pt-4 text-center border-t border-white/10">
-              <p className="text-xs text-white/60">Thank you for your purchase!</p>
-              <p className="mt-2 text-xs text-white/40">🤖 Generated with Claude Code</p>
+            <div className="h-px bg-white/10" />
+
+            <div className="space-y-1 text-sm">
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Subtotal</span><span><Money value={totals.subtotal} /></span></div>
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Discount</span><span><Money value={totals.discount} /></span></div>
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Tax</span><span><Money value={totals.tax} /></span></div>
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Delivery</span><span><Money value={totals.deliveryFee} /></span></div>
+              <div className="h-px bg-white/10" />
+              <div className="flex items-center justify-between font-semibold"><span>Total</span><span><Money value={totals.total} /></span></div>
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Paid</span><span><Money value={paid} /></span></div>
+              <div className="flex items-center justify-between"><span className={THEME.muted}>Change</span><span><Money value={change} /></span></div>
             </div>
+
+            {notes ? <div className={`text-xs ${THEME.muted}`}>Notes: {notes}</div> : null}
           </div>
-          <div className="flex gap-2">
-            <Button
-              variant="outline"
-              onClick={() => alert("Print action (demo). Add print API or window.print with layout.")}
-              className="flex-1 text-white bg-white/10 border-white/20 hover:bg-white/20"
-            >
+
+          <DialogFooter>
+            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setReceiptOpen(false)}>
+              Close
+            </Button>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => alert("Print action (demo). Add print support.")}>
               Print
             </Button>
-            <Button
-              onClick={() => {
-                setReceiptOpen(false)
-                setCart([])
-                setNotes("")
-                setDiscountValue(0)
-                setCashPay(0)
-                setCardPay(0)
-                setOnlinePay(0)
-              }}
-              className="flex-1 bg-purple-600 hover:bg-purple-700"
-            >
-              New Sale
-            </Button>
-          </div>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
 
       {/* Settings Modal */}
       <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
-        <DialogContent className="text-white bg-[#2b1f4a] border-white/10">
+        <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-xl">
           <DialogHeader>
-            <DialogTitle className="text-white">POS Settings</DialogTitle>
-            <DialogDescription className="text-white/60">
-              Configure your point of sale preferences
-            </DialogDescription>
+            <DialogTitle>POS Settings</DialogTitle>
+            <DialogDescription className="text-white/60">UI only settings for MVP</DialogDescription>
           </DialogHeader>
-          <div className="py-4 space-y-4">
-            <div className="p-4 border rounded-lg border-white/10 bg-white/5">
-              <p className="mb-2 text-sm text-white/80">Settings Panel</p>
-              <p className="text-xs text-white/60">
-                This is a UI placeholder. In production, connect to your backend to manage:
-              </p>
-              <ul className="mt-2 ml-4 space-y-1 text-xs list-disc text-white/40">
-                <li>Store information</li>
-                <li>Tax rates and rules</li>
-                <li>Payment gateway configuration</li>
-                <li>Receipt templates</li>
-                <li>User permissions</li>
-              </ul>
+
+          <div className="space-y-3">
+            <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
+              <div className="text-sm font-medium">Tax defaults</div>
+              <div className="flex items-center justify-between">
+                <span className={THEME.muted}>Tax enabled by default</span>
+                <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={String(taxRate)} onValueChange={(v) => setTaxRate(Number(v))}>
+                  <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                    <SelectValue placeholder="Tax rate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0%</SelectItem>
+                    <SelectItem value="0.03">3%</SelectItem>
+                    <SelectItem value="0.05">5%</SelectItem>
+                    <SelectItem value="0.12">12%</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Pill>Rate</Pill>
+              </div>
+            </div>
+
+            <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
+              <div className="text-sm font-medium">Device</div>
+              <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Device name e.g. Counter 1" />
+              <div className={`text-xs ${THEME.muted}`}>Store per device settings in backend later.</div>
             </div>
           </div>
-          <Button onClick={() => setSettingsOpen(false)} className="bg-purple-600 hover:bg-purple-700">
-            Close
-          </Button>
+
+          <DialogFooter>
+            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setSettingsOpen(false)}>
+              Close
+            </Button>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => { setSettingsOpen(false); alert("Saved (demo). Persist via API."); }}>
+              Save
+            </Button>
+          </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      <footer className="px-6 pb-6">
+        <div className={`text-xs ${THEME.muted}`}>POS system - unified layout</div>
+      </footer>
     </div>
-  )
+  );
 }
+

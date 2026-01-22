@@ -116,8 +116,8 @@ export default function VendorRegisterPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-4">
-              <div className="bg-green-100 p-3 rounded-full">
-                <CheckCircle2 className="h-6 w-6 text-green-600" />
+              <div className="p-3 rounded-full" style={{ backgroundColor: '#110228' }}>
+                <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
             </div>
             <CardTitle className="text-2xl font-bold text-center">Registration Successful!</CardTitle>
@@ -129,7 +129,7 @@ export default function VendorRegisterPage() {
             <p className="text-sm text-center text-gray-600">
               Redirecting to dashboard...
             </p>
-            <Button onClick={() => router.push("/pos/dashboard")} className="w-full bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600">
+            <Button onClick={() => router.push("/pos/dashboard")} className="w-full hover:opacity-90 text-white" style={{ backgroundColor: '#110228' }}>
               Go to Dashboard
             </Button>
           </CardFooter>
@@ -143,38 +143,41 @@ export default function VendorRegisterPage() {
       <div className="w-full max-w-6xl mx-auto pb-20">
         {/* Progress Steps */}
         <div className="mb-8">
-          <div className="flex items-center justify-center space-x-4">
-            {[1, 2, 3].map((s) => (
-              <div key={s} className="flex items-center">
-                <div
-                  className={`w-10 h-10 rounded-full flex items-center justify-center ${
-                    step >= s
-                      ? "bg-gradient-to-r from-emerald-500 to-green-500 text-white"
-                      : "bg-gray-200 text-gray-600"
-                  }`}
-                >
-                  {s}
-                </div>
-                {s < 3 && (
+          <div className="flex items-start justify-center gap-4">
+            {[
+              { num: 1, label: "Choose Plan" },
+              { num: 2, label: "Account Details" },
+              { num: 3, label: "Payment" }
+            ].map((s, idx) => (
+              <div key={s.num} className="flex items-center">
+                {/* Step Column */}
+                <div className="flex flex-col items-center">
                   <div
-                    className={`w-16 h-1 mx-2 ${
-                      step > s ? "bg-gradient-to-r from-emerald-500 to-green-500" : "bg-gray-200"
+                    className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
+                      step >= s.num
+                        ? "text-white"
+                        : "bg-gray-200 text-gray-600"
                     }`}
+                    style={step >= s.num ? { backgroundColor: '#110228' } : {}}
+                  >
+                    {s.num}
+                  </div>
+                  <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                    {s.label}
+                  </span>
+                </div>
+
+                {/* Connector Line */}
+                {idx < 2 && (
+                  <div
+                    className={`w-16 h-1 mx-2 mb-6 ${
+                      step > s.num ? "" : "bg-gray-200"
+                    }`}
+                    style={step > s.num ? { backgroundColor: '#110228' } : {}}
                   />
                 )}
               </div>
             ))}
-          </div>
-          <div className="flex justify-center space-x-20 mt-4 text-sm">
-            <span className={step >= 1 ? "text-emerald-600 font-medium" : "text-gray-500"}>
-              Choose Plan
-            </span>
-            <span className={step >= 2 ? "text-emerald-600 font-medium" : "text-gray-500"}>
-              Account Details
-            </span>
-            <span className={step >= 3 ? "text-emerald-600 font-medium" : "text-gray-500"}>
-              Payment
-            </span>
           </div>
         </div>
 
@@ -206,7 +209,8 @@ export default function VendorRegisterPage() {
                 </Link>
                 <Button
                   onClick={handleNextStep}
-                  className="bg-linear-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+                  className="hover:opacity-90 text-white"
+                  style={{ backgroundColor: '#110228' }}
                   disabled={!selectedPlan}
                 >
                   Continue
@@ -309,7 +313,8 @@ export default function VendorRegisterPage() {
                 </Button>
                 <Button
                   type="submit"
-                  className="bg-gradient-to-r from-emerald-500 to-green-500 hover:from-emerald-600 hover:to-green-600"
+                  className="hover:opacity-90 text-white"
+                  style={{ backgroundColor: '#110228' }}
                   disabled={isLoading}
                 >
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -330,7 +335,7 @@ export default function VendorRegisterPage() {
               </CardDescription>
             </CardHeader>
             <CardContent className="flex justify-center py-8">
-              <Loader2 className="h-12 w-12 animate-spin text-emerald-600" />
+              <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
             </CardContent>
           </Card>
         )}

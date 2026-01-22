@@ -182,11 +182,10 @@ export function Hero() {
                                                             {[...Array(5)].map((_, i) => (
                                                                 <Star
                                                                     key={i}
-                                                                    className={`w-4 h-4 ${
-                                                                        i < Math.floor(slide.rating)
+                                                                    className={`w-4 h-4 ${i < Math.floor(slide.rating)
                                                                             ? "fill-yellow-400 text-yellow-400"
                                                                             : "fill-gray-200 text-gray-200"
-                                                                    }`}
+                                                                        }`}
                                                                 />
                                                             ))}
                                                         </div>
@@ -306,11 +305,10 @@ export function Hero() {
                             <button
                                 key={index}
                                 onClick={() => api?.scrollTo(index)}
-                                className={`transition-all duration-300 rounded-full ${
-                                    current === index
+                                className={`transition-all duration-300 rounded-full ${current === index
                                         ? "w-8 h-2 bg-gray-900"
                                         : "w-2 h-2 bg-gray-400 hover:bg-gray-600"
-                                }`}
+                                    }`}
                                 aria-label={`Go to slide ${index + 1}`}
                             />
                         ))}
@@ -325,11 +323,10 @@ export function Hero() {
                         <button
                             key={index}
                             onClick={() => api?.scrollTo(index)}
-                            className={`transition-all duration-300 rounded-full active:scale-90 ${
-                                current === index
+                            className={`transition-all duration-300 rounded-full active:scale-90 ${current === index
                                     ? "w-8 h-2.5 bg-gray-900"
                                     : "w-2.5 h-2.5 bg-gray-400 hover:bg-gray-600"
-                            }`}
+                                }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />
                     ))}

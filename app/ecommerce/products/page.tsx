@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { ProductCard } from "@/components/ecommerce/ProductCard"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -175,6 +175,12 @@ export default function ProductsPage() {
     const [priceRange, setPriceRange] = useState([0, 500])
     const [sortBy, setSortBy] = useState("featured")
     const [showMobileFilters, setShowMobileFilters] = useState(false)
+    const [isMounted, setIsMounted] = useState(false)
+
+    // Handle client-side mounting to prevent hydration errors
+    useEffect(() => {
+        setIsMounted(true)
+    }, [])
 
     // Filter products
     const filteredProducts = ALL_PRODUCTS.filter((product) => {
@@ -219,7 +225,7 @@ export default function ProductsPage() {
         <div className="space-y-6">
             {/* Categories */}
             <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-3">Categories</h3>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#110228' }}>Categories</h3>
                 <div className="space-y-2.5">
                     {CATEGORIES.map((category) => (
                         <div key={category} className="flex items-center gap-2.5">
@@ -241,7 +247,7 @@ export default function ProductsPage() {
 
             {/* Price Range */}
             <div>
-                <h3 className="font-bold text-sm text-gray-900 mb-3">Price Range</h3>
+                <h3 className="font-bold text-sm mb-3" style={{ color: '#110228' }}>Price Range</h3>
                 <div className="space-y-4">
                     <Slider
                         min={0}
@@ -251,7 +257,7 @@ export default function ProductsPage() {
                         onValueChange={setPriceRange}
                         className="w-full"
                     />
-                    <div className="flex items-center justify-between text-sm text-gray-600">
+                    <div className="flex items-center justify-between text-sm font-semibold" style={{ color: '#26D5FF' }}>
                         <span>${priceRange[0]}</span>
                         <span>${priceRange[1]}</span>
                     </div>
@@ -261,7 +267,16 @@ export default function ProductsPage() {
             {/* Clear Filters */}
             <Button
                 variant="outline"
-                className="w-full"
+                className="w-full border-2 hover:text-white transition-colors"
+                style={{ borderColor: '#26D5FF', color: '#26D5FF' }}
+                onMouseEnter={(e) => {
+                    e.currentTarget.style.backgroundColor = '#26D5FF'
+                    e.currentTarget.style.color = 'white'
+                }}
+                onMouseLeave={(e) => {
+                    e.currentTarget.style.backgroundColor = 'transparent'
+                    e.currentTarget.style.color = '#26D5FF'
+                }}
                 onClick={clearFilters}
             >
                 Clear all filters
@@ -271,26 +286,52 @@ export default function ProductsPage() {
 
     return (
         <div className="min-h-screen bg-gray-50">
-            {/* Header */}
-            <div className="bg-white border-b border-gray-200">
-                <div className="container mx-auto px-4 lg:px-8 py-8">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">All Products</h1>
-                    <p className="text-gray-600">Discover thousands of products from trusted vendors</p>
+            {/* Hero Section */}
+            <div className="relative overflow-hidden" style={{ background: 'linear-gradient(135deg, #110228 0%, #2E0F5F 50%, #7C3AED 100%)' }}>
+                {/* Background Shape */}
+                <div className="absolute inset-0 overflow-hidden">
+                    <div
+                        className="absolute -top-24 -right-20 w-80 h-80 opacity-20"
+                        style={{ background: 'linear-gradient(135deg, rgba(217, 70, 239, 0.35) 0%, rgba(124, 58, 237, 0) 70%)' }}
+                    />
                 </div>
+
+                <div className="container mx-auto px-4 lg:px-8 relative z-10 flex items-center justify-center min-h-[300px] md:min-h-[360px]">
+                    <div className="max-w-3xl text-center flex flex-col items-center">
+                        <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full mb-5" style={{ backgroundColor: 'rgba(124, 58, 237, 0.15)', border: '1px solid rgba(124, 58, 237, 0.3)' }}>
+                            <span className="w-2 h-2 rounded-full" style={{ backgroundColor: '#7C3AED' }} />
+                            <span className="text-xs font-medium uppercase tracking-[0.2em]" style={{ color: '#D946EF' }}>
+                                Vendor Owner
+                            </span>
+                        </div>
+                        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold text-white">
+                            Luna Street Mart
+                        </h1>
+                        <p className="mt-2 text-sm md:text-base text-gray-300">
+                            Address: 123 Rizal Ave, Brgy. San Isidro, Quezon City
+                        </p>
+                    </div>
+                </div>
+
+                {/* Bottom Divider */}
+                <div className="absolute bottom-0 left-0 right-0 h-6" style={{ backgroundColor: '#f9fafb' }} />
             </div>
 
             <div className="container mx-auto px-4 lg:px-8 py-8">
                 <div className="flex flex-col lg:flex-row gap-8">
                     {/* Desktop Sidebar Filters */}
                     <aside className="hidden lg:block w-64 flex-shrink-0">
-                        <div className="bg-white rounded-2xl border border-gray-200 p-6 sticky top-24">
+                        <div className="bg-white rounded-2xl border-2 p-6 sticky top-24" style={{ borderColor: '#26D5FF' }}>
                             <div className="flex items-center justify-between mb-6">
-                                <h2 className="font-bold text-lg text-gray-900">Filters</h2>
+                                <h2 className="font-bold text-lg" style={{ color: '#110228' }}>Filters</h2>
                                 <Button
                                     variant="ghost"
                                     size="sm"
                                     onClick={clearFilters}
-                                    className="text-gray-500 hover:text-gray-900"
+                                    className="hover:bg-transparent"
+                                    style={{ color: '#26D5FF' }}
+                                    onMouseEnter={(e) => e.currentTarget.style.color = '#1ea8d8'}
+                                    onMouseLeave={(e) => e.currentTarget.style.color = '#26D5FF'}
                                 >
                                     Clear
                                 </Button>
@@ -324,47 +365,51 @@ export default function ProductsPage() {
                                 </div>
 
                                 {/* Sort */}
-                                <Select value={sortBy} onValueChange={setSortBy}>
-                                    <SelectTrigger className="w-full md:w-48 h-11 rounded-lg border-gray-200">
-                                        <SelectValue placeholder="Sort by" />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                        <SelectItem value="featured">Featured</SelectItem>
-                                        <SelectItem value="price-low">Price: Low to High</SelectItem>
-                                        <SelectItem value="price-high">Price: High to Low</SelectItem>
-                                        <SelectItem value="rating">Highest Rated</SelectItem>
-                                        <SelectItem value="newest">Newest</SelectItem>
-                                    </SelectContent>
-                                </Select>
+                                {isMounted && (
+                                    <Select value={sortBy} onValueChange={setSortBy}>
+                                        <SelectTrigger className="w-full md:w-48 h-11 rounded-lg border-gray-200">
+                                            <SelectValue placeholder="Sort by" />
+                                        </SelectTrigger>
+                                        <SelectContent>
+                                            <SelectItem value="featured">Featured</SelectItem>
+                                            <SelectItem value="price-low">Price: Low to High</SelectItem>
+                                            <SelectItem value="price-high">Price: High to Low</SelectItem>
+                                            <SelectItem value="rating">Highest Rated</SelectItem>
+                                            <SelectItem value="newest">Newest</SelectItem>
+                                        </SelectContent>
+                                    </Select>
+                                )}
 
                                 {/* Mobile Filter Button */}
-                                <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
-                                    <SheetTrigger asChild>
-                                        <Button
-                                            variant="outline"
-                                            className="lg:hidden h-11 rounded-lg border-gray-200"
-                                        >
-                                            <SlidersHorizontal className="w-5 h-5 mr-2" />
-                                            Filters
-                                        </Button>
-                                    </SheetTrigger>
-                                    <SheetContent side="left" className="w-80">
-                                        <SheetHeader>
-                                            <SheetTitle>Filters</SheetTitle>
-                                        </SheetHeader>
-                                        <div className="mt-6">
-                                            <FilterContent />
-                                        </div>
-                                    </SheetContent>
-                                </Sheet>
+                                {isMounted && (
+                                    <Sheet open={showMobileFilters} onOpenChange={setShowMobileFilters}>
+                                        <SheetTrigger asChild>
+                                            <Button
+                                                variant="outline"
+                                                className="lg:hidden h-11 rounded-lg border-gray-200"
+                                            >
+                                                <SlidersHorizontal className="w-5 h-5 mr-2" />
+                                                Filters
+                                            </Button>
+                                        </SheetTrigger>
+                                        <SheetContent side="left" className="w-80">
+                                            <SheetHeader>
+                                                <SheetTitle>Filters</SheetTitle>
+                                            </SheetHeader>
+                                            <div className="mt-6">
+                                                <FilterContent />
+                                            </div>
+                                        </SheetContent>
+                                    </Sheet>
+                                )}
                             </div>
                         </div>
 
                         {/* Results Count */}
                         <div className="mb-6">
                             <p className="text-sm text-gray-600">
-                                Showing <span className="font-semibold text-gray-900">{sortedProducts.length}</span> of{" "}
-                                <span className="font-semibold text-gray-900">{ALL_PRODUCTS.length}</span> products
+                                Showing <span className="font-semibold" style={{ color: '#7C3AED' }}>{sortedProducts.length}</span> of{" "}
+                                <span className="font-semibold" style={{ color: '#7C3AED' }}>{ALL_PRODUCTS.length}</span> products
                             </p>
                         </div>
 
@@ -376,10 +421,14 @@ export default function ProductsPage() {
                                 ))}
                             </div>
                         ) : (
-                            <div className="bg-white rounded-2xl border border-gray-200 p-12 text-center">
-                                <p className="text-gray-500 text-lg mb-2">No products found</p>
+                            <div className="bg-white rounded-2xl border-2 p-12 text-center" style={{ borderColor: '#D946EF' }}>
+                                <p className="text-lg mb-2" style={{ color: '#7C3AED' }}>No products found</p>
                                 <p className="text-gray-400 text-sm mb-6">Try adjusting your filters or search query</p>
-                                <Button onClick={clearFilters} variant="outline">
+                                <Button
+                                    onClick={clearFilters}
+                                    className="text-white hover:opacity-90"
+                                    style={{ background: 'linear-gradient(135deg, #7C3AED 0%, #D946EF 100%)' }}
+                                >
                                     Clear all filters
                                 </Button>
                             </div>

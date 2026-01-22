@@ -1,6 +1,6 @@
 "use client"
 
-import { ReactNode, useState, useEffect } from "react"
+import { ReactNode, useState, useEffect, useRef } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
@@ -83,6 +83,78 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
   const [userData, setUserData] = useState<{ business_name?: string; email?: string } | null>(null)
+  const [mounted, setMounted] = useState(false)
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    setMounted(true)
+    setIsLoading(false)
+  }, [])
+
+  // Resizable sidebar state
+  const [sidebarWidth, setSidebarWidth] = useState(256) // 16rem = 256px (default w-64)
+  const [isResizing, setIsResizing] = useState(false)
+  const [isDesktop, setIsDesktop] = useState(false)
+  const MIN_SIDEBAR_WIDTH = 200
+  const MAX_SIDEBAR_WIDTH = 400
+  const sidebarRef = useRef<HTMLElement>(null)
+
+  // Check if desktop on mount and resize
+  useEffect(() => {
+    const checkDesktop = () => {
+      const newIsDesktop = window.innerWidth >= 1024  // 1024px+ for sidebar (laptop/desktop)
+      setIsDesktop(newIsDesktop)
+
+      // Close mobile sidebar when switching to desktop
+      if (newIsDesktop && sidebarOpen) {
+        setSidebarOpen(false)
+        setMobileSidebarMoreOpen(false)
+      }
+
+      // Reset sidebar width if it's outside bounds on mobile
+      if (!newIsDesktop && sidebarWidth !== 256) {
+        setSidebarWidth(256)
+      }
+
+      // Stop resizing if switching to mobile
+      if (!newIsDesktop && isResizing) {
+        setIsResizing(false)
+      }
+    }
+    checkDesktop()
+    window.addEventListener('resize', checkDesktop)
+    return () => window.removeEventListener('resize', checkDesktop)
+  }, [sidebarOpen, sidebarWidth, isResizing])
+
+  // Handle resize mouse events
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isResizing || sidebarCollapsed) return
+
+      const newWidth = e.clientX
+      if (newWidth >= MIN_SIDEBAR_WIDTH && newWidth <= MAX_SIDEBAR_WIDTH) {
+        setSidebarWidth(newWidth)
+      }
+    }
+
+    const handleMouseUp = () => {
+      setIsResizing(false)
+    }
+
+    if (isResizing) {
+      document.addEventListener('mousemove', handleMouseMove)
+      document.addEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = 'col-resize'
+      document.body.style.userSelect = 'none'
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove)
+      document.removeEventListener('mouseup', handleMouseUp)
+      document.body.style.cursor = ''
+      document.body.style.userSelect = ''
+    }
+  }, [isResizing, sidebarCollapsed, MIN_SIDEBAR_WIDTH, MAX_SIDEBAR_WIDTH])
 
   // Fetch user data
   useEffect(() => {
@@ -127,13 +199,27 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const mobileVisibleItems = allItems.slice(0, visibleMobileItems)
   const mobileMoreItems = allItems.slice(visibleMobileItems)
 
+  // Check if current page is the POS terminal for full-bleed layout
+  const isPOSDashboard = pathname === "/pos/dashboard"
+  const isPOSScreen = pathname === "/pos/pos-screen"
+  const pageBackgroundClass = isPOSDashboard
+    ? "bg-white"
+    : isPOSScreen
+      ? "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]"
+      : "bg-background"
+  const mainBackgroundClass = isPOSDashboard
+    ? "bg-white"
+    : isPOSScreen
+      ? "bg-transparent"
+      : "bg-gray-50"
+
   // For non-auth pages, render with sidebar and navigation
   return (
-    <div className="min-h-screen overflow-x-hidden bg-background">
-      {/* Sidebar Overlay (Mobile) */}
+    <div className={`min-h-screen overflow-x-hidden ${pageBackgroundClass}`}>
+      {/* Sidebar Overlay (Mobile/Tablet) */}
       {sidebarOpen && (
         <div
-          className="fixed inset-0 z-40 bg-black/50 md:hidden"
+          className="fixed inset-0 z-40 bg-black/50 lg:hidden"
           onClick={() => {
             setSidebarOpen(false)
             setMobileSidebarMoreOpen(false)
@@ -141,48 +227,61 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         />
       )}
 
-      {/* Collapse Toggle Button (Desktop Only) - Hidden on Mobile, View More used instead */}
-      <div className={`fixed z-50 hidden md:block top-20 transition-all duration-300 ${sidebarCollapsed ? 'left-[68px]' : 'left-[244px]'}`}>
-        <Button
-          variant="outline"
-          size="icon"
-          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-          className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100"
+      {/* Collapse Toggle Button (Laptop/Desktop Only - 1024px+) - Hidden on Mobile/Tablet */}
+      {isDesktop && (
+        <div
+          className="fixed z-50 top-20 transition-all duration-300 hidden lg:block"
+          style={{
+            left: sidebarCollapsed ? '68px' : `${sidebarWidth - 12}px`
+          }}
         >
-          {sidebarCollapsed ? (
-            <ChevronRight className="w-4 h-4 text-purple-700" />
-          ) : (
-            <ChevronLeft className="w-4 h-4 text-purple-700" />
-          )}
-        </Button>
-      </div>
+          <Button
+            variant="outline"
+            size="icon"
+            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+            className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100"
+          >
+            {sidebarCollapsed ? (
+              <ChevronRight className="w-4 h-4 text-purple-700" />
+            ) : (
+              <ChevronLeft className="w-4 h-4 text-purple-700" />
+            )}
+          </Button>
+        </div>
+      )}
 
-      {/* Sidebar - Mobile: Full width with hamburger toggle | Desktop: Collapsible */}
+      {/* Sidebar - Mobile/Tablet: Hidden with hamburger toggle | Laptop/Desktop: Always visible & Collapsible */}
       <aside
+        ref={sidebarRef}
         className={`
-          fixed top-0 left-0 h-screen w-64 border-r border-purple-900 z-40
-          transform transition-all duration-300 ease-in-out overflow-hidden flex flex-col
-          md:translate-x-0
+          fixed top-0 left-0 h-screen border-r border-purple-900 z-40
+          transform ease-in-out overflow-hidden flex flex-col
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
-          ${sidebarCollapsed ? "md:w-20" : "md:w-64"}
+          lg:translate-x-0
+          ${isResizing ? "" : "transition-all duration-300"}
         `}
-        style={{ backgroundColor: '#110228' }}
+        style={{
+          backgroundColor: '#110228',
+          width: isDesktop
+            ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
+            : '256px'
+        }}
       >
         {/* Logo */}
-        <div className={`flex items-center h-16 px-6 border-b border-white/20 transition-all duration-300 flex-shrink-0 ${sidebarCollapsed ? 'md:px-2 md:justify-center' : ''}`}>
-          <div className={`flex items-center gap-2 transition-all duration-300 ${sidebarCollapsed ? 'md:justify-center md:w-full' : ''}`}>
+        <div className={`flex items-center h-16 px-6 border-b border-white/20 transition-all duration-300 flex-shrink-0 ${sidebarCollapsed ? 'lg:px-2 lg:justify-center' : ''}`}>
+          <div className={`flex items-center gap-2 transition-all duration-300 ${sidebarCollapsed ? 'lg:justify-center lg:w-full' : ''}`}>
             <div className="relative flex items-center justify-center w-8 h-8 rounded">
               <Image src="/logos/logo.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
             </div>
-            <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+            <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <h1 className="text-lg font-bold text-white whitespace-nowrap">Vendora</h1>
               <p className="text-xs text-white/80 whitespace-nowrap">Vendor Dashboard</p>
             </div>
           </div>
         </div>
 
-        {/* Search - Always visible on mobile, hidden when collapsed on desktop */}
-        <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+        {/* Search - Always visible on mobile/tablet, hidden when collapsed on laptop/desktop */}
+        <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
           <div className="relative">
             <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-white/60" />
             <input
@@ -194,10 +293,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </div>
 
         {/* Navigation */}
-        <nav className={`flex-1 min-h-0 px-3 pt-2 pb-4 overflow-y-auto overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'md:px-2' : ''}`}>
+        <nav className={`flex-1 min-h-0 px-3 pt-2 pb-4 overflow-y-auto overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
           <div className="space-y-4">
-            {/* Mobile: Show only Primary Menus + View More button */}
-            <div className="md:hidden">
+            {/* Mobile/Tablet: Show only Primary Menus + View More button */}
+            <div className="lg:hidden">
               {/* Primary Menus Section */}
               <div>
                 <h3 className="px-3 mb-2 text-xs font-semibold tracking-wider uppercase text-white/70">
@@ -219,10 +318,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                           className={`
                             relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                             transition-all duration-200
-                            ${
-                              isActive
-                                ? "bg-white text-purple-700 font-medium shadow-lg"
-                                : "text-white/90 hover:bg-white/10 hover:text-white"
+                            ${isActive
+                              ? "bg-white text-purple-700 font-medium shadow-lg"
+                              : "text-white/90 hover:bg-white/10 hover:text-white"
                             }
                           `}
                         >
@@ -258,9 +356,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                 </button>
 
                 {/* View More Dropdown Content - Always rendered, shown/hidden with CSS */}
-                <div className={`mt-2 space-y-4 pl-4 overflow-hidden transition-all duration-300 ${
-                  mobileSidebarMoreOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
-                }`}>
+                <div className={`mt-2 space-y-4 pl-4 overflow-hidden transition-all duration-300 ${mobileSidebarMoreOpen ? 'max-h-[1000px] opacity-100' : 'max-h-0 opacity-0'
+                  }`}>
                   {sidebarSections.slice(1).map((section, sectionIndex) => (
                     <div key={sectionIndex}>
                       <h3 className="px-3 mb-2 text-xs font-semibold tracking-wider uppercase text-white/60">
@@ -282,10 +379,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                                 className={`
                                   relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                                   transition-all duration-200
-                                  ${
-                                    isActive
-                                      ? "bg-white text-purple-700 font-medium shadow-lg"
-                                      : "text-white/90 hover:bg-white/10 hover:text-white"
+                                  ${isActive
+                                    ? "bg-white text-purple-700 font-medium shadow-lg"
+                                    : "text-white/90 hover:bg-white/10 hover:text-white"
                                   }
                                 `}
                               >
@@ -307,12 +403,12 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               </div>
             </div>
 
-            {/* Desktop: Show all sections normally */}
-            <div className="hidden md:block">
+            {/* Laptop/Desktop: Show all sections normally */}
+            <div className="hidden lg:block">
               {sidebarSections.map((section, sectionIndex) => (
                 <div key={sectionIndex} className="mb-4">
-                  {/* Section Title - Hidden when collapsed on desktop */}
-                  <h3 className={`px-3 mb-1.5 text-xs font-semibold tracking-wider uppercase text-white/70 ${sidebarCollapsed ? 'md:hidden' : ''}`}>
+                  {/* Section Title - Hidden when collapsed on laptop/desktop */}
+                  <h3 className={`px-3 mb-1.5 text-xs font-semibold tracking-wider uppercase text-white/70 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
                     {section.title}
                   </h3>
 
@@ -330,24 +426,23 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                             className={`
                               relative flex items-center gap-3 px-3 py-2 rounded-lg text-sm
                               transition-all duration-200 group
-                              ${sidebarCollapsed ? 'md:justify-center md:px-2' : ''}
-                              ${
-                                isActive
-                                  ? "bg-white text-purple-700 font-medium shadow-lg"
-                                  : "text-white/90 hover:bg-white/10 hover:text-white"
+                              ${sidebarCollapsed ? 'lg:justify-center lg:px-2' : ''}
+                              ${isActive
+                                ? "bg-white text-purple-700 font-medium shadow-lg"
+                                : "text-white/90 hover:bg-white/10 hover:text-white"
                               }
                             `}
                             title={sidebarCollapsed ? item.label : ''}
                           >
                             <Icon className="flex-shrink-0 w-5 h-5" />
-                            <span className={`flex-1 ${sidebarCollapsed ? 'md:hidden' : ''}`}>{item.label}</span>
-                            <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white whitespace-nowrap shadow-sm ${sidebarCollapsed ? 'md:hidden' : ''} ${item.comingSoon ? '' : 'hidden'}`}>
+                            <span className={`flex-1 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>{item.label}</span>
+                            <span className={`px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white whitespace-nowrap shadow-sm ${sidebarCollapsed ? 'lg:hidden' : ''} ${item.comingSoon ? '' : 'hidden'}`}>
                               Soon
                             </span>
 
-                            {/* Tooltip for collapsed state - Desktop only */}
+                            {/* Tooltip for collapsed state - Laptop/Desktop only */}
                             {sidebarCollapsed && (
-                              <div className="hidden md:block absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-xl">
+                              <div className="hidden lg:block absolute left-full ml-3 px-3 py-2 bg-gray-900 text-white text-sm rounded-lg opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-200 pointer-events-none whitespace-nowrap z-[100] shadow-xl">
                                 <div className="flex items-center gap-2">
                                   <span>{item.label}</span>
                                   {item.comingSoon && (
@@ -370,22 +465,65 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             </div>
           </div>
         </nav>
+
+        {/* Resize Handle - Desktop Only */}
+        {isDesktop && !sidebarCollapsed && (
+          <div
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize group hover:bg-purple-400 transition-colors z-50"
+            onMouseDown={(e) => {
+              e.preventDefault()
+              setIsResizing(true)
+            }}
+          >
+            {/* Hover indicator - shows arrows */}
+            <div className="absolute top-1/2 right-0 transform translate-x-1/2 -translate-y-1/2 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+              <div className="flex items-center justify-center w-5 h-12 bg-purple-600 rounded shadow-lg">
+                <div className="flex flex-col items-center">
+                  <ChevronLeft className="w-3 h-3 text-white -mb-1" />
+                  <ChevronRight className="w-3 h-3 text-white" />
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
       </aside>
 
       {/* Main Content */}
-      <main className={`min-h-screen transition-all duration-300 bg-gray-50 overflow-x-hidden ${sidebarCollapsed ? 'md:ml-20' : 'md:ml-64'}`}>
+      <main
+        className={`min-h-screen pt-16 ${mainBackgroundClass} overflow-x-hidden ${isResizing ? "" : "transition-all duration-300"
+          }`}
+        style={{
+          marginLeft: isDesktop
+            ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
+            : '0'
+        }}
+      >
         {/* Header */}
-        <header className="fixed top-0 left-0 right-0 z-30 flex items-center h-16 w-full px-6 border-b md:sticky md:left-auto md:right-auto md:w-auto" style={{ backgroundColor: '#2e0f5f', borderColor: '#1f0a3d' }}>
+        <header
+          className={`fixed top-0 left-0 z-30 flex items-center h-16 px-6 border-b w-full ${isResizing ? "" : "transition-all duration-300"
+            }`}
+          style={{
+            backgroundColor: '#2e0f5f',
+            borderColor: '#1f0a3d',
+            left: isDesktop
+              ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
+              : '0',
+            width: isDesktop
+              ? (sidebarCollapsed ? 'calc(100% - 80px)' : `calc(100% - ${sidebarWidth}px)`)
+              : '100%'
+          }}
+        >
           <div className="flex items-center justify-between flex-1">
             {/* Left Side - Logo (Mobile) / Title & Search (Desktop) */}
             <div className="flex items-center flex-1 gap-4">
-              {/* Mobile: Clickable Logo to open sidebar */}
+              {/* Mobile/Tablet: Clickable Logo to open sidebar */}
               <button
                 onClick={() => {
                   setSidebarOpen(!sidebarOpen)
                   if (sidebarOpen) setMobileSidebarMoreOpen(false)
                 }}
-                className="flex items-center gap-2 md:hidden"
+                className="flex items-center gap-2 lg:hidden"
               >
                 <div className="relative flex items-center justify-center w-8 h-8 rounded">
                   <Image src="/logos/logo.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
@@ -395,8 +533,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                 </div>
               </button>
 
-              {/* Desktop: Title */}
-              <h2 className="hidden text-xl font-semibold text-white md:block">POS System</h2>
+              {/* Laptop/Desktop: Title */}
+              <h2 className="hidden text-xl font-semibold text-white lg:block">POS System</h2>
 
               {/* Search Bar */}
               <div className="items-center hidden w-full max-w-md gap-2 px-4 py-2 ml-4 border rounded-lg lg:flex bg-white/10 border-white/20">
@@ -415,8 +553,76 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               <NotificationPanel />
 
               {/* User Profile Dropdown */}
-              <DropdownMenu>
-                <DropdownMenuTrigger asChild>
+              {!isLoading && (
+                mounted ? (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
+                      >
+                        {/* Avatar */}
+                        <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
+                          {avatarLetter}
+                        </div>
+                        {/* User Info */}
+                        <div className="flex-col items-start hidden lg:flex">
+                          <span className="text-sm font-semibold text-white">{displayName}</span>
+                          <span className="text-xs text-white/70">{displayEmail}</span>
+                        </div>
+                        <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                        <User className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>Profile</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                        <Store className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>My Store</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                        <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>Subscription</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                        <Settings className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>Settings</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                        <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
+                        <span>Help & Support</span>
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem
+                        className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
+                        onClick={async () => {
+                          try {
+                            // Clear tokens
+                            if (typeof window !== 'undefined') {
+                              document.cookie = 'vendora_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+                              localStorage.removeItem('vendora_access_token')
+                              localStorage.removeItem('vendora_refresh_token')
+                              localStorage.removeItem('vendora_user_type')
+                              localStorage.removeItem('vendora_token_expiry')
+                            }
+                            window.location.href = "/pos/auth/login"
+                          } catch (error) {
+                            console.error('Logout error:', error)
+                            window.location.href = "/pos/auth/login"
+                          }
+                        }}
+                      >
+                        <LogOut className="w-4 h-4 mr-2" />
+                        <span>Log out</span>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                ) : (
                   <Button
                     variant="ghost"
                     className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
@@ -426,158 +632,120 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                       {avatarLetter}
                     </div>
                     {/* User Info */}
-                    <div className="flex-col items-start hidden md:flex">
+                    <div className="flex-col items-start hidden lg:flex">
                       <span className="text-sm font-semibold text-white">{displayName}</span>
                       <span className="text-xs text-white/70">{displayEmail}</span>
                     </div>
-                    <ChevronDown className="hidden w-4 h-4 text-white md:block" />
+                    <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
                   </Button>
-                </DropdownMenuTrigger>
-                <DropdownMenuContent align="end" className="w-56">
-                  <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                    <User className="w-4 h-4 mr-2 text-gray-600" />
-                    <span>Profile</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                    <Store className="w-4 h-4 mr-2 text-gray-600" />
-                    <span>My Store</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                    <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
-                    <span>Subscription</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                    <Settings className="w-4 h-4 mr-2 text-gray-600" />
-                    <span>Settings</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                    <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
-                    <span>Help & Support</span>
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem
-                    className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
-                    onClick={async () => {
-                      try {
-                        // Clear tokens
-                        if (typeof window !== 'undefined') {
-                          document.cookie = 'vendora_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-                          localStorage.removeItem('vendora_access_token')
-                          localStorage.removeItem('vendora_refresh_token')
-                          localStorage.removeItem('vendora_user_type')
-                          localStorage.removeItem('vendora_token_expiry')
-                        }
-                        window.location.href = "/pos/auth/login"
-                      } catch (error) {
-                        console.error('Logout error:', error)
-                        window.location.href = "/pos/auth/login"
-                      }
-                    }}
-                  >
-                    <LogOut className="w-4 h-4 mr-2" />
-                    <span>Log out</span>
-                  </DropdownMenuItem>
-                </DropdownMenuContent>
-              </DropdownMenu>
+                )
+              )}
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className="max-w-full px-6 pt-24 pb-24 overflow-x-hidden md:p-6 md:pb-6">
+        <div className="max-w-full px-4 pb-24 overflow-x-hidden sm:px-6 sm:pb-6">
           {children}
         </div>
 
-        {/* Mobile Bottom Navigation */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t md:hidden" style={{ backgroundColor: '#110228', borderColor: '#2e0f5f' }}>
-          <div className="grid grid-cols-5 gap-1 px-2 py-2">
-            {/* First 4 visible items */}
-            {mobileVisibleItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
+        {/* Floating Menu Button - Tablet Only (640px - 1023px) */}
+        <div className="fixed bottom-6 right-6 z-50 hidden sm:block lg:hidden">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={() => setSidebarOpen(true)}
+            className="w-14 h-14 rounded-full bg-white hover:bg-white/90 text-gray-900 shadow-xl"
+          >
+            <Menu className="h-6 w-6" />
+          </Button>
+        </div>
 
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`
+        {/* Mobile Bottom Navigation - Hidden on tablet and above */}
+        <div className="fixed bottom-0 left-0 right-0 z-30 border-t sm:hidden" style={{ backgroundColor: '#110228', borderColor: '#2e0f5f' }}>
+            <div className="grid grid-cols-5 gap-1 px-2 py-2">
+              {/* First 4 visible items */}
+              {mobileVisibleItems.map((item) => {
+                const Icon = item.icon
+                const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
+
+                return (
+                  <Link
+                    key={item.href}
+                    href={item.href}
+                    className={`
                     relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg
                     transition-all duration-200
                     ${isActive ? 'bg-white text-purple-700' : 'text-white/90'}
                   `}
-                >
-                  <Icon className="flex-shrink-0 w-5 h-5" />
-                  <span className="text-[10px] font-medium truncate max-w-full">
-                    {item.label.split(' ')[0]}
-                  </span>
-                  {item.comingSoon && (
-                    <span className="absolute w-2 h-2 bg-purple-500 rounded-full shadow-sm top-1 right-1"></span>
-                  )}
-                </Link>
-              )
-            })}
+                  >
+                    <Icon className="flex-shrink-0 w-5 h-5" />
+                    <span className="text-[10px] font-medium truncate max-w-full">
+                      {item.label.split(' ')[0]}
+                    </span>
+                    {item.comingSoon && (
+                      <span className="absolute w-2 h-2 bg-purple-500 rounded-full shadow-sm top-1 right-1"></span>
+                    )}
+                  </Link>
+                )
+              })}
 
-            {/* More dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
-                className={`
+              {/* More dropdown */}
+              <div className="relative">
+                <button
+                  onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
+                  className={`
                   w-full flex flex-col items-center justify-center gap-1 p-2 rounded-lg
                   transition-all duration-200
                   ${mobileMoreOpen ? 'bg-white text-purple-700' : 'text-white/90'}
                 `}
-              >
-                <MoreVertical className="w-5 h-5" />
-                <span className="text-[10px] font-medium">More</span>
-              </button>
+                >
+                  <MoreVertical className="w-5 h-5" />
+                  <span className="text-[10px] font-medium">More</span>
+                </button>
 
-              {/* More Items Dropdown - Always rendered, shown/hidden with CSS */}
-              <div
-                className={`fixed inset-0 z-40 transition-opacity duration-200 ${
-                  mobileMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                }`}
-                onClick={() => setMobileMoreOpen(false)}
-              />
-              <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${
-                mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-              }`}>
-                <div className="p-2 border-b bg-gray-50">
-                  <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
-                </div>
-                <div className="p-1">
-                  {mobileMoreItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = pathname === item.href
+                {/* More Items Dropdown - Always rendered, shown/hidden with CSS */}
+                <div
+                  className={`fixed inset-0 z-40 transition-opacity duration-200 ${mobileMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                    }`}
+                  onClick={() => setMobileMoreOpen(false)}
+                />
+                <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+                  }`}>
+                  <div className="p-2 border-b bg-gray-50">
+                    <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
+                  </div>
+                  <div className="p-1">
+                    {mobileMoreItems.map((item) => {
+                      const Icon = item.icon
+                      const isActive = pathname === item.href
 
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileMoreOpen(false)}
-                        className={`
+                      return (
+                        <Link
+                          key={item.href}
+                          href={item.href}
+                          onClick={() => setMobileMoreOpen(false)}
+                          className={`
                           relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                           transition-all duration-200
                           ${isActive ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}
                         `}
-                      >
-                        <Icon className="flex-shrink-0 w-5 h-5" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.comingSoon && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm">
-                            Soon
-                          </span>
-                        )}
-                      </Link>
-                    )
-                  })}
+                        >
+                          <Icon className="flex-shrink-0 w-5 h-5" />
+                          <span className="flex-1">{item.label}</span>
+                          {item.comingSoon && (
+                            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm">
+                              Soon
+                            </span>
+                          )}
+                        </Link>
+                      )
+                    })}
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
       </main>
     </div>
   )

@@ -40,7 +40,12 @@ export function ProductCard({ product }: ProductCardProps) {
     const reviewCount = product.reviewCount || Math.floor(Math.random() * 300 + 50)
 
     return (
-        <div className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden border border-gray-200 hover:border-gray-300 hover:shadow-xl active:scale-[0.98] transition-all duration-300 flex flex-col h-full">
+        <div
+            className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden border-2 hover:shadow-xl active:scale-[0.98] transition-all duration-300 flex flex-col h-full"
+            style={{ borderColor: '#e5e7eb' }}
+            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#26D5FF'}
+            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
+        >
             {/* Product Image */}
             <Link href={`/ecommerce/products/${product.id}`} className="relative aspect-square overflow-hidden bg-gray-50 block">
                 <Image
@@ -69,11 +74,16 @@ export function ProductCard({ product }: ProductCardProps) {
             {/* Product Info */}
             <div className="p-3 sm:p-4 flex flex-col flex-1 space-y-2 sm:space-y-3">
                 {/* Category */}
-                <p className="text-[10px] sm:text-xs text-gray-500 uppercase tracking-wide font-medium">{product.category}</p>
+                <p className="text-[10px] sm:text-xs uppercase tracking-wide font-medium" style={{ color: '#26D5FF' }}>{product.category}</p>
 
                 {/* Product Name */}
                 <Link href={`/ecommerce/products/${product.id}`}>
-                    <h3 className="font-bold text-sm sm:text-base text-gray-900 line-clamp-2 min-h-10 sm:min-h-12 group-hover:text-gray-700 transition-colors leading-snug cursor-pointer">
+                    <h3
+                        className="font-bold text-sm sm:text-base line-clamp-2 min-h-10 sm:min-h-12 transition-colors leading-snug cursor-pointer"
+                        style={{ color: '#110228' }}
+                        onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'}
+                        onMouseLeave={(e) => e.currentTarget.style.color = '#110228'}
+                    >
                         {product.name}
                     </h3>
                 </Link>
@@ -106,7 +116,7 @@ export function ProductCard({ product }: ProductCardProps) {
 
                 {/* Price Row */}
                 <div className="flex items-baseline gap-1.5 sm:gap-2 pt-2 border-t border-gray-100">
-                    <span className="text-lg sm:text-2xl font-black text-gray-900">
+                    <span className="text-lg sm:text-2xl font-black" style={{ color: '#110228' }}>
                         ${product.price.toFixed(2)}
                     </span>
                     {product.originalPrice && (
@@ -142,7 +152,10 @@ export function ProductCard({ product }: ProductCardProps) {
                             }
                         )
                     }}
-                    className="w-full h-9 sm:h-11 bg-gray-900 hover:bg-gray-800 active:bg-gray-950 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all group/button mt-2 sm:mt-3"
+                    className="w-full h-9 sm:h-11 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all group/button mt-2 sm:mt-3"
+                    style={{ backgroundColor: '#110228' }}
+                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a0440'}
+                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#110228'}
                 >
                     <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 group-hover/button:scale-110 transition-transform" />
                     <span className="hidden sm:inline">Add to Cart</span>

@@ -1,4 +1,7 @@
+"use client"
+
 import Link from "next/link"
+import Image from "next/image"
 import { Facebook, Instagram, Twitter, Youtube, Mail, MapPin, Phone } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -6,27 +9,33 @@ import { Separator } from "@/components/ui/separator"
 
 export function Footer() {
     return (
-        <footer className="bg-background border-t">
+        <footer className="border-t" style={{ backgroundColor: '#110228', borderTopColor: '#26D5FF' }}>
             <div className="container mx-auto px-4 py-12">
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
                     {/* Brand Info */}
                     <div className="space-y-4">
-                        <h3 className="text-2xl font-bold">VENDORA</h3>
-                        <p className="text-muted-foreground text-sm leading-relaxed">
+                        <Image
+                            src="/logos/full logo-light.png"
+                            alt="Vendora"
+                            width={180}
+                            height={50}
+                            className="h-auto"
+                        />
+                        <p className="text-sm leading-relaxed" style={{ color: '#a0a0c0' }}>
                             Your one-stop destination for premium fashion and lifestyle products.
                             We bring you the latest trends with quality assurance.
                         </p>
                         <div className="flex items-center gap-4">
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href="#" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>
                                 <Facebook className="w-5 h-5" />
                             </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href="#" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>
                                 <Instagram className="w-5 h-5" />
                             </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href="#" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>
                                 <Twitter className="w-5 h-5" />
                             </Link>
-                            <Link href="#" className="text-muted-foreground hover:text-primary transition-colors">
+                            <Link href="#" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>
                                 <Youtube className="w-5 h-5" />
                             </Link>
                         </div>
@@ -34,75 +43,75 @@ export function Footer() {
 
                     {/* Quick Links */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-lg">Quick Links</h4>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
+                        <h4 className="font-semibold text-lg text-white">Quick Links</h4>
+                        <ul className="space-y-2 text-sm">
                             <li>
-                                <Link href="/ecommerce/about" className="hover:text-primary transition-colors">About Us</Link>
+                                <Link href="/ecommerce/about" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>About Us</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/contact" className="hover:text-primary transition-colors">Contact Us</Link>
+                                <Link href="/ecommerce/contact" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Contact Us</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/faq" className="hover:text-primary transition-colors">FAQs</Link>
+                                <Link href="/ecommerce/faq" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>FAQs</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/terms" className="hover:text-primary transition-colors">Terms & Conditions</Link>
+                                <Link href="/ecommerce/terms" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Terms & Conditions</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/privacy" className="hover:text-primary transition-colors">Privacy Policy</Link>
+                                <Link href="/ecommerce/privacy" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Privacy Policy</Link>
                             </li>
                         </ul>
                     </div>
 
                     {/* Customer Service */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-lg">Customer Service</h4>
-                        <ul className="space-y-2 text-sm text-muted-foreground">
+                        <h4 className="font-semibold text-lg text-white">Customer Service</h4>
+                        <ul className="space-y-2 text-sm">
                             <li>
-                                <Link href="/ecommerce/orders" className="hover:text-primary transition-colors">Track Order</Link>
+                                <Link href="/ecommerce/orders" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Track Order</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/returns" className="hover:text-primary transition-colors">Returns & Exchanges</Link>
+                                <Link href="/ecommerce/returns" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Returns & Exchanges</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/shipping" className="hover:text-primary transition-colors">Shipping Info</Link>
+                                <Link href="/ecommerce/shipping" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Shipping Info</Link>
                             </li>
                             <li>
-                                <Link href="/ecommerce/size-guide" className="hover:text-primary transition-colors">Size Guide</Link>
+                                <Link href="/ecommerce/size-guide" className="transition-colors" style={{ color: '#a0a0c0' }} onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'} onMouseLeave={(e) => e.currentTarget.style.color = '#a0a0c0'}>Size Guide</Link>
                             </li>
                         </ul>
                     </div>
 
                     {/* Newsletter */}
                     <div className="space-y-4">
-                        <h4 className="font-semibold text-lg">Stay Updated</h4>
-                        <p className="text-sm text-muted-foreground">
+                        <h4 className="font-semibold text-lg text-white">Stay Updated</h4>
+                        <p className="text-sm" style={{ color: '#a0a0c0' }}>
                             Subscribe to our newsletter for exclusive deals and updates.
                         </p>
                         <div className="flex gap-2">
-                            <Input placeholder="Enter your email" className="bg-muted/50" />
-                            <Button>Subscribe</Button>
+                            <Input placeholder="Enter your email" className="text-white placeholder:text-gray-400" style={{ backgroundColor: 'rgba(255, 255, 255, 0.1)', borderColor: '#26D5FF' }} />
+                            <Button className="text-white" style={{ backgroundColor: '#26D5FF' }}>Subscribe</Button>
                         </div>
                         <div className="space-y-2 pt-4">
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <MapPin className="w-4 h-4" />
+                            <div className="flex items-center gap-2 text-sm" style={{ color: '#a0a0c0' }}>
+                                <MapPin className="w-4 h-4" style={{ color: '#26D5FF' }} />
                                 <span>123 Fashion Street, NY 10001</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Phone className="w-4 h-4" />
+                            <div className="flex items-center gap-2 text-sm" style={{ color: '#a0a0c0' }}>
+                                <Phone className="w-4 h-4" style={{ color: '#26D5FF' }} />
                                 <span>+1 (555) 123-4567</span>
                             </div>
-                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                <Mail className="w-4 h-4" />
+                            <div className="flex items-center gap-2 text-sm" style={{ color: '#a0a0c0' }}>
+                                <Mail className="w-4 h-4" style={{ color: '#26D5FF' }} />
                                 <span>support@vendora.com</span>
                             </div>
                         </div>
                     </div>
                 </div>
 
-                <Separator className="my-8" />
+                <Separator className="my-8" style={{ backgroundColor: '#26D5FF' }} />
 
-                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
+                <div className="flex flex-col md:flex-row items-center justify-between gap-4 text-sm" style={{ color: '#a0a0c0' }}>
                     <p>&copy; {new Date().getFullYear()} Vendora. All rights reserved.</p>
                     <div className="flex items-center gap-4">
                         <span>Visa</span>

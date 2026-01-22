@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts"
@@ -38,7 +38,7 @@ export function TopSellingProducts() {
               <YAxis hide />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === 'revenue') return [`₱${value.toLocaleString()}`, 'Revenue']
+                  if (name === 'revenue') return [`\u20B1 ${value.toLocaleString()}`, 'Revenue']
                   return [value, 'Units']
                 }}
               />
@@ -64,7 +64,7 @@ export function TopSellingProducts() {
                   <div className="flex gap-3 text-xs">
                     <span className="text-gray-500">{product.units} units</span>
                     <span className="font-semibold text-purple-600 min-w-[80px] text-right">
-                      ₱{product.revenue.toLocaleString()}
+                      {"\u20B1 "}{product.revenue.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -83,3 +83,7 @@ export function TopSellingProducts() {
     </Card>
   )
 }
+
+
+
+

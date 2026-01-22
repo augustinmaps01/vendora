@@ -1,5 +1,6 @@
-"use client"
+﻿"use client"
 
+import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -28,7 +29,7 @@ const notifications = [
     type: "order",
     icon: ShoppingCart,
     title: "New Order Received",
-    message: "Order #ORD-10495 from Sarah K. - ₱2,340",
+    message: "Order #ORD-10495 from Sarah K. - \u20B1 2,340",
     time: "12 min ago",
     color: "text-blue-600 bg-blue-50",
     unread: true,
@@ -48,7 +49,7 @@ const notifications = [
     type: "sales",
     icon: TrendingUp,
     title: "Sales Milestone",
-    message: "You've reached ₱100,000 in sales this month!",
+    message: "You've reached \u20B1 100,000 in sales this month!",
     time: "1 hour ago",
     color: "text-green-600 bg-green-50",
     unread: false,
@@ -66,7 +67,32 @@ const notifications = [
 ]
 
 export function NotificationPanel() {
+  const [mounted, setMounted] = useState(false)
   const unreadCount = notifications.filter(n => n.unread).length
+
+  useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  if (!mounted) {
+    return (
+      <Button
+        variant="ghost"
+        size="icon"
+        className="relative hover:bg-white/10 text-white"
+        aria-label="Notifications"
+      >
+        <Bell className="h-5 w-5" />
+        {unreadCount > 0 && (
+          <Badge
+            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-pink-500 text-white text-xs font-semibold border-2 border-purple-600"
+          >
+            {unreadCount}
+          </Badge>
+        )}
+      </Button>
+    )
+  }
 
   return (
     <DropdownMenu>
@@ -103,9 +129,8 @@ export function NotificationPanel() {
             return (
               <div
                 key={notification.id}
-                className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${
-                  notification.unread ? 'bg-blue-50/30' : ''
-                }`}
+                className={`p-3 hover:bg-gray-50 cursor-pointer transition-colors ${notification.unread ? 'bg-blue-50/30' : ''
+                  }`}
               >
                 <div className="flex gap-3">
                   <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.color}`}>
@@ -137,3 +162,8 @@ export function NotificationPanel() {
     </DropdownMenu>
   )
 }
+
+
+
+
+

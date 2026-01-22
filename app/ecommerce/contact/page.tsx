@@ -76,7 +76,7 @@ export default function ContactPage() {
                 <div className="grid lg:grid-cols-3 gap-8 mb-12">
                     {/* Contact Info Cards */}
                     <Card className="p-6 border-2 border-gray-100 hover:border-gray-300 hover:shadow-lg transition-all">
-                        <div className="w-12 h-12 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 bg-[#7C3AED] rounded-xl flex items-center justify-center mb-4">
                             <Mail className="w-6 h-6 text-white" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Email Us</h3>
@@ -87,7 +87,7 @@ export default function ContactPage() {
                     </Card>
 
                     <Card className="p-6 border-2 border-gray-100 hover:border-gray-300 hover:shadow-lg transition-all">
-                        <div className="w-12 h-12 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 bg-[#D946EF] rounded-xl flex items-center justify-center mb-4">
                             <Phone className="w-6 h-6 text-white" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Call Us</h3>
@@ -98,7 +98,7 @@ export default function ContactPage() {
                     </Card>
 
                     <Card className="p-6 border-2 border-gray-100 hover:border-gray-300 hover:shadow-lg transition-all">
-                        <div className="w-12 h-12 bg-gradient-to-br from-purple-500 to-purple-600 rounded-xl flex items-center justify-center mb-4">
+                        <div className="w-12 h-12 bg-purple-600 rounded-xl flex items-center justify-center mb-4">
                             <MessageSquare className="w-6 h-6 text-white" />
                         </div>
                         <h3 className="text-lg font-bold text-gray-900 mb-2">Live Chat</h3>
@@ -210,7 +210,7 @@ export default function ContactPage() {
                                     <Button
                                         type="submit"
                                         size="lg"
-                                        className="w-full h-12 bg-gray-900 hover:bg-gray-800 text-white rounded-lg font-semibold"
+                                        className="w-full h-12 bg-[#D946EF] hover:bg-[#c026d3] text-white rounded-lg font-semibold"
                                         disabled={isSubmitting}
                                     >
                                         {isSubmitting ? (
@@ -233,13 +233,13 @@ export default function ContactPage() {
                     {/* Sidebar Info */}
                     <div className="lg:col-span-2 space-y-6">
                         {/* FAQ Link */}
-                        <Card className="p-6 border-2 border-gray-100 bg-gradient-to-br from-indigo-50 to-purple-50">
-                            <HelpCircle className="w-10 h-10 text-indigo-600 mb-4" />
+                        <Card className="p-6 border-2 border-gray-100 bg-purple-50">
+                            <HelpCircle className="w-10 h-10 text-purple-600 mb-4" />
                             <h3 className="text-lg font-bold text-gray-900 mb-2">Have a quick question?</h3>
                             <p className="text-gray-600 text-sm mb-4">
                                 Check out our FAQ section for instant answers to common questions.
                             </p>
-                            <Button variant="outline" className="w-full border-indigo-600 text-indigo-600 hover:bg-indigo-50">
+                            <Button variant="outline" className="w-full border-purple-600 text-purple-600 hover:bg-purple-100">
                                 Visit FAQ
                             </Button>
                         </Card>
