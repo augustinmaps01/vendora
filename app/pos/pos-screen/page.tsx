@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -234,10 +234,12 @@ export default function VendoraPOS() {
   const canGoCheckout = useMemo(() => cart.length > 0 && totals.total > 0, [cart.length, totals.total]);
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
-  const [saleId] = useState(() => {
+  const [saleId, setSaleId] = useState<string | null>(null);
+
+  useEffect(() => {
     const base = String(Math.floor(Date.now() / 1000)).slice(-6);
-    return `SALE-${base}`;
-  });
+    setSaleId(`SALE-${base}`);
+  }, []);
 
   const screenProps = {
     screen,
@@ -306,7 +308,7 @@ export default function VendoraPOS() {
             </div>
             <div className="leading-tight min-w-0">
               <div className="font-semibold text-white truncate">Vendora POS</div>
-              <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : "Checkout"} - Txn {saleId}</div>
+              <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : "Checkout"} - Txn {saleId ?? "—"}</div>
             </div>
             <div className="hidden lg:flex gap-2 ml-2">
               <Pill>Cashier Maria</Pill>
@@ -414,7 +416,7 @@ export default function VendoraPOS() {
             <div className="flex items-start justify-between">
               <div>
                 <div className="font-semibold">Vendora Retail Demo</div>
-                <div className={`text-xs ${THEME.muted}`}>Transaction {saleId}</div>
+                <div className={`text-xs ${THEME.muted}`}>Transaction {saleId ?? "—"}</div>
               </div>
               <div className="text-right">
                 <div className={`text-xs ${THEME.muted}`}>Cashier</div>

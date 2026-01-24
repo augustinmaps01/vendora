@@ -70,54 +70,54 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     screen = "sale",
     cart = [],
     query = "",
-    setQuery = () => {},
+    setQuery = () => { },
     barcodeInput = "",
-    setBarcodeInput = () => {},
+    setBarcodeInput = () => { },
     category = "all",
-    setCategory = () => {},
+    setCategory = () => { },
     customer = "walkin",
-    setCustomer = () => {},
+    setCustomer = () => { },
     notes = "",
-    setNotes = () => {},
+    setNotes = () => { },
     filtered = [],
-    addToCart = () => {},
-    applyBarcode = () => {},
-    changeQty = () => {},
-    removeItem = () => {},
+    addToCart = () => { },
+    applyBarcode = () => { },
+    changeQty = () => { },
+    removeItem = () => { },
     totals = { subtotal: 0, discount: 0, tax: 0, deliveryFee: 0, total: 0 },
     discountAmount = 0,
     canGoCheckout = false,
-    setScreen = () => {},
+    setScreen = () => { },
     discountMode = "amount",
-    setDiscountMode = () => {},
+    setDiscountMode = () => { },
     discountValue = 0,
-    setDiscountValue = () => {},
+    setDiscountValue = () => { },
     taxEnabled = true,
-    setTaxEnabled = () => {},
+    setTaxEnabled = () => { },
     taxRate = 0.12,
-    setTaxRate = () => {},
+    setTaxRate = () => { },
     fulfillment = "pickup",
-    setFulfillment = () => {},
+    setFulfillment = () => { },
     deliveryKm = 3,
-    setDeliveryKm = () => {},
+    setDeliveryKm = () => { },
     paymentType = "full",
-    setPaymentType = () => {},
+    setPaymentType = () => { },
     splitPay = false,
-    setSplitPay = () => {},
+    setSplitPay = () => { },
     primaryMethod = "cash",
-    setPrimaryMethod = () => {},
+    setPrimaryMethod = () => { },
     cashPay = 0,
-    setCashPay = () => {},
+    setCashPay = () => { },
     cardPay = 0,
-    setCardPay = () => {},
+    setCardPay = () => { },
     onlinePay = 0,
-    setOnlinePay = () => {},
+    setOnlinePay = () => { },
     amountDue = 0,
     paid = 0,
     balance = 0,
     change = 0,
     canComplete = false,
-    setReceiptOpen = () => {},
+    setReceiptOpen = () => { },
     calcDeliveryFee = () => 0,
   } = props || {};
   return (
@@ -247,15 +247,15 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
           {/* Right column - Cart */}
           <div className="h-full xl:col-span-4 overflow-hidden">
-            <Card className={`rounded-2xl ${THEME.card} h-full overflow-hidden`}>
-              <CardHeader className="pb-3">
+            <Card className={`rounded-2xl ${THEME.card} h-full overflow-hidden flex flex-col`}>
+              <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-base text-white flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-purple-200" /> Cart
                 </CardTitle>
                 <div className={`text-xs ${THEME.muted}`}>Adjust quantity then go checkout</div>
               </CardHeader>
 
-              <CardContent className="h-full overflow-hidden">
+              <CardContent className="flex-1 overflow-hidden">
                 <div className="h-full flex flex-col gap-3 overflow-hidden">
                   <div className="flex-1 overflow-auto pr-1">
                     {cart.length === 0 ? (
@@ -263,52 +263,55 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         Cart is empty
                       </div>
                     ) : (
-                      <div className="space-y-3 pb-2">
+                      <div className="space-y-2 pb-2">
                         {cart.map((x) => (
-                          <div key={x.id} className={`rounded-2xl ${THEME.panel} p-3`}>
+                          <div key={x.id} className={`rounded-2xl ${THEME.panel} p-2`}>
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <div className="font-medium truncate text-white">{x.name}</div>
-                                <div className={`text-xs ${THEME.muted}`}>{x.sku} â€¢ {x.unit}</div>
+                                <div className="font-medium truncate text-white text-xs">
+                                  {x.name} <span className={`text-[7px] ${THEME.muted} font-normal`}>({x.sku})</span>
+                                </div>
+                                <div className={`text-[7px] ${THEME.muted}`}>{x.unit}</div>
                               </div>
                               <div className="text-sm font-semibold text-white"><Money value={x.price * x.qty} /></div>
                             </div>
 
-                            <div className="mt-3 flex items-center gap-2">
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200"
-                                onClick={() => changeQty(x.id, x.qty - 1)}
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
+                            <div className="mt-1 flex items-center gap-2">
+                              <div className="flex items-center rounded-md bg-white/10 border border-white/10 h-5 overflow-hidden">
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-full w-5 p-0 rounded-none hover:bg-white/10 text-purple-200"
+                                  onClick={() => changeQty(x.id, x.qty - 1)}
+                                >
+                                  <Minus className="h-2 w-2" />
+                                </Button>
+                                <Input
+                                  value={x.qty}
+                                  onChange={(e) => changeQty(x.id, e.target.value)}
+                                  className="h-full w-7 text-center bg-transparent border-0 text-white text-[9px] p-0 focus-visible:ring-0 rounded-none"
+                                  inputMode="numeric"
+                                />
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-full w-5 p-0 rounded-none hover:bg-white/10 text-purple-200"
+                                  onClick={() => changeQty(x.id, x.qty + 1)}
+                                >
+                                  <Plus className="h-2 w-2" />
+                                </Button>
+                              </div>
 
-                              <Input
-                                value={x.qty}
-                                onChange={(e) => changeQty(x.id, e.target.value)}
-                                className="w-14 text-center rounded-xl bg-white/10 border-white/10 text-white"
-                                inputMode="numeric"
-                              />
-
-                              <Button
-                                variant="secondary"
-                                size="sm"
-                                className="rounded-xl bg-purple-500/20 hover:bg-purple-500/30 text-purple-200"
-                                onClick={() => changeQty(x.id, x.qty + 1)}
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
-
-                              <div className={`ml-auto text-xs ${THEME.muted}`}>Unit <Money value={x.price} /></div>
+                              <div className={`ml-auto text-[10px] ${THEME.muted}`}>Unit <Money value={x.price} /></div>
 
                               <Button
                                 variant="outline"
                                 size="sm"
-                                className="rounded-xl border-red-500/30 text-gray-600 hover:bg-red-500/10 hover:text-red-200"
+                                className="h-5 w-5 p-0 rounded-md border-red-500/30 text-gray-600 hover:bg-red-500/10 hover:text-red-200"
                                 onClick={() => removeItem(x.id)}
+                                aria-label="Remove item"
                               >
-                                Remove
+                                <Trash2 className="h-3 w-3" />
                               </Button>
                             </div>
 
@@ -320,7 +323,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
                   </div>
 
-                  <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2 shrink-0`}>
+                  <div className={`rounded-2xl ${THEME.panel} p-2 space-y-2 shrink-0`}>
                     <div className="text-sm font-medium text-white">Notes</div>
                     <Input
                       value={notes}
@@ -568,10 +571,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       ) : (
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
                           <div className="text-sm font-medium text-white">Split amounts</div>
-                        <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
-                          <div className="space-y-1">
-                            <div className={`text-xs ${THEME.muted}`}>Cash</div>
-                            <Input
+                          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
+                            <div className="space-y-1">
+                              <div className={`text-xs ${THEME.muted}`}>Cash</div>
+                              <Input
                                 value={cashPay}
                                 onChange={(e) => setCashPay(Number(e.target.value || 0))}
                                 className="rounded-xl bg-white/10 border-white/10 text-white"

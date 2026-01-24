@@ -54,7 +54,6 @@ export default function VendorLoginPage() {
         user_type: "vendor",
       }
 
-      // Use authService which properly handles API calls
       const result = await authService.pos.login(credentials)
 
       if (!result.success) {
@@ -66,16 +65,13 @@ export default function VendorLoginPage() {
         return
       }
 
-      // Successful login - token is automatically stored by authService
       router.push("/pos/dashboard")
     } catch (err: unknown) {
-      // Handle different error types
       const axiosError = err as { response?: { data?: { message?: string; errors?: { account_locked?: boolean; lockout_expiry?: string; requires_email_verification?: boolean } } }, message?: string }
 
       if (axiosError.response?.data) {
         const errorData = axiosError.response.data
 
-        // Check for account locked
         if (errorData.errors?.account_locked) {
           setAccountLocked(true)
           setLockoutTime(errorData.errors.lockout_expiry || null)
@@ -83,7 +79,6 @@ export default function VendorLoginPage() {
           return
         }
 
-        // Check for email verification required
         if (errorData.errors?.requires_email_verification) {
           setError("Please verify your email before logging in. Check your inbox for the verification link.")
           return
@@ -106,7 +101,6 @@ export default function VendorLoginPage() {
     try {
       const email = getValues("email")
 
-      // TODO: Replace with actual API call
       const response = await fetch("/api/vendor/auth/verify-2fa", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -123,7 +117,6 @@ export default function VendorLoginPage() {
         throw new Error(result.message || "Invalid verification code")
       }
 
-      // Successful 2FA verification
       router.push("/pos/dashboard")
     } catch (err) {
       setError(err instanceof Error ? err.message : "An error occurred during verification")
@@ -187,201 +180,117 @@ export default function VendorLoginPage() {
   }
 
   return (
-    <div className="relative flex overflow-hidden bg-neutral-50">
-      {/* Subtle Background Pattern */}
-      <div className="absolute inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute inset-0 bg-[linear-gradient(to_right,#8080800a_1px,transparent_1px),linear-gradient(to_bottom,#8080800a_1px,transparent_1px)] bg-[size:32px_32px]"></div>
+    <div className="min-h-screen w-full flex flex-col lg:flex-row">
+      {/* Left Column - Image (60% width) */}
+      <div className="relative w-full h-64 sm:h-80 lg:h-screen lg:w-3/5 bg-slate-900">
+        <img
+          src="/images/Login.jpg"
+          alt="Login Background"
+          className="absolute inset-0 w-full h-full object-cover object-left"
+        />
       </div>
 
-      {/* Main Container - 60/40 Split - Full Width */}
-      <div className="relative z-10 flex flex-col w-full overflow-hidden bg-white lg:flex-row">
-
-        {/* Left Section - Executive Branding (60%) */}
-        <div className="lg:w-3/5 bg-gradient-to-br from-[#1a0f2e] via-[#241535] to-[#1a0f2e] relative overflow-hidden flex flex-col justify-between py-6 px-8 lg:py-10 lg:px-16 xl:px-20 text-white">
-
-          {/* Abstract Geometric Grid Pattern */}
-          <div className="absolute inset-0 opacity-20">
-            <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:60px_60px]"></div>
+      {/* Right Column - Login Form (40% width) */}
+      <div className="w-full lg:w-2/5 lg:h-screen flex items-center justify-center p-8 lg:p-12 bg-white">
+        <div className="w-full max-w-sm space-y-6">
+          <div className="text-left">
+            <h2 className="text-3xl font-bold text-gray-900">Login to your account</h2>
+            <p className="text-gray-500 mt-2 text-sm">Sign in to your management dashboard</p>
           </div>
 
-          {/* Abstract Dashboard Visualization Elements */}
-          <div className="absolute inset-0 pointer-events-none">
-            {/* Top-right abstract chart lines */}
+          <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+            {/* Error Message */}
+            {error && (
+              <Alert variant="destructive" className="border-red-300 bg-red-50/80 backdrop-blur-sm animate-in slide-in-from-top-2">
+                <AlertCircle className="w-4 h-4" />
+                <AlertDescription className="font-medium text-red-800">{error}</AlertDescription>
+              </Alert>
+            )}
 
-            {/* Bottom-left abstract grid boxes */}
+            {/* Account Locked Message */}
+            {accountLocked && lockoutTime && (
+              <Alert className="border-yellow-300 bg-yellow-50/80 backdrop-blur-sm animate-in slide-in-from-top-2">
+                <AlertCircle className="w-4 h-4 text-yellow-600" />
+                <AlertDescription className="font-medium text-yellow-800">
+                  Account locked until {new Date(lockoutTime).toLocaleTimeString()}. Please try again later.
+                </AlertDescription>
+              </Alert>
+            )}
 
-            {/* Center abstract circle elements */}
-          </div>
+            {/* Email */}
+            <div className="space-y-1.5">
+              <Label htmlFor="email" className="text-sm font-medium text-gray-700">Email</Label>
+              <Input
+                {...register("email")}
+                id="email"
+                type="email"
+                placeholder="vendor@example.com"
+                className="h-9 bg-gray-50 border-gray-200 focus:bg-white"
+                disabled={isLoading}
+              />
+              {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
+            </div>
 
-          <div className="relative z-10">
-            {/* Logo */}
-            <div className="mb-6 lg:mb-8">
-              <div className="inline-block">
-                <Image
-                  src="/logos/full logo-light.png"
-                  alt="Vendora POS"
-                  width={200}
-                  height={58}
-                  className="w-auto h-10 lg:h-12"
-                  priority
-                />
+            {/* Password */}
+            <div className="space-y-1.5">
+              <div className="flex items-center justify-between">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">Password</Label>
               </div>
-            </div>
-
-            {/* Executive Messaging */}
-            <div className="max-w-2xl space-y-3">
-              <h1 className="text-4xl lg:text-5xl xl:text-6xl font-bold leading-[1.1] tracking-tight text-white">
-                Command Your Business
-              </h1>
-              <p className="max-w-xl text-base font-normal leading-normal text-white/70 lg:text-lg">
-                Centralized control for business owners and store managers. Monitor operations, analyze performance, and drive growth from a single platform.
-              </p>
-            </div>
-          </div>
-
-          {/* Executive Feature Grid */}
-          <div className="relative z-10 grid grid-cols-2 gap-3 py-4 lg:gap-4">
-            <div className="p-3 border rounded-lg border-white/10 lg:p-4 backdrop-blur-sm bg-white/5">
-              <BarChart3 className="w-6 h-6 mb-2 text-purple-400 lg:h-7 lg:w-7" />
-              <h3 className="font-semibold text-white text-sm lg:text-base mb-0.5">Analytics Dashboard</h3>
-              <p className="text-xs font-light text-white/50">Real-time insights</p>
-            </div>
-            <div className="p-3 border rounded-lg border-white/10 lg:p-4 backdrop-blur-sm bg-white/5">
-              <TrendingUp className="w-6 h-6 mb-2 text-pink-400 lg:h-7 lg:w-7" />
-              <h3 className="font-semibold text-white text-sm lg:text-base mb-0.5">Performance Metrics</h3>
-              <p className="text-xs font-light text-white/50">Track growth</p>
-            </div>
-            <div className="p-3 border rounded-lg border-white/10 lg:p-4 backdrop-blur-sm bg-white/5">
-              <Package className="w-6 h-6 mb-2 text-purple-300 lg:h-7 lg:w-7" />
-              <h3 className="font-semibold text-white text-sm lg:text-base mb-0.5">Inventory Control</h3>
-              <p className="text-xs font-light text-white/50">Complete oversight</p>
-            </div>
-            <div className="p-3 border rounded-lg border-white/10 lg:p-4 backdrop-blur-sm bg-white/5">
-              <Store className="w-6 h-6 mb-2 text-pink-300 lg:h-7 lg:w-7" />
-              <h3 className="font-semibold text-white text-sm lg:text-base mb-0.5">Multi-Store Management</h3>
-              <p className="text-xs font-light text-white/50">Unified platform</p>
-            </div>
-          </div>
-        </div>
-
-        {/* Right Section - Login Form (40%) */}
-        <div className="relative flex items-center justify-center px-8 py-6 bg-white lg:w-2/5 lg:py-10 lg:px-12 xl:px-16">
-          <div className="w-full max-w-lg space-y-5">
-            <div className="text-left">
-              <h2 className="text-2xl font-bold text-gray-900 lg:text-3xl">Vendor POS</h2>
-              <p className="text-gray-600 mt-1.5 font-normal text-sm lg:text-base">Sign in to your management dashboard</p>
-            </div>
-
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              {/* Error Message */}
-              {error && (
-                <Alert variant="destructive" className="border-red-300 bg-red-50/80 backdrop-blur-sm animate-in slide-in-from-top-2">
-                  <AlertCircle className="w-4 h-4" />
-                  <AlertDescription className="font-medium text-red-800">{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Account Locked Message */}
-              {accountLocked && lockoutTime && (
-                <Alert className="border-yellow-300 bg-yellow-50/80 backdrop-blur-sm animate-in slide-in-from-top-2">
-                  <AlertCircle className="w-4 h-4 text-yellow-600" />
-                  <AlertDescription className="font-medium text-yellow-800">
-                    Account locked until {new Date(lockoutTime).toLocaleTimeString()}. Please try again later.
-                  </AlertDescription>
-                </Alert>
-              )}
-
-              {/* Email */}
-              <div className="space-y-1.5">
-                <Label htmlFor="email" className="text-sm">Email</Label>
-                <div className="relative">
-                  <Mail className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-                  <Input
-                    {...register("email")}
-                    id="email"
-                    type="email"
-                    placeholder="vendor@example.com"
-                    className="pl-10 text-sm transition-all border-gray-200 h-11 bg-gray-50 focus:bg-white"
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
-              </div>
-
-              {/* Password */}
-              <div className="space-y-1.5">
-                <div className="flex items-center justify-between">
-                  <Label htmlFor="password" className="text-sm">Password</Label>
-                  <Link
-                    href="/pos/auth/forgot-password"
-                    className="text-xs font-medium text-purple-600 hover:text-purple-700"
-                  >
-                    Forgot password?
-                  </Link>
-                </div>
-                <div className="relative">
-                  <Lock className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 left-3 top-1/2" />
-                  <Input
-                    {...register("password")}
-                    id="password"
-                    type="password"
-                    placeholder="Enter your password"
-                    className="pl-10 text-sm transition-all border-gray-200 h-11 bg-gray-50 focus:bg-white"
-                    disabled={isLoading}
-                  />
-                </div>
-                {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
-              </div>
-
-              <div className="flex items-center space-x-2">
-                <Checkbox
-                  id="remember"
-                  checked={rememberMe}
-                  onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+              <div className="relative">
+                <Input
+                  {...register("password")}
+                  id="password"
+                  type="password"
+                  placeholder="Enter your password"
+                  className="h-9 bg-gray-50 border-gray-200 focus:bg-white pr-10"
                   disabled={isLoading}
                 />
-                <label htmlFor="remember" className="text-xs font-medium text-gray-600 cursor-pointer">
-                  Remember me for 30 days
-                </label>
+                <Lock className="absolute w-4 h-4 text-gray-400 -translate-y-1/2 right-3 top-1/2" />
               </div>
+              {errors.password && <p className="text-xs text-red-500">{errors.password.message}</p>}
+              <div className="flex justify-end pt-1">
+                <Link
+                  href="/pos/auth/forgot-password"
+                  className="text-xs font-medium text-purple-600 hover:text-purple-700"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+            </div>
 
-              <Button
-                type="submit"
-                className="w-full font-semibold text-white transition-all bg-purple-600 shadow-lg h-11 hover:bg-purple-700 rounded-xl shadow-purple-500/20"
-                disabled={isLoading || accountLocked}
-              >
-                {isLoading ? "Signing in..." : "Sign In"}
-              </Button>
-            </form>
+            <div className="flex items-center space-x-2">
+              <Checkbox
+                id="remember"
+                checked={rememberMe}
+                onCheckedChange={(checked) => setRememberMe(checked as boolean)}
+                disabled={isLoading}
+              />
+              <label htmlFor="remember" className="text-xs font-medium text-gray-600 cursor-pointer">
+                Remember me for 30 days
+              </label>
+            </div>
 
-            <div className="relative py-1">
+            <Button
+              type="submit"
+              className="w-full font-bold text-white transition-all bg-purple-600 h-11 hover:bg-purple-700 rounded-lg"
+              disabled={isLoading || accountLocked}
+            >
+              {isLoading ? "Signing in..." : "Sign In"}
+            </Button>
+
+            <div className="relative py-2">
               <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200"></div>
+                <div className="w-full border-t border-gray-100"></div>
               </div>
-              <div className="relative flex justify-center text-xs">
-                <span className="px-2 text-gray-500 bg-white">New to Vendora?</span>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="px-2 text-gray-400 bg-white">OR</span>
               </div>
             </div>
 
-            <div className="-mt-1 text-center">
-              <Link href="/pos/auth/register" className="text-sm font-semibold text-purple-600 hover:text-purple-700">
-                Create an account
-              </Link>
+            <div className="text-center text-sm text-gray-500">
+              Don't have an account? <Link href="/pos/auth/register" className="font-medium text-purple-600 hover:text-purple-700">Create an account</Link>
             </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Footer */}
-      <div className="absolute left-0 right-0 z-20 pointer-events-none bottom-2">
-        <div className="w-full px-8 lg:px-16 xl:px-20">
-          <div className="flex items-center justify-between">
-            <p className="text-xs font-light text-gray-400">© 2026 Vendora POS. All rights reserved.</p>
-            <div className="flex items-center gap-1.5">
-              <Shield className="w-3 h-3 text-purple-600" />
-              <span className="text-xs font-light text-gray-400">Enterprise-grade security</span>
-            </div>
-          </div>
+          </form>
         </div>
       </div>
     </div>

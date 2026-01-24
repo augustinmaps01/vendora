@@ -3,6 +3,7 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -139,207 +140,258 @@ export default function VendorRegisterPage() {
   }
 
   return (
-    <div className="min-h-screen p-4 py-3">
-      <div className="w-full max-w-6xl mx-auto pb-20">
-        {/* Progress Steps */}
-        <div className="mb-8">
-          <div className="flex items-start justify-center gap-4">
-            {[
-              { num: 1, label: "Choose Plan" },
-              { num: 2, label: "Account Details" },
-              { num: 3, label: "Payment" }
-            ].map((s, idx) => (
-              <div key={s.num} className="flex items-center">
-                {/* Step Column */}
-                <div className="flex flex-col items-center">
-                  <div
-                    className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${
-                      step >= s.num
-                        ? "text-white"
-                        : "bg-gray-200 text-gray-600"
-                    }`}
-                    style={step >= s.num ? { backgroundColor: '#110228' } : {}}
-                  >
-                    {s.num}
+    <>
+      {step === 2 ? (
+        // Step 2: Full viewport layout without wrapper
+        <div className="min-h-screen w-full flex flex-col lg:flex-row">
+          {/* Left Column - Image (60% width) */}
+          <div className="relative w-full h-64 sm:h-80 lg:h-screen lg:w-3/5 bg-slate-900">
+            <img
+              src="/images/Register.jpg"
+              alt="Register Background"
+              className="absolute inset-0 w-full h-full object-cover object-left"
+            />
+          </div>
+
+          {/* Right Column - Registration Form (40% width) */}
+          <div className="w-full lg:w-2/5 lg:h-screen flex flex-col bg-white">
+            {/* Progress Steps - Inside right column */}
+            <div className="border-b bg-white py-4 px-6">
+              <div className="flex items-start justify-center gap-3">
+                {[
+                  { num: 1, label: "Choose Plan" },
+                  { num: 2, label: "Account Details" },
+                  { num: 3, label: "Payment" }
+                ].map((s, idx) => (
+                  <div key={s.num} className="flex items-center">
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm ${step >= s.num
+                          ? "text-white"
+                          : "bg-gray-200 text-gray-600"
+                          }`}
+                        style={step >= s.num ? { backgroundColor: '#110228' } : {}}
+                      >
+                        {s.num}
+                      </div>
+                      <span className={`mt-2 text-xs text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                        {s.label}
+                      </span>
+                    </div>
+                    {idx < 2 && (
+                      <div
+                        className={`w-12 h-0.5 mx-1 mb-5 ${step > s.num ? "" : "bg-gray-200"
+                          }`}
+                        style={step > s.num ? { backgroundColor: '#110228' } : {}}
+                      />
+                    )}
                   </div>
-                  <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
-                    {s.label}
-                  </span>
+                ))}
+              </div>
+            </div>
+
+            {/* Form Container */}
+            <div className="flex-1 flex items-center justify-center p-6 lg:p-8">
+              <div className="w-full max-w-sm space-y-4">
+                <div className="text-left">
+                  <h2 className="text-2xl font-bold text-gray-900">Create Your Account</h2>
+                  <p className="text-gray-500 mt-1 text-xs">Enter your business details to get started</p>
                 </div>
 
-                {/* Connector Line */}
-                {idx < 2 && (
-                  <div
-                    className={`w-16 h-1 mx-2 mb-6 ${
-                      step > s.num ? "" : "bg-gray-200"
-                    }`}
-                    style={step > s.num ? { backgroundColor: '#110228' } : {}}
-                  />
-                )}
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-3">
+                  <div className="space-y-1.5">
+                    <Label htmlFor="business_name">Business Name</Label>
+                    <div className="relative">
+                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        {...register("business_name")}
+                        id="business_name"
+                        type="text"
+                        placeholder="Your Business Name"
+                        className="pl-10 h-9"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.business_name && (
+                      <p className="text-sm text-red-500">{errors.business_name.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="email">Email Address</Label>
+                    <div className="relative">
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        {...register("email")}
+                        id="email"
+                        type="email"
+                        placeholder="business@example.com"
+                        className="pl-10 h-9"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.email && (
+                      <p className="text-sm text-red-500">{errors.email.message}</p>
+                    )}
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password">Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        {...register("password")}
+                        id="password"
+                        type="password"
+                        placeholder="Create a strong password"
+                        className="pl-10 h-9"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.password && (
+                      <p className="text-sm text-red-500">{errors.password.message}</p>
+                    )}
+                    <p className="text-[10px] text-gray-500 leading-tight">
+                      Min 8 chars, 1 uppercase, 1 lowercase, 1 number
+                    </p>
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label htmlFor="password_confirmation">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Input
+                        {...register("password_confirmation")}
+                        id="password_confirmation"
+                        type="password"
+                        placeholder="Confirm your password"
+                        className="pl-10 h-9"
+                        disabled={isLoading}
+                      />
+                    </div>
+                    {errors.password_confirmation && (
+                      <p className="text-sm text-red-500">{errors.password_confirmation.message}</p>
+                    )}
+                  </div>
+
+                  <div className="flex justify-between pt-2">
+                    <Button type="button" variant="ghost" onClick={handlePrevStep}>
+                      <ArrowLeft className="mr-2 h-4 w-4" />
+                      Back
+                    </Button>
+                    <Button
+                      type="submit"
+                      className="hover:opacity-90 text-white"
+                      style={{ backgroundColor: '#110228' }}
+                      disabled={isLoading}
+                    >
+                      {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                      Continue to Payment
+                    </Button>
+                  </div>
+                </form>
               </div>
-            ))}
+            </div>
           </div>
         </div>
+      ) : (
+          // Steps 1 and 3: Wrapped layout
+          <div className="min-h-screen p-4 py-3">
+            <div className="w-full max-w-6xl mx-auto pb-20">
+              {/* Progress Steps */}
+              <div className="mb-8">
+                <div className="flex items-start justify-center gap-4">
+                  {[
+                    { num: 1, label: "Choose Plan" },
+                    { num: 2, label: "Account Details" },
+                    { num: 3, label: "Payment" }
+                  ].map((s, idx) => (
+                    <div key={s.num} className="flex items-center">
+                      {/* Step Column */}
+                      <div className="flex flex-col items-center">
+                        <div
+                          className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${step >= s.num
+                            ? "text-white"
+                            : "bg-gray-200 text-gray-600"
+                            }`}
+                          style={step >= s.num ? { backgroundColor: '#110228' } : {}}
+                        >
+                          {s.num}
+                        </div>
+                        <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                          {s.label}
+                        </span>
+                      </div>
 
-        {error && (
-          <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error}</AlertDescription>
-          </Alert>
-        )}
-
-        {/* Step 1: Plan Selection */}
-        {step === 1 && (
-          <>
-            <div className="mb-24">
-              <SubscriptionPlanSelector
-                selectedPlan={selectedPlan}
-                onSelectPlan={handlePlanSelection}
-              />
-            </div>
-
-            {/* Sticky Navigation Buttons */}
-            <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t shadow-lg">
-              <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-                <Link href="/pos/auth/login">
-                  <Button variant="ghost">
-                    <ArrowLeft className="mr-2 h-4 w-4" />
-                    Back to Login
-                  </Button>
-                </Link>
-                <Button
-                  onClick={handleNextStep}
-                  className="hover:opacity-90 text-white"
-                  style={{ backgroundColor: '#110228' }}
-                  disabled={!selectedPlan}
-                >
-                  Continue
-                </Button>
+                      {/* Connector Line */}
+                      {idx < 2 && (
+                        <div
+                          className={`w-16 h-1 mx-2 mb-6 ${step > s.num ? "" : "bg-gray-200"
+                            }`}
+                          style={step > s.num ? { backgroundColor: '#110228' } : {}}
+                        />
+                      )}
+                    </div>
+                  ))}
+                </div>
               </div>
+
+              {error && (
+                <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
+                  <AlertCircle className="h-4 w-4" />
+                  <AlertDescription>{error}</AlertDescription>
+                </Alert>
+              )}
+
+              {/* Step 1: Plan Selection */}
+              {step === 1 && (
+                <>
+                  <div className="mb-24">
+                    <SubscriptionPlanSelector
+                      selectedPlan={selectedPlan}
+                      onSelectPlan={handlePlanSelection}
+                    />
+                  </div>
+
+                  {/* Sticky Navigation Buttons */}
+                  <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t shadow-lg">
+                    <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                      <Link href="/pos/auth/login">
+                        <Button variant="ghost">
+                          <ArrowLeft className="mr-2 h-4 w-4" />
+                          Back to Login
+                        </Button>
+                      </Link>
+                      <Button
+                        onClick={handleNextStep}
+                        className="hover:opacity-90 text-white"
+                        style={{ backgroundColor: '#110228' }}
+                        disabled={!selectedPlan}
+                      >
+                        Continue
+                      </Button>
+                    </div>
+                  </div>
+                </>
+              )}
+
+              {/* Step 3: Payment - This would redirect to Stripe/PayPal */}
+              {step === 3 && (
+                <Card className="max-w-2xl mx-auto">
+                  <CardHeader className="space-y-1">
+                    <CardTitle className="text-2xl font-bold text-center">Processing...</CardTitle>
+                    <CardDescription className="text-center">
+                      Redirecting to secure payment processor
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent className="flex justify-center py-8">
+                    <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
+                  </CardContent>
+                </Card>
+              )}
             </div>
-          </>
-        )}
-
-        {/* Step 2: Account Details */}
-        {step === 2 && (
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Create Your Account</CardTitle>
-              <CardDescription className="text-center">
-                Enter your business details to get started
-              </CardDescription>
-            </CardHeader>
-            <form onSubmit={handleSubmit(onSubmit)}>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="business_name">Business Name</Label>
-                  <div className="relative">
-                    <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...register("business_name")}
-                      id="business_name"
-                      type="text"
-                      placeholder="Your Business Name"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {errors.business_name && (
-                    <p className="text-sm text-red-500">{errors.business_name.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="email">Email Address</Label>
-                  <div className="relative">
-                    <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...register("email")}
-                      id="email"
-                      type="email"
-                      placeholder="business@example.com"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {errors.email && (
-                    <p className="text-sm text-red-500">{errors.email.message}</p>
-                  )}
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="password">Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...register("password")}
-                      id="password"
-                      type="password"
-                      placeholder="Create a strong password"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {errors.password && (
-                    <p className="text-sm text-red-500">{errors.password.message}</p>
-                  )}
-                  <p className="text-xs text-gray-500">
-                    Must contain at least 8 characters, one uppercase, one lowercase, and one number
-                  </p>
-                </div>
-
-                <div className="space-y-2 py-5">
-                  <Label htmlFor="password_confirmation">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                    <Input
-                      {...register("password_confirmation")}
-                      id="password_confirmation"
-                      type="password"
-                      placeholder="Confirm your password"
-                      className="pl-10"
-                      disabled={isLoading}
-                    />
-                  </div>
-                  {errors.password_confirmation && (
-                    <p className="text-sm text-red-500">{errors.password_confirmation.message}</p>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button type="button" variant="ghost" onClick={handlePrevStep}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back
-                </Button>
-                <Button
-                  type="submit"
-                  className="hover:opacity-90 text-white"
-                  style={{ backgroundColor: '#110228' }}
-                  disabled={isLoading}
-                >
-                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                  Continue to Payment
-                </Button>
-              </CardFooter>
-            </form>
-          </Card>
-        )}
-
-        {/* Step 3: Payment - This would redirect to Stripe/PayPal */}
-        {step === 3 && (
-          <Card className="max-w-2xl mx-auto">
-            <CardHeader className="space-y-1">
-              <CardTitle className="text-2xl font-bold text-center">Processing...</CardTitle>
-              <CardDescription className="text-center">
-                Redirecting to secure payment processor
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="flex justify-center py-8">
-              <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
-            </CardContent>
-          </Card>
-        )}
-      </div>
-    </div>
-  )
+          </div>
+      )}
+        </>
+      )
 }

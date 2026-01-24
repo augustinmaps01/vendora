@@ -21,6 +21,15 @@ interface ProductCardProps {
 export function ProductCard({ product }: ProductCardProps) {
     const { addItem } = useCartStore()
 
+    const getDeterministicReviewCount = (seed: string) => {
+        let hash = 0
+        for (let i = 0; i < seed.length; i += 1) {
+            hash = (hash * 31 + seed.charCodeAt(i)) | 0
+        }
+        const normalized = Math.abs(hash)
+        return 50 + (normalized % 300)
+    }
+
     // Generate badge styling based on type
     const getBadgeStyles = (type?: string) => {
         switch (type) {
@@ -37,7 +46,8 @@ export function ProductCard({ product }: ProductCardProps) {
 
     const productImage = product.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80"
     const rating = product.rating || 4.8
-    const reviewCount = product.reviewCount || Math.floor(Math.random() * 300 + 50)
+    const reviewSeed = String(product.id ?? product.name ?? product.category ?? "product")
+    const reviewCount = product.reviewCount ?? getDeterministicReviewCount(reviewSeed)
 
     return (
         <div

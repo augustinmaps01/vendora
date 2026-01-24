@@ -9,6 +9,8 @@ import Confetti from "react-confetti"
 export default function OrderSuccessPage() {
     const [showConfetti, setShowConfetti] = useState(true)
     const [windowSize, setWindowSize] = useState({ width: 0, height: 0 })
+    const [orderNumber, setOrderNumber] = useState<string | null>(null)
+    const [estimatedDelivery, setEstimatedDelivery] = useState<string | null>(null)
 
     useEffect(() => {
         // Set window size for confetti
@@ -17,6 +19,17 @@ export default function OrderSuccessPage() {
             height: window.innerHeight,
         })
 
+        // Generate client-only values to avoid hydration mismatch
+        setOrderNumber(`ORD-${Math.random().toString(36).substring(2, 11).toUpperCase()}`)
+        setEstimatedDelivery(
+            new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString("en-US", {
+                weekday: "long",
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+            })
+        )
+
         // Stop confetti after 5 seconds
         const timer = setTimeout(() => {
             setShowConfetti(false)
@@ -24,15 +37,6 @@ export default function OrderSuccessPage() {
 
         return () => clearTimeout(timer)
     }, [])
-
-    // Generate random order number
-    const orderNumber = `ORD-${Math.random().toString(36).substring(2, 11).toUpperCase()}`
-    const estimatedDelivery = new Date(Date.now() + 5 * 24 * 60 * 60 * 1000).toLocaleDateString('en-US', {
-        weekday: 'long',
-        year: 'numeric',
-        month: 'long',
-        day: 'numeric'
-    })
 
     return (
         <div className="min-h-screen bg-[#F5F3FF]">
@@ -85,7 +89,7 @@ export default function OrderSuccessPage() {
                         <div className="flex items-center justify-between text-white">
                             <div>
                                 <p className="text-sm font-medium opacity-90 mb-1">Order Number</p>
-                                <p className="text-xl sm:text-2xl font-bold tracking-wide">{orderNumber}</p>
+                                <p className="text-xl sm:text-2xl font-bold tracking-wide">{orderNumber ?? "ORD-—"}</p>
                             </div>
                             <Package className="w-10 h-10 sm:w-12 sm:h-12 opacity-80" />
                         </div>
@@ -132,7 +136,7 @@ export default function OrderSuccessPage() {
                                 </div>
                                 <div>
                                     <h4 className="font-bold text-gray-900 mb-1">Estimated Delivery</h4>
-                                    <p className="text-sm text-gray-700 font-medium">{estimatedDelivery}</p>
+                                    <p className="text-sm text-gray-700 font-medium">{estimatedDelivery ?? "—"}</p>
                                     <p className="text-xs text-gray-600 mt-1">You'll receive tracking information via email</p>
                                 </div>
                             </div>
