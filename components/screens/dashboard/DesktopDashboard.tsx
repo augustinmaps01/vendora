@@ -2,7 +2,7 @@
 
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
-import { ShoppingCart, Plus } from "lucide-react"
+import { DollarSign, Package, Plus, ShoppingBag, Wallet, ShoppingCart } from "lucide-react"
 import { DashboardStats } from "@/components/pos/DashboardStats"
 import { SalesTrendChart } from "@/components/pos/SalesTrendChart"
 import { OrdersByChannelChart } from "@/components/pos/OrdersByChannelChart"
@@ -13,6 +13,7 @@ import { LowStockAlerts } from "@/components/pos/LowStockAlerts"
 import { PendingOrders } from "@/components/pos/PendingOrders"
 import { RecentActivity } from "@/components/pos/RecentActivity"
 import { QuickActions } from "@/components/pos/QuickActions"
+import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
   SelectContent,
@@ -32,35 +33,33 @@ export default function DesktopDashboard() {
       value: "\u20B1 128,420",
       change: "+8.4%",
       changeType: "positive" as const,
+      icon: DollarSign,
     },
     {
       title: "Total Orders",
       value: "214",
       change: "+4.1%",
       changeType: "positive" as const,
+      icon: ShoppingBag,
     },
     {
       title: "Net Revenue",
       value: "\u20B1 96,880",
       change: "After discount",
       changeType: "positive" as const,
-    },
-    {
-      title: "Average Order Value",
-      value: "\u20B1 600",
-      change: "Stable",
-      changeType: "positive" as const,
+      icon: Wallet,
     },
     {
       title: "Items Sold",
       value: "1,248",
       change: "POS and Online",
       changeType: "positive" as const,
+      icon: Package,
     },
   ]
 
   return (
-    <div className="space-y-6 pb-8">
+    <div className="space-y-4 pb-6">
       {/* Desktop Header */}
       <div className="hidden sm:flex sm:flex-col gap-3 bg-white p-4 sm:p-6 rounded-lg border border-gray-200 lg:flex-row lg:items-center lg:justify-between">
         <div>
@@ -95,38 +94,45 @@ export default function DesktopDashboard() {
       {/* Desktop Stats */}
       <DashboardStats stats={stats} />
 
-      {/* Desktop Analytics Section - 3 columns */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        {/* Sales Trend Chart - Takes 2 columns */}
-        <div className="lg:col-span-2">
-          <SalesTrendChart />
+      {/* Second Section */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-4 lg:items-stretch">
+        <div className="lg:col-span-2 lg:h-[420px]">
+          <SalesTrendChart className="h-full" contentClassName="flex-1" />
         </div>
-
-        {/* Orders by Channel */}
-        <OrdersByChannelChart />
-      </div>
-
-      {/* Payment Methods and Top Selling Products */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <PaymentMethodsChart />
-        <div className="lg:col-span-2">
-          <TopSellingProducts />
+        <div className="space-y-4 lg:col-span-2 lg:h-[420px] lg:flex lg:flex-col lg:space-y-4">
+          <div className="lg:flex-1">
+            <OrdersByChannelChart className="h-full" />
+          </div>
+          <div className="lg:flex-1">
+            <PaymentMethodsChart className="h-full" />
+          </div>
         </div>
       </div>
 
-      {/* Operational Insights Section */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <InventoryHealth />
-        <LowStockAlerts />
-        <PendingOrders />
-      </div>
-
-      {/* Recent Activity and Quick Actions */}
-      <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <RecentActivity />
+      {/* Third Section */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-3 lg:items-stretch">
+        <div className="lg:col-span-2 lg:h-[520px]">
+          <Card className="border-gray-200 h-full">
+            <CardContent className="p-5 space-y-4">
+              <TopSellingProducts variant="embedded" />
+              <div className="h-px bg-gray-200" />
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <InventoryHealth variant="embedded" />
+                <LowStockAlerts variant="embedded" />
+                <PendingOrders variant="embedded" />
+              </div>
+            </CardContent>
+          </Card>
         </div>
-        <QuickActions />
+        <div className="lg:h-[520px]">
+          <Card className="border-gray-200 h-full">
+            <CardContent className="p-5 space-y-4">
+              <RecentActivity variant="embedded" />
+              <div className="h-px bg-gray-200" />
+              <QuickActions variant="embedded" />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Footer Note */}

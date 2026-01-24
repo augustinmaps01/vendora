@@ -163,14 +163,6 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
                   <div className="flex flex-wrap items-center gap-2">
                     <Pill>Subtotal <Money value={totals.subtotal} /></Pill>
-                    <Button
-                      className="rounded-xl bg-purple-600 hover:bg-purple-700"
-                      disabled={!canGoCheckout}
-                      onClick={() => setScreen("checkout")}
-                    >
-                      Checkout
-                      <ArrowRight className="h-4 w-4 ml-2" />
-                    </Button>
                   </div>
                 </div>
               </CardContent>
@@ -325,6 +317,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         ))}
                       </div>
                     )}
+
                   </div>
 
                   <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2 shrink-0`}>
@@ -342,6 +335,16 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
                     <div className="h-px bg-white/10" />
                     <StatRow label="Total" value={<Money value={totals.total} />} strong />
+                    {cart.length > 0 ? (
+                      <Button
+                        className="w-full rounded-xl bg-purple-600 hover:bg-purple-700"
+                        disabled={!canGoCheckout}
+                        onClick={() => setScreen("checkout")}
+                      >
+                        Checkout
+                        <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    ) : null}
                   </div>
                 </div>
               </CardContent>

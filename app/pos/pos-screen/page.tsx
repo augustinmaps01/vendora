@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -94,15 +94,6 @@ function Pill({ children }: { children: React.ReactNode }) {
 
 function Money({ value }: { value: number }) {
   return <span>{"\u20B1 "}{Math.round(value).toLocaleString()}</span>;
-}
-
-function StatRow({ label, value, strong }: { label: string; value: React.ReactNode; strong?: boolean }) {
-  return (
-    <div className={`flex items-center justify-between text-sm ${strong ? "font-semibold" : ""}`}>
-      <span className={THEME.muted}>{label}</span>
-      <span className={strong ? "text-white" : "text-white"}>{value}</span>
-    </div>
-  );
 }
 
 export default function VendoraPOS() {
@@ -243,12 +234,10 @@ export default function VendoraPOS() {
   const canGoCheckout = useMemo(() => cart.length > 0 && totals.total > 0, [cart.length, totals.total]);
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
-  const [saleId, setSaleId] = useState("");
-
-  useEffect(() => {
+  const [saleId] = useState(() => {
     const base = String(Math.floor(Date.now() / 1000)).slice(-6);
-    setSaleId(`SALE-${base}`);
-  }, []);
+    return `SALE-${base}`;
+  });
 
   const screenProps = {
     screen,

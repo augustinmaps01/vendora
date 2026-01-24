@@ -25,17 +25,25 @@ const pendingOrders = [
   },
 ]
 
-export function PendingOrders() {
-  return (
-    <Card>
-      <CardHeader>
+type PendingOrdersProps = {
+  variant?: "default" | "embedded"
+}
+
+export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  const content = (
+    <>
+      <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <Clock className="w-5 h-5 text-blue-500" />
           Pending Orders
         </CardTitle>
         <p className="text-sm text-gray-500">Fulfillment queue</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClass}>
         <div className="space-y-3">
           {pendingOrders.map((order) => (
             <div
@@ -64,6 +72,16 @@ export function PendingOrders() {
           ))}
         </div>
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

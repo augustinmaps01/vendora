@@ -10,14 +10,19 @@ const data = [
   { name: "Partial", value: 12, color: "#5b21b6" },
 ]
 
-export function PaymentMethodsChart() {
+type PaymentMethodsChartProps = {
+  className?: string
+  contentClassName?: string
+}
+
+export function PaymentMethodsChart({ className, contentClassName }: PaymentMethodsChartProps) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Payment Methods</CardTitle>
         <p className="text-sm text-gray-500">Distribution</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClassName}>
         <ResponsiveContainer width="100%" height={200}>
           <PieChart>
             <Pie

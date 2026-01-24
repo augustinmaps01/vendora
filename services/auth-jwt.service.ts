@@ -25,6 +25,60 @@ interface ApiResponse<T = any> {
   data: T
 }
 
+interface PosAuthResponse extends AuthResponse {
+  payment_url?: string
+}
+
+const normalizePosAuthResponse = (raw: unknown): ApiResponse<PosAuthResponse> => {
+  if (raw && typeof raw === 'object') {
+    const record = raw as Record<string, unknown>
+
+    if ('success' in record && 'data' in record) {
+      return {
+        success: Boolean(record.success),
+        message: typeof record.message === 'string' ? record.message : 'OK',
+        data: record.data as PosAuthResponse,
+      }
+    }
+
+    const message = typeof record.message === 'string' ? record.message : 'OK'
+    const token = typeof record.token === 'string' ? record.token : ''
+    const requiresTwoFactor =
+      typeof record.requires_two_factor === 'boolean' ? record.requires_two_factor : undefined
+    const requiresEmailVerification =
+      typeof record.requires_email_verification === 'boolean'
+        ? record.requires_email_verification
+        : undefined
+
+    return {
+      success: Boolean(token || requiresTwoFactor || requiresEmailVerification),
+      message,
+      data: {
+        user: (record.user ?? {}) as User,
+        token,
+        session_token:
+          typeof record.session_token === 'string' ? record.session_token : '',
+        refreshToken:
+          typeof record.refreshToken === 'string' ? record.refreshToken : undefined,
+        expires_in: typeof record.expires_in === 'number' ? record.expires_in : undefined,
+        requires_two_factor: requiresTwoFactor,
+        requires_email_verification: requiresEmailVerification,
+        payment_url: typeof record.payment_url === 'string' ? record.payment_url : undefined,
+      },
+    }
+  }
+
+  return {
+    success: false,
+    message: 'Invalid response from server',
+    data: {
+      user: {} as User,
+      token: '',
+      session_token: '',
+    },
+  }
+}
+
 export const authService = {
   /**
    * Admin Authentication Methods
@@ -194,27 +248,6 @@ export const authService = {
     },
 
     /**
-     * Verify 2FA code
-     */
-    async verify2FA(data: TwoFactorVerification): Promise<ApiResponse<AuthResponse>> {
-      const response = await axiosClient.post<ApiResponse<AuthResponse>>(
-        API_ENDPOINTS.VENDOR.VERIFY_2FA,
-        data
-      )
-
-      if (response.data.success && response.data.data.token) {
-        tokenManager.setAccessToken(response.data.data.token)
-        tokenManager.setUserType('vendor')
-
-        if (response.data.data.expires_in) {
-          tokenManager.setTokenExpiry(response.data.data.expires_in)
-        }
-      }
-
-      return response.data
-    },
-
-    /**
      * Logout vendor user
      */
     async logout(): Promise<void> {
@@ -224,59 +257,59 @@ export const authService = {
         tokenManager.clearTokens()
       }
     },
+  },
 
+  /**
+   * POS Authentication Methods
+   */
+  pos: {
     /**
-     * Get current authenticated vendor user
+     * Register a new POS vendor user
      */
-    async me(): Promise<User> {
-      const response = await axiosClient.get<ApiResponse<{ user: User }>>(API_ENDPOINTS.VENDOR.ME)
-      return response.data.data.user
-    },
+    async register(data: VendorRegisterData): Promise<ApiResponse<PosAuthResponse>> {
+      const response = await axiosClient.post(API_ENDPOINTS.VENDOR.REGISTER, data)
+      const normalized = normalizePosAuthResponse(response.data)
 
-    /**
-     * Request password reset
-     */
-    async forgotPassword(email: string): Promise<{ message: string }> {
-      const response = await axiosClient.post<ApiResponse>(
-        API_ENDPOINTS.VENDOR.FORGOT_PASSWORD,
-        { email, user_type: 'vendor' }
-      )
-      return { message: response.data.message }
-    },
+      if (normalized.success && normalized.data.token) {
+        tokenManager.setAccessToken(normalized.data.token)
+        tokenManager.setUserType('vendor')
 
-    /**
-     * Reset password with token
-     */
-    async resetPassword(data: PasswordReset): Promise<{ message: string }> {
-      const response = await axiosClient.post<ApiResponse>(
-        API_ENDPOINTS.VENDOR.RESET_PASSWORD,
-        data
-      )
-      return { message: response.data.message }
-    },
-
-    /**
-     * Verify email with token
-     */
-    async verifyEmail(token: string): Promise<{ message: string; user: User }> {
-      const response = await axiosClient.post<ApiResponse<{ user: User }>>(
-        API_ENDPOINTS.VENDOR.VERIFY_EMAIL,
-        { token, user_type: 'vendor' }
-      )
-      return {
-        message: response.data.message,
-        user: response.data.data.user,
+        if (normalized.data.expires_in) {
+          tokenManager.setTokenExpiry(normalized.data.expires_in)
+        }
       }
+
+      return normalized
     },
 
     /**
-     * Resend email verification
+     * Login POS vendor user
      */
-    async resendVerification(): Promise<{ message: string }> {
-      const response = await axiosClient.post<ApiResponse>(
-        API_ENDPOINTS.VENDOR.RESEND_VERIFICATION
-      )
-      return { message: response.data.message }
+    async login(credentials: VendorLoginCredentials): Promise<ApiResponse<PosAuthResponse>> {
+      const response = await axiosClient.post(API_ENDPOINTS.VENDOR.LOGIN, credentials)
+      const normalized = normalizePosAuthResponse(response.data)
+
+      if (normalized.success && normalized.data.token) {
+        tokenManager.setAccessToken(normalized.data.token)
+        tokenManager.setUserType('vendor')
+
+        if (normalized.data.expires_in) {
+          tokenManager.setTokenExpiry(normalized.data.expires_in)
+        }
+      }
+
+      return normalized
+    },
+
+    /**
+     * Logout POS vendor user
+     */
+    async logout(): Promise<void> {
+      try {
+        await axiosClient.post(API_ENDPOINTS.VENDOR.LOGOUT)
+      } finally {
+        tokenManager.clearTokens()
+      }
     },
   },
 }

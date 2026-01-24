@@ -22,44 +22,51 @@ const salesData = [
   { day: "Sun", pos: 18000, online: 20000, total: 38000 },
 ]
 
-export function SalesTrendChart() {
+type SalesTrendChartProps = {
+  className?: string
+  contentClassName?: string
+}
+
+export function SalesTrendChart({ className, contentClassName }: SalesTrendChartProps) {
   return (
-    <Card className="col-span-2">
+    <Card className={`col-span-2 ${className ?? ""}`.trim()}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Sales Trend</CardTitle>
         <p className="text-sm text-gray-500">Compare POS and Online sales</p>
       </CardHeader>
-      <CardContent>
-        <ResponsiveContainer width="100%" height={300}>
-          <LineChart data={salesData}>
-            <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-            <XAxis dataKey="day" stroke="#888" fontSize={12} />
-            <YAxis stroke="#888" fontSize={12} />
-            <Tooltip />
-            <Legend />
-            <Line
-              type="monotone"
-              dataKey="online"
-              stroke="#a78bfa"
-              strokeWidth={2}
-              dot={{ fill: "#a78bfa", r: 4 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="pos"
-              stroke="#7c3aed"
-              strokeWidth={2}
-              dot={{ fill: "#7c3aed", r: 4 }}
-            />
-            <Line
-              type="monotone"
-              dataKey="total"
-              stroke="#e0e0e0"
-              strokeWidth={1}
-              strokeDasharray="5 5"
-            />
-          </LineChart>
-        </ResponsiveContainer>
+      <CardContent className={`flex-1 ${contentClassName ?? ""}`.trim()}>
+        <div className="h-[260px] sm:h-[300px] lg:h-full">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={salesData}>
+              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
+              <XAxis dataKey="day" stroke="#888" fontSize={12} />
+              <YAxis stroke="#888" fontSize={12} />
+              <Tooltip />
+              <Legend />
+              <Line
+                type="monotone"
+                dataKey="online"
+                stroke="#a78bfa"
+                strokeWidth={2}
+                dot={{ fill: "#a78bfa", r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="pos"
+                stroke="#7c3aed"
+                strokeWidth={2}
+                dot={{ fill: "#7c3aed", r: 4 }}
+              />
+              <Line
+                type="monotone"
+                dataKey="total"
+                stroke="#e0e0e0"
+                strokeWidth={1}
+                strokeDasharray="5 5"
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
       </CardContent>
     </Card>
   )

@@ -23,17 +23,25 @@ const lowStockItems = [
   },
 ]
 
-export function LowStockAlerts() {
-  return (
-    <Card>
-      <CardHeader>
+type LowStockAlertsProps = {
+  variant?: "default" | "embedded"
+}
+
+export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  const content = (
+    <>
+      <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold flex items-center gap-2">
           <AlertTriangle className="w-5 h-5 text-orange-500" />
           Low Stock Alerts
         </CardTitle>
         <p className="text-sm text-gray-500">Needs attention</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClass}>
         <div className="space-y-3">
           {lowStockItems.map((item, index) => (
             <div
@@ -56,6 +64,16 @@ export function LowStockAlerts() {
           ))}
         </div>
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

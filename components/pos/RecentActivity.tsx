@@ -30,14 +30,22 @@ const activities = [
   },
 ]
 
-export function RecentActivity() {
-  return (
-    <Card>
-      <CardHeader>
+type RecentActivityProps = {
+  variant?: "default" | "embedded"
+}
+
+export function RecentActivity({ variant = "default" }: RecentActivityProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  const content = (
+    <>
+      <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
         <p className="text-sm text-gray-500">Live updates</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClass}>
         <div className="space-y-3">
           {activities.map((activity, index) => {
             const Icon = activity.icon
@@ -55,6 +63,16 @@ export function RecentActivity() {
           })}
         </div>
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

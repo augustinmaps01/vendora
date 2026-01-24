@@ -13,13 +13,21 @@ const products = [
   { name: "Soap Bar Pack", units: 55, revenue: 13500 },
 ]
 
-export function TopSellingProducts() {
+type TopSellingProductsProps = {
+  variant?: "default" | "embedded"
+}
+
+export function TopSellingProducts({ variant = "default" }: TopSellingProductsProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
   // Calculate max revenue for percentage calculations
   const maxRevenue = Math.max(...products.map(p => p.revenue))
 
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
+  const content = (
+    <>
+      <CardHeader className={`flex flex-row items-center justify-between ${headerClass ?? ""}`}>
         <div>
           <CardTitle className="text-lg font-semibold">Top Selling Products</CardTitle>
           <p className="text-sm text-gray-500">Units and revenue</p>
@@ -29,11 +37,11 @@ export function TopSellingProducts() {
           View
         </Button>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClass}>
         {/* Bar Chart */}
         <div className="mb-6">
           <ResponsiveContainer width="100%" height={200}>
-            <BarChart data={products}>
+            <BarChart data={products} barCategoryGap={18} barGap={6}>
               <XAxis dataKey="name" hide />
               <YAxis hide />
               <Tooltip
@@ -46,8 +54,8 @@ export function TopSellingProducts() {
                 iconType="circle"
                 wrapperStyle={{ fontSize: '12px' }}
               />
-              <Bar dataKey="revenue" fill="#a78bfa" radius={[4, 4, 0, 0]} name="Revenue" />
-              <Bar dataKey="units" fill="#7c3aed" radius={[4, 4, 0, 0]} name="Units" />
+              <Bar dataKey="revenue" fill="#a78bfa" radius={[4, 4, 0, 0]} name="Revenue" barSize={28} />
+              <Bar dataKey="units" fill="#7c3aed" radius={[4, 4, 0, 0]} name="Units" barSize={28} />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -69,9 +77,9 @@ export function TopSellingProducts() {
                   </div>
                 </div>
                 {/* Revenue Bar */}
-                <div className="w-full bg-gray-100 rounded-full h-2 overflow-hidden">
+                <div className="w-full bg-gray-100 rounded-full h-[2px] overflow-hidden">
                   <div
-                    className="bg-gradient-to-r from-purple-600 to-purple-400 h-2 rounded-full transition-all duration-500"
+                    className="bg-gradient-to-r from-purple-600 to-purple-400 h-[2px] rounded-full transition-all duration-500"
                     style={{ width: `${revenuePercentage}%` }}
                   />
                 </div>
@@ -80,6 +88,16 @@ export function TopSellingProducts() {
           })}
         </div>
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

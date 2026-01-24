@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import { useState } from "react"
 import { Button } from "@/components/ui/button"
@@ -12,6 +12,8 @@ import {
   Search,
   Plus,
   Package,
+  DollarSign,
+  CheckCircle2,
   Edit,
   Trash2,
   Filter,
@@ -314,29 +316,56 @@ export default function ProductsPage() {
       {/* Statistics */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:grid-cols-4 md:gap-6">
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-xs sm:text-sm text-gray-600">Total Products</div>
-          <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{products.length}</div>
-        </div>
-        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-xs sm:text-sm text-gray-600">Low Stock</div>
-          <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-0.5 sm:mt-1">
-            {products.filter(p => p.stock <= (p.minStock || 0)).length}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Products</div>
+              <div className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{products.length}</div>
+            </div>
+            <div className="h-9 w-9 rounded-lg bg-gray-100 text-gray-600 flex items-center justify-center">
+              <Package className="h-5 w-5" />
+            </div>
           </div>
         </div>
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-xs sm:text-sm text-gray-600">Active Products</div>
-          <div className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">
-            {products.filter(p => p.isActive).length}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs sm:text-sm text-gray-600">Low Stock</div>
+              <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-0.5 sm:mt-1">
+                {products.filter(p => p.stock <= (p.minStock || 0)).length}
+              </div>
+            </div>
+            <div className="h-9 w-9 rounded-lg bg-orange-50 text-orange-600 flex items-center justify-center">
+              <AlertTriangle className="h-5 w-5" />
+            </div>
           </div>
         </div>
         <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
-          <div className="text-xs sm:text-sm text-gray-600">Total Value</div>
-          <div className="text-lg sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">
-            ₱{products.reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs sm:text-sm text-gray-600">Active Products</div>
+              <div className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">
+                {products.filter(p => p.isActive).length}
+              </div>
+            </div>
+            <div className="h-9 w-9 rounded-lg bg-green-50 text-green-600 flex items-center justify-center">
+              <CheckCircle2 className="h-5 w-5" />
+            </div>
+          </div>
+        </div>
+        <div className="bg-white p-3 sm:p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <div className="text-xs sm:text-sm text-gray-600">Total Value</div>
+              <div className="text-lg sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">
+                ₱{products.reduce((sum, p) => sum + (p.price * p.stock), 0).toLocaleString()}
+              </div>
+            </div>
+            <div className="h-9 w-9 rounded-lg bg-purple-50 text-purple-600 flex items-center justify-center">
+              <DollarSign className="h-5 w-5" />
+            </div>
           </div>
         </div>
       </div>
-
       {/* Products Table - Desktop */}
       <div className="hidden lg:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -414,9 +443,9 @@ export default function ProductsPage() {
                       <Badge variant="secondary">{product.category}</Badge>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
-                      <div className="text-sm font-medium text-gray-900">₱{product.price.toLocaleString()}</div>
+                      <div className="text-sm font-medium text-gray-900">â‚±{product.price.toLocaleString()}</div>
                       {product.costPrice && product.costPrice > 0 && (
-                        <div className="text-xs text-gray-500">Cost: ₱{product.costPrice.toLocaleString()}</div>
+                        <div className="text-xs text-gray-500">Cost: â‚±{product.costPrice.toLocaleString()}</div>
                       )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
@@ -502,7 +531,7 @@ export default function ProductsPage() {
               <div className="grid grid-cols-2 gap-2 text-sm mb-3">
                 <div>
                   <span className="text-gray-500">Price:</span>
-                  <span className="text-gray-900 font-medium ml-1">₱{product.price.toLocaleString()}</span>
+                  <span className="text-gray-900 font-medium ml-1">â‚±{product.price.toLocaleString()}</span>
                 </div>
                 <div>
                   <span className="text-gray-500">Stock:</span>
@@ -686,7 +715,7 @@ export default function ProductsPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="price">Selling Price (₱) *</Label>
+                  <Label htmlFor="price">Selling Price (â‚±) *</Label>
                   <Input
                     id="price"
                     type="number"
@@ -703,7 +732,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="costPrice">Cost Price (₱)</Label>
+                  <Label htmlFor="costPrice">Cost Price (â‚±)</Label>
                   <Input
                     id="costPrice"
                     type="number"
@@ -719,7 +748,7 @@ export default function ProductsPage() {
                   )}
                   {formData.price > 0 && formData.costPrice && formData.costPrice > 0 && (
                     <p className="text-xs text-gray-500">
-                      Margin: ₱{(formData.price - formData.costPrice).toFixed(2)} ({((formData.price - formData.costPrice) / formData.price * 100).toFixed(1)}%)
+                      Margin: â‚±{(formData.price - formData.costPrice).toFixed(2)} ({((formData.price - formData.costPrice) / formData.price * 100).toFixed(1)}%)
                     </p>
                   )}
                 </div>
@@ -1000,7 +1029,7 @@ export default function ProductsPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="space-y-2">
-                  <Label htmlFor="edit-price">Selling Price (₱) *</Label>
+                  <Label htmlFor="edit-price">Selling Price (â‚±) *</Label>
                   <Input
                     id="edit-price"
                     type="number"
@@ -1017,7 +1046,7 @@ export default function ProductsPage() {
                 </div>
 
                 <div className="space-y-2">
-                  <Label htmlFor="edit-costPrice">Cost Price (₱)</Label>
+                  <Label htmlFor="edit-costPrice">Cost Price (â‚±)</Label>
                   <Input
                     id="edit-costPrice"
                     type="number"
@@ -1033,7 +1062,7 @@ export default function ProductsPage() {
                   )}
                   {formData.price > 0 && formData.costPrice && formData.costPrice > 0 && (
                     <p className="text-xs text-gray-500">
-                      Margin: ₱{(formData.price - formData.costPrice).toFixed(2)} ({((formData.price - formData.costPrice) / formData.price * 100).toFixed(1)}%)
+                      Margin: â‚±{(formData.price - formData.costPrice).toFixed(2)} ({((formData.price - formData.costPrice) / formData.price * 100).toFixed(1)}%)
                     </p>
                   )}
                 </div>
@@ -1220,3 +1249,5 @@ export default function ProductsPage() {
     </div>
   )
 }
+
+

@@ -55,7 +55,7 @@ export default function VendorLoginPage() {
       }
 
       // Use authService which properly handles API calls
-      const result = await authService.vendor.login(credentials)
+      const result = await authService.pos.login(credentials)
 
       if (!result.success) {
         throw new Error(result.message || "Login failed")

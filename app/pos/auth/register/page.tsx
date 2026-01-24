@@ -83,7 +83,7 @@ export default function VendorRegisterPage() {
       }
 
       // Use the authService which properly handles API calls
-      const result = await authService.vendor.register(registerData)
+      const result = await authService.pos.register(registerData)
 
       if (!result.success) {
         throw new Error(result.message || "Registration failed")

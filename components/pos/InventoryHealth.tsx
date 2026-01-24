@@ -9,14 +9,22 @@ const inventoryData = [
   { label: "Out of Stock", value: 6 },
 ]
 
-export function InventoryHealth() {
-  return (
-    <Card>
-      <CardHeader>
+type InventoryHealthProps = {
+  variant?: "default" | "embedded"
+}
+
+export function InventoryHealth({ variant = "default" }: InventoryHealthProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  const content = (
+    <>
+      <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
         <p className="text-sm text-gray-500">Stock status</p>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className={`space-y-6 ${contentClass ?? ""}`}>
         {inventoryData.map((item) => (
           <div key={item.label} className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -32,6 +40,16 @@ export function InventoryHealth() {
           </div>
         ))}
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

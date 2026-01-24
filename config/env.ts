@@ -25,7 +25,80 @@ const getNumberEnvVar = (key: string, defaultValue: number): number => {
   return isNaN(num) ? defaultValue : num
 }
 
-export const env = {
+export interface Environment {
+  app: {
+    name: string
+    url: string
+    env: string
+    isDevelopment: boolean
+    isProduction: boolean
+  }
+  api: {
+    baseUrl: string
+    version: string
+    timeout: number
+  }
+  auth: {
+    jwtSecret: string
+    tokenKey: string
+    refreshTokenKey: string
+    sessionTimeout: number
+  }
+  sanctum: {
+    url: string
+    statefulDomains: string
+  }
+  payment: {
+    gcash: {
+      enabled: boolean
+      publicKey: string
+    }
+    paymaya: {
+      enabled: boolean
+      publicKey: string
+    }
+    stripe: {
+      publishableKey: string
+    }
+  }
+  storage: {
+    url: string
+    cdnUrl: string
+  }
+  features: {
+    analytics: boolean
+    liveChat: boolean
+    barcodeScanner: boolean
+    receiptPrinter: boolean
+  }
+  services: {
+    googleMapsApiKey: string
+    gaTrackingId: string
+    fbPixelId: string
+  }
+  business: {
+    currency: string
+    currencySymbol: string
+    taxRate: number
+    timezone: string
+  }
+  contact: {
+    supportEmail: string
+    salesEmail: string
+  }
+  social: {
+    facebook: string
+    instagram: string
+    twitter: string
+  }
+  debug: {
+    enabled: boolean
+    showErrorDetails: boolean
+    mockApi: boolean
+  }
+}
+
+export const env: Environment = {
   // Application
   app: {
     name: getEnvVar("NEXT_PUBLIC_APP_NAME", "Vendora"),
@@ -37,7 +110,7 @@ export const env = {
 
   // API Configuration
   api: {
-    baseUrl: getEnvVar("NEXT_PUBLIC_API_URL", "http://localhost:8000/api"),
+    baseUrl: getEnvVar("NEXT_PUBLIC_API_URL", "https://vendora-api.abedubas.dev/api"),
     version: getEnvVar("NEXT_PUBLIC_API_VERSION", "v1"),
     timeout: getNumberEnvVar("NEXT_PUBLIC_API_TIMEOUT", 30000),
   },
@@ -47,7 +120,7 @@ export const env = {
     jwtSecret: getEnvVar("NEXT_PUBLIC_JWT_SECRET", ""),
     tokenKey: getEnvVar("NEXT_PUBLIC_AUTH_TOKEN_KEY", "vendora_auth_token"),
     refreshTokenKey: getEnvVar("NEXT_PUBLIC_REFRESH_TOKEN_KEY", "vendora_refresh_token"),
-    sessionTimeout: getNumberEnvVar("NEXT_PUBLIC_SESSION_TIMEOUT", 60),
+    sessionTimeout: getNumberEnvVar("NEXT_PUBLIC_SESSION_TIMEOUT", 60)
   },
 
   // Laravel Sanctum
@@ -119,7 +192,4 @@ export const env = {
     showErrorDetails: getBoolEnvVar("NEXT_PUBLIC_SHOW_ERROR_DETAILS", false),
     mockApi: getBoolEnvVar("NEXT_PUBLIC_MOCK_API", false),
   },
-} as const
-
-// Type-safe environment access
-export type Environment = typeof env
+}

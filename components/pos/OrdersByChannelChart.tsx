@@ -8,14 +8,19 @@ const data = [
   { name: "Online", value: 38, color: "#a78bfa" },
 ]
 
-export function OrdersByChannelChart() {
+type OrdersByChannelChartProps = {
+  className?: string
+  contentClassName?: string
+}
+
+export function OrdersByChannelChart({ className, contentClassName }: OrdersByChannelChartProps) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Orders by Channel</CardTitle>
         <p className="text-sm text-gray-500">POS vs Online</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClassName}>
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie

@@ -27,14 +27,22 @@ const actions = [
   },
 ]
 
-export function QuickActions() {
-  return (
-    <Card>
-      <CardHeader>
+type QuickActionsProps = {
+  variant?: "default" | "embedded"
+}
+
+export function QuickActions({ variant = "default" }: QuickActionsProps) {
+  const isEmbedded = variant === "embedded"
+  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
+  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  const content = (
+    <>
+      <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
         <p className="text-sm text-gray-500">Common tasks</p>
       </CardHeader>
-      <CardContent>
+      <CardContent className={contentClass}>
         <div className="space-y-2">
           {actions.map((action, index) => {
             const Icon = action.icon
@@ -51,6 +59,16 @@ export function QuickActions() {
           })}
         </div>
       </CardContent>
+    </>
+  )
+
+  if (isEmbedded) {
+    return <div>{content}</div>
+  }
+
+  return (
+    <Card>
+      {content}
     </Card>
   )
 }

@@ -19,11 +19,11 @@ export const API_ENDPOINTS = {
     RESEND_VERIFICATION: '/admin/auth/resend-verification',
   },
 
-  // Vendor/POS Authentication Endpoints
+  // Vendor Authentication Endpoints
   VENDOR: {
-    REGISTER: '/vendor/auth/register',
-    LOGIN: '/vendor/auth/login',
-    LOGOUT: '/vendor/auth/logout',
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
     REFRESH: '/vendor/auth/refresh',
     ME: '/vendor/auth/me',
     VERIFY_2FA: '/vendor/auth/verify-2fa',

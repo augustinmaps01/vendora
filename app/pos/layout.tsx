@@ -24,7 +24,6 @@ import {
   X,
   LogOut,
   User,
-  Search,
   ChevronDown,
   Store,
   CreditCard,
@@ -280,18 +279,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           </div>
         </div>
 
-        {/* Search - Always visible on mobile/tablet, hidden when collapsed on laptop/desktop */}
-        <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
-          <div className="relative">
-            <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-white/60" />
-            <input
-              type="text"
-              placeholder="Search menu"
-              className="w-full py-2 pl-10 pr-4 text-sm text-white border rounded-lg bg-white/10 border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
-            />
-          </div>
-        </div>
-
         {/* Navigation */}
         <nav className={`flex-1 min-h-0 px-3 pt-2 pb-4 overflow-y-auto overflow-x-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:px-2' : ''}`}>
           <div className="space-y-4">
@@ -536,7 +523,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               {/* Laptop/Desktop: Title */}
               <h2 className="hidden text-xl font-semibold text-white lg:block">POS System</h2>
 
-              {/* Search Bar */}
+              {/*
+              Search Bar (disabled per request)
               <div className="items-center hidden w-full max-w-md gap-2 px-4 py-2 ml-4 border rounded-lg lg:flex bg-white/10 border-white/20">
                 <Search className="w-4 h-4 text-white/70" />
                 <input
@@ -545,6 +533,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                   className="w-full text-sm text-white bg-transparent border-none outline-none placeholder:text-white/60"
                 />
               </div>
+              */}
             </div>
 
             {/* Right Side - Notifications & User Profile */}
@@ -645,7 +634,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <div className="max-w-full px-4 pb-24 overflow-x-hidden sm:px-6 sm:pb-6">
+        <div className="max-w-full px-4 pt-6 pb-24 overflow-x-hidden sm:px-6 sm:pt-6 sm:pb-6">
           {children}
         </div>
 
@@ -750,3 +739,16 @@ export default function POSLayout({ children }: { children: ReactNode }) {
     </div>
   )
 }
+        {/*
+        Sidebar search (disabled per request)
+        <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
+          <div className="relative">
+            <Search className="absolute w-4 h-4 transform -translate-y-1/2 left-3 top-1/2 text-white/60" />
+            <input
+              type="text"
+              placeholder="Search menu"
+              className="w-full py-2 pl-10 pr-4 text-sm text-white border rounded-lg bg-white/10 border-white/20 placeholder-white/50 focus:outline-none focus:ring-2 focus:ring-white/30 focus:border-transparent"
+            />
+          </div>
+        </div>
+        */}
