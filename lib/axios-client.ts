@@ -114,6 +114,39 @@ let failedQueue: Array<{
   reject: (reason?: any) => void
 }> = []
 
+const AUTH_PATHS = [
+  API_ENDPOINTS.ADMIN.LOGIN,
+  API_ENDPOINTS.ADMIN.REGISTER,
+  API_ENDPOINTS.ADMIN.VERIFY_2FA,
+  API_ENDPOINTS.ADMIN.FORGOT_PASSWORD,
+  API_ENDPOINTS.ADMIN.RESET_PASSWORD,
+  API_ENDPOINTS.ADMIN.VERIFY_EMAIL,
+  API_ENDPOINTS.ADMIN.RESEND_VERIFICATION,
+  API_ENDPOINTS.VENDOR.LOGIN,
+  API_ENDPOINTS.VENDOR.REGISTER,
+  API_ENDPOINTS.VENDOR.VERIFY_2FA,
+  API_ENDPOINTS.VENDOR.FORGOT_PASSWORD,
+  API_ENDPOINTS.VENDOR.RESET_PASSWORD,
+  API_ENDPOINTS.VENDOR.VERIFY_EMAIL,
+  API_ENDPOINTS.VENDOR.RESEND_VERIFICATION,
+]
+
+const isAuthRequest = (url?: string): boolean => {
+  if (!url) return false
+  return AUTH_PATHS.some((path) => url.includes(path))
+}
+
+const resolveLoginPath = (userType?: 'admin' | 'vendor' | null): string => {
+  if (userType === 'vendor') return '/pos/auth/login'
+  if (userType === 'admin') return '/admin/auth/login'
+  if (typeof window !== 'undefined') {
+    return window.location.pathname.startsWith('/pos')
+      ? '/pos/auth/login'
+      : '/admin/auth/login'
+  }
+  return '/admin/auth/login'
+}
+
 const processQueue = (error: any, token: string | null = null) => {
   failedQueue.forEach((prom) => {
     if (error) {
@@ -141,6 +174,10 @@ axiosClient.interceptors.response.use(
   },
   async (error: AxiosError<any>) => {
     const originalRequest: any = error.config
+
+    if (error.response?.status === 401 && isAuthRequest(originalRequest?.url)) {
+      return Promise.reject(error)
+    }
 
     // Handle network errors (no response from server)
     if (!error.response) {
@@ -173,10 +210,8 @@ axiosClient.interceptors.response.use(
     // If we've already tried to refresh, don't try again
     if (originalRequest._retry) {
       tokenManager.clearTokens()
-      const userType = tokenManager.getUserType() || 'admin'
       if (typeof window !== 'undefined') {
-        // Map vendor to pos for correct route
-        const loginPath = userType === 'vendor' ? '/pos/auth/login' : '/admin/auth/login'
+        const loginPath = resolveLoginPath(tokenManager.getUserType())
         window.location.href = loginPath
       }
       return Promise.reject(error)
@@ -206,7 +241,7 @@ axiosClient.interceptors.response.use(
     if (!userType) {
       tokenManager.clearTokens()
       if (typeof window !== 'undefined') {
-        window.location.href = '/admin/auth/login'
+        window.location.href = resolveLoginPath(null)
       }
       return Promise.reject(error)
     }
@@ -243,7 +278,7 @@ axiosClient.interceptors.response.use(
       tokenManager.clearTokens()
 
       if (typeof window !== 'undefined') {
-        window.location.href = `/${userType}/auth/login`
+        window.location.href = resolveLoginPath(userType)
       }
 
       return Promise.reject(refreshError)

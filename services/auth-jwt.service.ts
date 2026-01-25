@@ -29,20 +29,37 @@ interface PosAuthResponse extends AuthResponse {
   payment_url?: string
 }
 
+const readString = (value: unknown): string => (typeof value === 'string' ? value : '')
+
+const getTokenFromRecord = (record: Record<string, unknown>): string =>
+  readString(record.token) || readString(record.access_token)
+
+const getRefreshTokenFromRecord = (record: Record<string, unknown>): string | undefined =>
+  readString(record.refreshToken) || readString(record.refresh_token) || undefined
+
 const normalizePosAuthResponse = (raw: unknown): ApiResponse<PosAuthResponse> => {
   if (raw && typeof raw === 'object') {
     const record = raw as Record<string, unknown>
 
     if ('success' in record && 'data' in record) {
+      const data = record.data as Record<string, unknown>
+      const token = getTokenFromRecord(data)
+      const refreshToken = getRefreshTokenFromRecord(data)
+
       return {
         success: Boolean(record.success),
         message: typeof record.message === 'string' ? record.message : 'OK',
-        data: record.data as PosAuthResponse,
+        data: {
+          ...(data as PosAuthResponse),
+          token,
+          refreshToken,
+        },
       }
     }
 
     const message = typeof record.message === 'string' ? record.message : 'OK'
-    const token = typeof record.token === 'string' ? record.token : ''
+    const token = getTokenFromRecord(record)
+    const refreshToken = getRefreshTokenFromRecord(record)
     const requiresTwoFactor =
       typeof record.requires_two_factor === 'boolean' ? record.requires_two_factor : undefined
     const requiresEmailVerification =
@@ -58,8 +75,7 @@ const normalizePosAuthResponse = (raw: unknown): ApiResponse<PosAuthResponse> =>
         token,
         session_token:
           typeof record.session_token === 'string' ? record.session_token : '',
-        refreshToken:
-          typeof record.refreshToken === 'string' ? record.refreshToken : undefined,
+        refreshToken,
         expires_in: typeof record.expires_in === 'number' ? record.expires_in : undefined,
         requires_two_factor: requiresTwoFactor,
         requires_email_verification: requiresEmailVerification,
@@ -94,8 +110,10 @@ export const authService = {
       )
 
       // Store token if registration is successful and returns a token
-      if (response.data.success && response.data.data.token) {
-        tokenManager.setAccessToken(response.data.data.token)
+      const registerData = (response.data.data ?? {}) as Record<string, unknown>
+      const registerToken = getTokenFromRecord(registerData)
+      if (response.data.success && registerToken) {
+        tokenManager.setAccessToken(registerToken)
         tokenManager.setUserType('admin')
 
         if (response.data.data.expires_in) {
@@ -115,8 +133,10 @@ export const authService = {
         credentials
       )
 
-      if (response.data.success && response.data.data.token) {
-        tokenManager.setAccessToken(response.data.data.token)
+      const loginData = (response.data.data ?? {}) as Record<string, unknown>
+      const loginToken = getTokenFromRecord(loginData)
+      if (response.data.success && loginToken) {
+        tokenManager.setAccessToken(loginToken)
         tokenManager.setUserType('admin')
 
         if (response.data.data.expires_in) {
@@ -136,8 +156,10 @@ export const authService = {
         data
       )
 
-      if (response.data.success && response.data.data.token) {
-        tokenManager.setAccessToken(response.data.data.token)
+      const verifyData = (response.data.data ?? {}) as Record<string, unknown>
+      const verifyToken = getTokenFromRecord(verifyData)
+      if (response.data.success && verifyToken) {
+        tokenManager.setAccessToken(verifyToken)
         tokenManager.setUserType('admin')
 
         if (response.data.data.expires_in) {
@@ -235,8 +257,10 @@ export const authService = {
         credentials
       )
 
-      if (response.data.success && response.data.data.token) {
-        tokenManager.setAccessToken(response.data.data.token)
+      const loginData = (response.data.data ?? {}) as Record<string, unknown>
+      const loginToken = getTokenFromRecord(loginData)
+      if (response.data.success && loginToken) {
+        tokenManager.setAccessToken(loginToken)
         tokenManager.setUserType('vendor')
 
         if (response.data.data.expires_in) {
@@ -287,6 +311,25 @@ export const authService = {
      */
     async login(credentials: VendorLoginCredentials): Promise<ApiResponse<PosAuthResponse>> {
       const response = await axiosClient.post(API_ENDPOINTS.VENDOR.LOGIN, credentials)
+      const normalized = normalizePosAuthResponse(response.data)
+
+      if (normalized.success && normalized.data.token) {
+        tokenManager.setAccessToken(normalized.data.token)
+        tokenManager.setUserType('vendor')
+
+        if (normalized.data.expires_in) {
+          tokenManager.setTokenExpiry(normalized.data.expires_in)
+        }
+      }
+
+      return normalized
+    },
+
+    /**
+     * Verify POS vendor 2FA
+     */
+    async verify2FA(data: TwoFactorVerification): Promise<ApiResponse<PosAuthResponse>> {
+      const response = await axiosClient.post(API_ENDPOINTS.VENDOR.VERIFY_2FA, data)
       const normalized = normalizePosAuthResponse(response.data)
 
       if (normalized.success && normalized.data.token) {

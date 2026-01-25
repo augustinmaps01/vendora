@@ -69,6 +69,7 @@ export interface AdminRegisterData {
 }
 
 export interface VendorRegisterData {
+  name?: string
   business_name: string
   email: string
   password: string

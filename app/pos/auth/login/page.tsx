@@ -101,19 +101,13 @@ export default function VendorLoginPage() {
     try {
       const email = getValues("email")
 
-      const response = await fetch("/api/vendor/auth/verify-2fa", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          email,
-          code: twoFactorCode,
-          user_type: "vendor",
-        }),
+      const result = await authService.pos.verify2FA({
+        email,
+        code: twoFactorCode,
+        user_type: "vendor",
       })
 
-      const result = await response.json()
-
-      if (!response.ok) {
+      if (!result.success) {
         throw new Error(result.message || "Invalid verification code")
       }
 

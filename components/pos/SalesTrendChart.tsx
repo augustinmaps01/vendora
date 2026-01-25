@@ -29,13 +29,13 @@ type SalesTrendChartProps = {
 
 export function SalesTrendChart({ className, contentClassName }: SalesTrendChartProps) {
   return (
-    <Card className={`col-span-2 ${className ?? ""}`.trim()}>
+    <Card className={`col-span-2 flex flex-col ${className ?? ""}`.trim()}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Sales Trend</CardTitle>
         <p className="text-sm text-gray-500">Compare POS and Online sales</p>
       </CardHeader>
       <CardContent className={`flex-1 ${contentClassName ?? ""}`.trim()}>
-        <div className="h-[260px] sm:h-[300px] lg:h-full">
+        <div className="min-h-[260px] h-[260px] sm:h-[300px] lg:h-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={salesData}>
               <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />

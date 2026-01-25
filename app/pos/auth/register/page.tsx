@@ -79,6 +79,7 @@ export default function VendorRegisterPage() {
     try {
       const registerData: VendorRegisterData = {
         ...data,
+        name: data.business_name,
         subscription_plan: selectedPlan,
         user_type: "vendor",
       }

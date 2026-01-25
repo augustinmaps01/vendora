@@ -98,7 +98,7 @@ export interface Environment {
   }
 }
 
-export const env: Environment = {
+const createEnv = (): Environment => ({
   // Application
   app: {
     name: getEnvVar("NEXT_PUBLIC_APP_NAME", "Vendora"),
@@ -192,4 +192,6 @@ export const env: Environment = {
     showErrorDetails: getBoolEnvVar("NEXT_PUBLIC_SHOW_ERROR_DETAILS", false),
     mockApi: getBoolEnvVar("NEXT_PUBLIC_MOCK_API", false),
   },
-}
+})
+
+export const env = createEnv()
