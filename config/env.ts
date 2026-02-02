@@ -12,6 +12,12 @@ const getEnvVar = (key: string, defaultValue?: string): string => {
   return value || ""
 }
 
+const getOptionalEnvVar = (key: string, defaultValue = ""): string => {
+  const value = process.env[key]
+  if (value === undefined) return defaultValue
+  return value
+}
+
 const getBoolEnvVar = (key: string, defaultValue = false): boolean => {
   const value = process.env[key]
   if (value === undefined) return defaultValue
@@ -37,6 +43,7 @@ export interface Environment {
     baseUrl: string
     version: string
     timeout: number
+    withCredentials: boolean
   }
   auth: {
     jwtSecret: string
@@ -111,14 +118,15 @@ const createEnv = (): Environment => ({
   // API Configuration
   api: {
     baseUrl: getEnvVar("NEXT_PUBLIC_API_URL", "https://vendora-api.abedubas.dev/api"),
-    version: getEnvVar("NEXT_PUBLIC_API_VERSION", "v1"),
+    version: getOptionalEnvVar("NEXT_PUBLIC_API_VERSION", ""),
     timeout: getNumberEnvVar("NEXT_PUBLIC_API_TIMEOUT", 30000),
+    withCredentials: getBoolEnvVar("NEXT_PUBLIC_API_WITH_CREDENTIALS", false),
   },
 
   // Authentication
   auth: {
     jwtSecret: getEnvVar("NEXT_PUBLIC_JWT_SECRET", ""),
-    tokenKey: getEnvVar("NEXT_PUBLIC_AUTH_TOKEN_KEY", "vendora_auth_token"),
+    tokenKey: getEnvVar("NEXT_PUBLIC_AUTH_TOKEN_KEY", "vendora_access_token"),
     refreshTokenKey: getEnvVar("NEXT_PUBLIC_REFRESH_TOKEN_KEY", "vendora_refresh_token"),
     sessionTimeout: getNumberEnvVar("NEXT_PUBLIC_SESSION_TIMEOUT", 60)
   },

@@ -6,6 +6,7 @@
 
 import axiosClient, { tokenManager } from '@/lib/axios-client'
 import { API_ENDPOINTS } from '@/config/api-endpoints'
+import { TOKEN_CONFIG } from '@/config/api.config'
 import {
   AdminLoginCredentials,
   VendorLoginCredentials,
@@ -36,6 +37,16 @@ const getTokenFromRecord = (record: Record<string, unknown>): string =>
 
 const getRefreshTokenFromRecord = (record: Record<string, unknown>): string | undefined =>
   readString(record.refreshToken) || readString(record.refresh_token) || undefined
+
+const storeUserProfile = (user?: User) => {
+  if (typeof window === 'undefined' || !user) return
+  localStorage.setItem(TOKEN_CONFIG.USER_PROFILE_KEY, JSON.stringify(user))
+}
+
+const clearUserProfile = () => {
+  if (typeof window === 'undefined') return
+  localStorage.removeItem(TOKEN_CONFIG.USER_PROFILE_KEY)
+}
 
 const normalizePosAuthResponse = (raw: unknown): ApiResponse<PosAuthResponse> => {
   if (raw && typeof raw === 'object') {
@@ -115,6 +126,7 @@ export const authService = {
       if (response.data.success && registerToken) {
         tokenManager.setAccessToken(registerToken)
         tokenManager.setUserType('admin')
+        storeUserProfile(response.data.data?.user)
 
         if (response.data.data.expires_in) {
           tokenManager.setTokenExpiry(response.data.data.expires_in)
@@ -138,6 +150,7 @@ export const authService = {
       if (response.data.success && loginToken) {
         tokenManager.setAccessToken(loginToken)
         tokenManager.setUserType('admin')
+        storeUserProfile(response.data.data?.user)
 
         if (response.data.data.expires_in) {
           tokenManager.setTokenExpiry(response.data.data.expires_in)
@@ -161,6 +174,7 @@ export const authService = {
       if (response.data.success && verifyToken) {
         tokenManager.setAccessToken(verifyToken)
         tokenManager.setUserType('admin')
+        storeUserProfile(response.data.data?.user)
 
         if (response.data.data.expires_in) {
           tokenManager.setTokenExpiry(response.data.data.expires_in)
@@ -178,7 +192,29 @@ export const authService = {
         await axiosClient.post(API_ENDPOINTS.ADMIN.LOGOUT)
       } finally {
         tokenManager.clearTokens()
+        clearUserProfile()
       }
+    },
+
+    /**
+     * Refresh admin token
+     */
+    async refresh(): Promise<ApiResponse<AuthResponse>> {
+      const response = await axiosClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.ADMIN.REFRESH
+      )
+      const refreshData = (response.data.data ?? {}) as Record<string, unknown>
+      const refreshToken = getTokenFromRecord(refreshData)
+      if (response.data.success && refreshToken) {
+        tokenManager.setAccessToken(refreshToken)
+        tokenManager.setUserType('admin')
+        storeUserProfile(response.data.data?.user)
+
+        if (response.data.data.expires_in) {
+          tokenManager.setTokenExpiry(response.data.data.expires_in)
+        }
+      }
+      return response.data
     },
 
     /**
@@ -186,6 +222,7 @@ export const authService = {
      */
     async me(): Promise<User> {
       const response = await axiosClient.get<ApiResponse<{ user: User }>>(API_ENDPOINTS.ADMIN.ME)
+      storeUserProfile(response.data.data.user)
       return response.data.data.user
     },
 
@@ -245,6 +282,17 @@ export const authService = {
      */
     async register(data: VendorRegisterData): Promise<ApiResponse<{ user: User; payment_url?: string; message: string }>> {
       const response = await axiosClient.post<ApiResponse>(API_ENDPOINTS.VENDOR.REGISTER, data)
+      const registerData = (response.data.data ?? {}) as Record<string, unknown>
+      const registerToken = getTokenFromRecord(registerData)
+      if (response.data.success && registerToken) {
+        tokenManager.setAccessToken(registerToken)
+        tokenManager.setUserType('vendor')
+        storeUserProfile(response.data.data?.user)
+
+        if (response.data.data.expires_in) {
+          tokenManager.setTokenExpiry(response.data.data.expires_in)
+        }
+      }
       return response.data
     },
 
@@ -262,6 +310,7 @@ export const authService = {
       if (response.data.success && loginToken) {
         tokenManager.setAccessToken(loginToken)
         tokenManager.setUserType('vendor')
+        storeUserProfile(response.data.data?.user)
 
         if (response.data.data.expires_in) {
           tokenManager.setTokenExpiry(response.data.data.expires_in)
@@ -279,7 +328,106 @@ export const authService = {
         await axiosClient.post(API_ENDPOINTS.VENDOR.LOGOUT)
       } finally {
         tokenManager.clearTokens()
+        clearUserProfile()
       }
+    },
+
+    /**
+     * Refresh vendor token
+     */
+    async refresh(): Promise<ApiResponse<AuthResponse>> {
+      const response = await axiosClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.VENDOR.REFRESH
+      )
+      const refreshData = (response.data.data ?? {}) as Record<string, unknown>
+      const refreshToken = getTokenFromRecord(refreshData)
+      if (response.data.success && refreshToken) {
+        tokenManager.setAccessToken(refreshToken)
+        tokenManager.setUserType('vendor')
+        storeUserProfile(response.data.data?.user)
+
+        if (response.data.data.expires_in) {
+          tokenManager.setTokenExpiry(response.data.data.expires_in)
+        }
+      }
+      return response.data
+    },
+
+    /**
+     * Get current authenticated vendor user
+     */
+    async me(): Promise<User> {
+      const response = await axiosClient.get<ApiResponse<{ user: User }>>(API_ENDPOINTS.VENDOR.ME)
+      storeUserProfile(response.data.data.user)
+      return response.data.data.user
+    },
+
+    /**
+     * Verify vendor 2FA
+     */
+    async verify2FA(data: TwoFactorVerification): Promise<ApiResponse<AuthResponse>> {
+      const response = await axiosClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.VENDOR.VERIFY_2FA,
+        data
+      )
+      const verifyData = (response.data.data ?? {}) as Record<string, unknown>
+      const verifyToken = getTokenFromRecord(verifyData)
+      if (response.data.success && verifyToken) {
+        tokenManager.setAccessToken(verifyToken)
+        tokenManager.setUserType('vendor')
+        storeUserProfile(response.data.data?.user)
+
+        if (response.data.data.expires_in) {
+          tokenManager.setTokenExpiry(response.data.data.expires_in)
+        }
+      }
+      return response.data
+    },
+
+    /**
+     * Request password reset
+     */
+    async forgotPassword(email: string): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.FORGOT_PASSWORD,
+        { email, user_type: 'vendor' }
+      )
+      return { message: response.data.message }
+    },
+
+    /**
+     * Reset password with token
+     */
+    async resetPassword(data: PasswordReset): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.RESET_PASSWORD,
+        data
+      )
+      return { message: response.data.message }
+    },
+
+    /**
+     * Verify email with token
+     */
+    async verifyEmail(token: string): Promise<{ message: string; user: User }> {
+      const response = await axiosClient.post<ApiResponse<{ user: User }>>(
+        API_ENDPOINTS.VENDOR.VERIFY_EMAIL,
+        { token, user_type: 'vendor' }
+      )
+      return {
+        message: response.data.message,
+        user: response.data.data.user,
+      }
+    },
+
+    /**
+     * Resend email verification
+     */
+    async resendVerification(): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.RESEND_VERIFICATION
+      )
+      return { message: response.data.message }
     },
   },
 
@@ -297,6 +445,7 @@ export const authService = {
       if (normalized.success && normalized.data.token) {
         tokenManager.setAccessToken(normalized.data.token)
         tokenManager.setUserType('vendor')
+        storeUserProfile(normalized.data.user)
 
         if (normalized.data.expires_in) {
           tokenManager.setTokenExpiry(normalized.data.expires_in)
@@ -313,12 +462,31 @@ export const authService = {
       const response = await axiosClient.post(API_ENDPOINTS.VENDOR.LOGIN, credentials)
       const normalized = normalizePosAuthResponse(response.data)
 
+      // Debug logging in development
+      if (process.env.NODE_ENV === 'development') {
+        console.log('🔐 POS Login Response:', {
+          success: normalized.success,
+          hasToken: !!normalized.data.token,
+          tokenPreview: normalized.data.token ? normalized.data.token.substring(0, 15) + '...' : 'none',
+        })
+      }
+
       if (normalized.success && normalized.data.token) {
         tokenManager.setAccessToken(normalized.data.token)
         tokenManager.setUserType('vendor')
+        storeUserProfile(normalized.data.user)
 
         if (normalized.data.expires_in) {
           tokenManager.setTokenExpiry(normalized.data.expires_in)
+        }
+
+        // Verify token was stored correctly
+        if (process.env.NODE_ENV === 'development') {
+          const storedToken = tokenManager.getAccessToken()
+          console.log('🔐 Token verification:', {
+            stored: !!storedToken,
+            matches: storedToken === normalized.data.token,
+          })
         }
       }
 
@@ -335,6 +503,7 @@ export const authService = {
       if (normalized.success && normalized.data.token) {
         tokenManager.setAccessToken(normalized.data.token)
         tokenManager.setUserType('vendor')
+        storeUserProfile(normalized.data.user)
 
         if (normalized.data.expires_in) {
           tokenManager.setTokenExpiry(normalized.data.expires_in)
@@ -352,7 +521,84 @@ export const authService = {
         await axiosClient.post(API_ENDPOINTS.VENDOR.LOGOUT)
       } finally {
         tokenManager.clearTokens()
+        clearUserProfile()
       }
+    },
+
+    /**
+     * Refresh POS vendor token
+     */
+    async refresh(): Promise<ApiResponse<AuthResponse>> {
+      const response = await axiosClient.post<ApiResponse<AuthResponse>>(
+        API_ENDPOINTS.VENDOR.REFRESH
+      )
+      const refreshData = (response.data.data ?? {}) as unknown as Record<string, unknown>
+      const refreshToken = getTokenFromRecord(refreshData)
+      if (response.data.success && refreshToken) {
+        tokenManager.setAccessToken(refreshToken)
+        tokenManager.setUserType('vendor')
+        storeUserProfile(response.data.data?.user)
+
+        if (response.data.data.expires_in) {
+          tokenManager.setTokenExpiry(response.data.data.expires_in)
+        }
+      }
+      return response.data
+    },
+
+    /**
+     * Get current authenticated vendor user (POS)
+     */
+    async me(): Promise<User> {
+      const response = await axiosClient.get<ApiResponse<{ user: User }>>(API_ENDPOINTS.VENDOR.ME)
+      storeUserProfile(response.data.data.user)
+      return response.data.data.user
+    },
+
+    /**
+     * Request password reset (POS)
+     */
+    async forgotPassword(email: string): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.FORGOT_PASSWORD,
+        { email, user_type: 'vendor' }
+      )
+      return { message: response.data.message }
+    },
+
+    /**
+     * Reset password with token (POS)
+     */
+    async resetPassword(data: PasswordReset): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.RESET_PASSWORD,
+        data
+      )
+      return { message: response.data.message }
+    },
+
+    /**
+     * Verify email with token (POS)
+     */
+    async verifyEmail(token: string): Promise<{ message: string; user: User }> {
+      const response = await axiosClient.post<ApiResponse<{ user: User }>>(
+        API_ENDPOINTS.VENDOR.VERIFY_EMAIL,
+        { token, user_type: 'vendor' }
+      )
+      return {
+        message: response.data.message,
+        user: response.data.data.user,
+      }
+    },
+
+    /**
+     * Resend email verification (POS)
+     */
+    async resendVerification(): Promise<{ message: string }> {
+      const response = await axiosClient.post<ApiResponse>(
+        API_ENDPOINTS.VENDOR.RESEND_VERIFICATION
+      )
+      return { message: response.data.message }
     },
   },
 }

@@ -11,6 +11,7 @@ import axios, {
   AxiosError,
 } from "axios";
 import { env } from "@/config/env";
+import { tokenManager } from "@/lib/axios-client";
 
 // Types
 export interface ApiResponse<T = any> {
@@ -37,7 +38,7 @@ const createApiClient = (): AxiosInstance => {
       "Content-Type": "application/json",
       Accept: "application/json",
     },
-    withCredentials: true, // For Laravel Sanctum
+    withCredentials: env.api.withCredentials,
   });
 
   // Request Interceptor
@@ -49,6 +50,11 @@ const createApiClient = (): AxiosInstance => {
         config.headers.Authorization = `Bearer ${token}`;
       }
 
+      // Handle FormData - let axios set the Content-Type with proper boundary
+      if (config.data instanceof FormData) {
+        delete config.headers["Content-Type"];
+      }
+
       // Add API version to URL if configured
       if (
         env.api.version &&
@@ -58,13 +64,14 @@ const createApiClient = (): AxiosInstance => {
         config.url = `/${env.api.version}${config.url}`;
       }
 
-      // Log request in debug mode
-      if (env.debug.enabled) {
+      // Always log auth status for debugging
+      if (process.env.NODE_ENV === "development") {
         console.log("📤 API Request:", {
           method: config.method?.toUpperCase(),
           url: config.url,
-          data: config.data,
-          params: config.params,
+          hasToken: !!token,
+          tokenPreview: token ? `${token.substring(0, 10)}...` : "none",
+          data: config.data instanceof FormData ? "[FormData]" : config.data,
         });
       }
 
@@ -122,10 +129,13 @@ const createApiClient = (): AxiosInstance => {
 
       // Handle 403 Forbidden
       if (error.response?.status === 403) {
-        if (typeof window !== "undefined") {
-          // Redirect to unauthorized page or show message
-          console.error("Access forbidden");
-        }
+        const responseData = error.response?.data as any;
+        console.error("Access forbidden:", {
+          message: responseData?.message,
+          error: responseData?.error,
+          errors: responseData?.errors,
+          fullResponse: responseData,
+        });
       }
 
       // Handle 500 Server Error
@@ -145,13 +155,35 @@ const createApiClient = (): AxiosInstance => {
 /**
  * Format API error for consistent error handling
  */
-const formatApiError = (error: AxiosError): ApiError => {
+const formatApiError = (error: AxiosError): any => {
   const response = error.response?.data as any;
+  const status = error.response?.status;
 
+  // Provide more specific messages for common errors
+  let message = response?.message || error.message || "An error occurred";
+
+  if (status === 403) {
+    message = response?.message || "You don't have permission to perform this action. Please check your account status.";
+  } else if (status === 401) {
+    message = "Your session has expired. Please log in again.";
+  }
+
+  // Return a more comprehensive error object that preserves axios structure
   return {
-    message: response?.message || error.message || "An error occurred",
-    status: error.response?.status,
+    message,
+    status,
     errors: response?.errors,
+    // Preserve original response structure for detailed debugging
+    response: error.response ? {
+      data: error.response.data,
+      status: error.response.status,
+      statusText: error.response.statusText,
+      headers: error.response.headers,
+    } : undefined,
+    // Preserve the original error properties
+    name: error.name,
+    code: error.code,
+    config: error.config,
   };
 };
 
@@ -160,7 +192,7 @@ const formatApiError = (error: AxiosError): ApiError => {
  */
 const getAuthToken = (): string | null => {
   if (typeof window === "undefined") return null;
-  return localStorage.getItem(env.auth.tokenKey);
+  return tokenManager.getAccessToken() || localStorage.getItem(env.auth.tokenKey);
 };
 
 /**
@@ -176,8 +208,10 @@ const getRefreshToken = (): string | null => {
  */
 export const setAuthTokens = (token: string, refreshToken?: string): void => {
   if (typeof window === "undefined") return;
+  tokenManager.setAccessToken(token);
   localStorage.setItem(env.auth.tokenKey, token);
   if (refreshToken) {
+    tokenManager.setRefreshToken(refreshToken);
     localStorage.setItem(env.auth.refreshTokenKey, refreshToken);
   }
 };
@@ -187,6 +221,7 @@ export const setAuthTokens = (token: string, refreshToken?: string): void => {
  */
 export const clearAuthTokens = (): void => {
   if (typeof window === "undefined") return;
+  tokenManager.clearTokens();
   localStorage.removeItem(env.auth.tokenKey);
   localStorage.removeItem(env.auth.refreshTokenKey);
 };

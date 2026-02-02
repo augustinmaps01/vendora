@@ -11,23 +11,32 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts"
-
-const salesData = [
-  { day: "Mon", pos: 18000, online: 22000, total: 40000 },
-  { day: "Tue", pos: 19000, online: 21000, total: 40000 },
-  { day: "Wed", pos: 15000, online: 17000, total: 32000 },
-  { day: "Thu", pos: 17000, online: 19000, total: 36000 },
-  { day: "Fri", pos: 20000, online: 23000, total: 43000 },
-  { day: "Sat", pos: 26000, online: 28000, total: 54000 },
-  { day: "Sun", pos: 18000, online: 20000, total: 38000 },
-]
+import type { SalesTrend } from "@/types/dashboard"
 
 type SalesTrendChartProps = {
+  data?: SalesTrend | null
   className?: string
   contentClassName?: string
 }
 
-export function SalesTrendChart({ className, contentClassName }: SalesTrendChartProps) {
+export function SalesTrendChart({ data, className, contentClassName }: SalesTrendChartProps) {
+  // Transform API data to chart format
+  const salesData = data ? data.labels.map((label, index) => {
+    const posData = data.series.find(s => s.name === "pos")?.data[index] || 0
+    const onlineData = data.series.find(s => s.name === "online")?.data[index] || 0
+
+    // Convert date to day of week
+    const date = new Date(label)
+    const dayName = date.toLocaleDateString('en-US', { weekday: 'short' })
+
+    return {
+      day: dayName,
+      pos: posData,
+      online: onlineData,
+      total: posData + onlineData,
+    }
+  }) : []
+
   return (
     <Card className={`col-span-2 flex flex-col ${className ?? ""}`.trim()}>
       <CardHeader>

@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useRouter } from "next/navigation"
-import { Bell, Search, Settings, LogOut, User } from "lucide-react"
+import { Bell, Search, Settings, LogOut, User, ChevronDown } from "lucide-react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -24,10 +24,13 @@ export function Header() {
     setIsLoading(true)
     try {
       await authService.admin.logout()
+      // Set flag to show logout success message on login page
+      sessionStorage.setItem('showLogout', 'true')
       router.push("/admin/auth/login")
     } catch (error) {
       console.error("Logout error:", error)
       // Clear tokens anyway and redirect
+      sessionStorage.setItem('showLogout', 'true')
       router.push("/admin/auth/login")
     } finally {
       setIsLoading(false)
@@ -35,26 +38,35 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b bg-background px-6">
-      {/* Left Side - Search Bar */}
-      <div className="flex-1 max-w-md">
-        <div className="relative">
-          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-          <Input
-            type="search"
+    <header
+      className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b px-6"
+      style={{
+        backgroundColor: '#2e0f5f',
+        borderColor: '#1f0a3d',
+      }}
+    >
+      {/* Left Side - Title & Search Bar */}
+      <div className="flex items-center flex-1 gap-4">
+        <h2 className="text-xl font-semibold text-white">Admin Portal</h2>
+
+        {/* Search Bar */}
+        <div className="hidden md:flex items-center w-full max-w-md gap-2 px-4 py-2 border rounded-lg bg-white/10 border-white/20">
+          <Search className="w-4 h-4 text-white/70" />
+          <input
+            type="text"
             placeholder="Search..."
-            className="w-full pl-10 pr-4"
+            className="w-full text-sm text-white bg-transparent border-none outline-none placeholder:text-white/60"
           />
         </div>
       </div>
 
       {/* Right Side - Notifications & User Menu */}
-      <div className="flex items-center gap-2 ml-auto">
+      <div className="flex items-center gap-3">
         {/* Notifications */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" size="icon" className="relative">
-              <Bell className="h-5 w-5" />
+            <Button variant="ghost" size="icon" className="relative hover:bg-white/10">
+              <Bell className="h-5 w-5 text-white" />
               <Badge
                 variant="destructive"
                 className="absolute -right-1 -top-1 h-5 w-5 rounded-full p-0 text-xs flex items-center justify-center"
@@ -105,35 +117,47 @@ export function Header() {
         {/* User Menu */}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="ghost" className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary text-primary-foreground text-sm font-semibold">
+            <Button
+              variant="ghost"
+              className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
+            >
+              {/* Avatar */}
+              <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
                 AD
               </div>
-              <div className="hidden md:block text-left">
-                <p className="text-sm font-medium">Admin User</p>
-                <p className="text-xs text-muted-foreground">Super Admin</p>
+              {/* User Info */}
+              <div className="flex-col items-start hidden md:flex">
+                <span className="text-sm font-semibold text-white">Admin User</span>
+                <span className="text-xs text-white/70">Super Admin</span>
               </div>
+              <ChevronDown className="hidden w-4 h-4 text-white md:block" />
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>My Account</DropdownMenuLabel>
+            <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
             <DropdownMenuSeparator />
-            <DropdownMenuItem onClick={() => router.push("/admin/profile")}>
-              <User className="mr-2 h-4 w-4" />
-              Profile
+            <DropdownMenuItem
+              onClick={() => router.push("/admin/profile")}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              <User className="mr-2 h-4 w-4 text-gray-600" />
+              <span>Profile</span>
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => router.push("/admin/settings")}>
-              <Settings className="mr-2 h-4 w-4" />
-              Settings
+            <DropdownMenuItem
+              onClick={() => router.push("/admin/settings")}
+              className="cursor-pointer hover:bg-gray-50"
+            >
+              <Settings className="mr-2 h-4 w-4 text-gray-600" />
+              <span>Settings</span>
             </DropdownMenuItem>
             <DropdownMenuSeparator />
             <DropdownMenuItem
               onClick={handleLogout}
               disabled={isLoading}
-              className="text-destructive focus:text-destructive"
+              className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
             >
               <LogOut className="mr-2 h-4 w-4" />
-              {isLoading ? "Logging out..." : "Logout"}
+              <span>{isLoading ? "Logging out..." : "Logout"}</span>
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>

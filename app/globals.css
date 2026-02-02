@@ -79,40 +79,43 @@
 }
 
 .dark {
-  --background: 0.098 0 0;
-  --foreground: 0.985 0 0;
-  --card: 0.098 0 0;
-  --card-foreground: 0.985 0 0;
-  --popover: 0.098 0 0;
-  --popover-foreground: 0.985 0 0;
-  --primary: 0.985 0 0;
-  --primary-foreground: 0.098 0 0;
-  --secondary: 0.176 0 0;
-  --secondary-foreground: 0.985 0 0;
-  --muted: 0.176 0 0;
-  --muted-foreground: 0.655 0 0;
-  --accent: 0.176 0 0;
-  --accent-foreground: 0.985 0 0;
+  /* Vendora Brand Dark Mode - Purple/Violet Theme */
+  --background: 0.12 0.03 270; /* Deep purple #0a0118 */
+  --foreground: 0.97 0.01 280; /* Light purple-white #f5f3ff */
+  --card: 0.15 0.05 280; /* Dark purple card #1a0a2e */
+  --card-foreground: 0.97 0.01 280;
+  --popover: 0.15 0.05 280;
+  --popover-foreground: 0.97 0.01 280;
+  --primary: 0.65 0.2 280; /* Violet-500 #8b5cf6 */
+  --primary-foreground: 0.98 0.01 280;
+  --secondary: 0.2 0.08 280; /* Dark purple #2e1065 */
+  --secondary-foreground: 0.85 0.1 280;
+  --muted: 0.2 0.08 280;
+  --muted-foreground: 0.7 0.1 280; /* Muted violet #a78bfa */
+  --accent: 0.25 0.1 280; /* Accent purple */
+  --accent-foreground: 0.95 0.02 280;
   --destructive: 0.647 0.199 23.899;
   --destructive-foreground: 0.985 0 0;
-  --border: 0.176 0 0;
-  --input: 0.176 0 0;
-  --ring: 0.851 0 0;
+  --border: 0.22 0.1 280; /* Purple border #2e1065 */
+  --input: 0.22 0.1 280;
+  --ring: 0.65 0.2 280; /* Violet ring */
 
-  --chart-1: 0.703 0.161 36.599;
-  --chart-2: 0.708 0.13 217.895;
-  --chart-3: 0.802 0.12 97.308;
-  --chart-4: 0.686 0.155 80.506;
-  --chart-5: 0.733 0.155 318.852;
+  /* Chart colors - Brand appropriate */
+  --chart-1: 0.65 0.2 280; /* Violet */
+  --chart-2: 0.7 0.18 320; /* Pink/Magenta */
+  --chart-3: 0.6 0.15 250; /* Blue-violet */
+  --chart-4: 0.75 0.12 300; /* Light purple */
+  --chart-5: 0.55 0.22 260; /* Deep violet */
 
-  --sidebar: 0.098 0 0;
-  --sidebar-foreground: 0.985 0 0;
-  --sidebar-primary: 0.985 0 0;
-  --sidebar-primary-foreground: 0.098 0 0;
-  --sidebar-accent: 0.176 0 0;
-  --sidebar-accent-foreground: 0.985 0 0;
-  --sidebar-border: 0.176 0 0;
-  --sidebar-ring: 0.851 0 0;
+  /* Sidebar - Already dark themed, keep consistent */
+  --sidebar: 0.1 0.05 280; /* #110228 */
+  --sidebar-foreground: 0.95 0.02 280;
+  --sidebar-primary: 0.65 0.2 280;
+  --sidebar-primary-foreground: 0.98 0.01 280;
+  --sidebar-accent: 0.2 0.08 280;
+  --sidebar-accent-foreground: 0.95 0.02 280;
+  --sidebar-border: 0.22 0.1 280;
+  --sidebar-ring: 0.65 0.2 280;
 }
 
 @layer base {
@@ -166,4 +169,148 @@
 
 .animate-float-slow {
   animation: float-slow 8s ease-in-out infinite 2s;
+}
+
+/* SweetAlert2 Enhanced Toast Styles */
+.colored-toast {
+  padding: 12px 16px !important;
+  border-radius: 12px !important;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15), 0 4px 12px rgba(0, 0, 0, 0.1) !important;
+  border: 1px solid rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(10px) !important;
+}
+
+.colored-toast .swal2-title {
+  font-size: 14px !important;
+  font-weight: 600 !important;
+  margin: 0 !important;
+  padding: 0 8px !important;
+}
+
+.colored-toast .swal2-html-container {
+  font-size: 12px !important;
+  margin: 2px 0 0 0 !important;
+  padding: 0 8px !important;
+  opacity: 0.85;
+}
+
+.colored-toast .swal2-icon {
+  width: 28px !important;
+  height: 28px !important;
+  margin: 0 !important;
+  border-width: 2px !important;
+}
+
+.colored-toast .swal2-icon .swal2-icon-content {
+  font-size: 16px !important;
+}
+
+.colored-toast .swal2-icon.swal2-success [class^='swal2-success-line'] {
+  height: 2px !important;
+}
+
+.colored-toast .swal2-icon.swal2-success .swal2-success-ring {
+  width: 28px !important;
+  height: 28px !important;
+}
+
+.toast-progress-bar {
+  background: linear-gradient(90deg, rgba(255,255,255,0.3) 0%, rgba(255,255,255,0.6) 100%) !important;
+  height: 4px !important;
+  border-radius: 0 0 12px 12px !important;
+}
+
+/* Slide animations for toast */
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+@keyframes slideOutRight {
+  from {
+    transform: translateX(0);
+    opacity: 1;
+  }
+  to {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+}
+
+.animate__animated {
+  animation-duration: 0.3s;
+  animation-fill-mode: both;
+}
+
+.animate__faster {
+  animation-duration: 0.25s;
+}
+
+.animate__slideInRight {
+  animation-name: slideInRight;
+}
+
+.animate__slideOutRight {
+  animation-name: slideOutRight;
+}
+
+/* SweetAlert2 Modern Popup Styles */
+.swal2-modern-popup {
+  border-radius: 16px !important;
+  padding: 24px !important;
+  box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25) !important;
+}
+
+.swal2-modern-title {
+  font-size: 20px !important;
+  font-weight: 700 !important;
+  color: #1f2937 !important;
+}
+
+.swal2-modern-confirm {
+  border-radius: 8px !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.swal2-modern-confirm:hover {
+  transform: translateY(-1px) !important;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.4) !important;
+}
+
+.swal2-modern-cancel {
+  border-radius: 8px !important;
+  padding: 10px 24px !important;
+  font-weight: 600 !important;
+  font-size: 14px !important;
+  transition: all 0.2s ease !important;
+}
+
+.swal2-modern-cancel:hover {
+  transform: translateY(-1px) !important;
+  background-color: #4b5563 !important;
+}
+
+/* Icon animation */
+.swal2-icon.swal2-warning {
+  border-color: #f59e0b !important;
+  color: #f59e0b !important;
+}
+
+.swal2-icon.swal2-success {
+  border-color: #10b981 !important;
+  color: #10b981 !important;
+}
+
+.swal2-icon.swal2-error {
+  border-color: #ef4444 !important;
+  color: #ef4444 !important;
 }

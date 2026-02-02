@@ -34,9 +34,14 @@ import {
   Calculator,
   ChevronLeft,
   ChevronRight,
-  MoreVertical
+  MoreVertical,
+  Loader2
 } from "lucide-react"
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
+import { ThemeToggle } from "@/components/pos/ThemeToggle"
+import { authService } from "@/services/auth-jwt.service"
+import { tokenManager } from "@/lib/axios-client"
+import { TOKEN_CONFIG } from "@/config/api.config"
 
 // Sidebar menu structure based on data.docx
 const sidebarSections = [
@@ -46,7 +51,7 @@ const sidebarSections = [
       { icon: LayoutDashboard, label: "Dashboard", href: "/pos/dashboard", comingSoon: false },
       { icon: ShoppingCart, label: "POS", href: "/pos/pos-screen", comingSoon: false },
       { icon: Package, label: "Products", href: "/pos/products", comingSoon: false },
-      { icon: PackageOpen, label: "Inventory", href: "/pos/inventory", comingSoon: false },
+      { icon: CreditCard, label: "Credit Accounts", href: "/pos/credit-accounts", comingSoon: false },
       { icon: ClipboardList, label: "Orders", href: "/pos/orders", comingSoon: false },
       { icon: Users, label: "Customers", href: "/pos/customers", comingSoon: false },
     ]
@@ -81,9 +86,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
-  const [userData, setUserData] = useState<{ business_name?: string; email?: string } | null>(null)
+  const [userData, setUserData] = useState<{ name?: string; email?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
+  const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   useEffect(() => {
     setMounted(true)
@@ -158,19 +164,27 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // Fetch user data
   useEffect(() => {
     const fetchUserData = async () => {
+      if (typeof window === "undefined") return
       try {
-        // Since backend is removed, use demo data for now
-        // Replace this with your actual API call when backend is ready
+        const cached = localStorage.getItem(TOKEN_CONFIG.USER_PROFILE_KEY)
+        if (cached) {
+          try {
+            const parsed = JSON.parse(cached) as { name?: string; email?: string }
+            setUserData(parsed)
+          } catch {
+            localStorage.removeItem(TOKEN_CONFIG.USER_PROFILE_KEY)
+          }
+        }
+
+        if (!tokenManager.getAccessToken()) return
+        const user = await authService.pos.me()
+        const displayName = 'business_name' in user ? user.business_name : user.full_name
         setUserData({
-          business_name: 'Bunya Retail Shop',
-          email: 'vendor@bunyaretail.com'
+          name: displayName,
+          email: user.email,
         })
       } catch {
-        // Silently fail - backend not connected yet
-        setUserData({
-          business_name: 'Bunya Retail Shop',
-          email: 'vendor@bunyaretail.com'
-        })
+        // Silently fail - keep cached/default
       }
     }
 
@@ -179,9 +193,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
     }
   }, [pathname])
 
-  // Get first letter of business name for avatar
-  const avatarLetter = userData?.business_name?.charAt(0).toUpperCase() || 'V'
-  const displayName = userData?.business_name || 'Vendor Store'
+  // Get first letter of name for avatar
+  const avatarLetter = userData?.name?.charAt(0).toUpperCase() || 'V'
+  const displayName = userData?.name || 'Vendor Store'
   const displayEmail = userData?.email || 'vendor@example.com'
 
   // Check if current route is an auth page
@@ -202,19 +216,61 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const isPOSDashboard = pathname === "/pos/dashboard"
   const isPOSScreen = pathname === "/pos/pos-screen"
   const pageBackgroundClass = isPOSDashboard
-    ? "bg-white"
+    ? "bg-white dark:bg-[#0a0118]"
     : isPOSScreen
       ? "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]"
       : "bg-background"
-  const mainBackgroundClass = isPOSDashboard
-    ? "bg-white"
-    : isPOSScreen
-      ? "bg-transparent"
-      : "bg-gray-50"
+  const mainBackgroundClass = isPOSScreen ? "bg-transparent" : "bg-gray-100 dark:bg-[#0d0420]"
+
+  // Calculate effective sidebar width for styles
+  const effectiveSidebarWidth = sidebarCollapsed ? 80 : sidebarWidth
 
   // For non-auth pages, render with sidebar and navigation
   return (
-    <div className={`min-h-screen overflow-x-hidden ${pageBackgroundClass}`}>
+    <div
+      className={`min-h-screen overflow-x-hidden ${pageBackgroundClass}`}
+      style={{
+        '--sidebar-width': `${effectiveSidebarWidth}px`
+      } as React.CSSProperties}
+    >
+      {/* Logout Loading Overlay */}
+      {isLoggingOut && (
+        <div className="fixed inset-0 z-[100] flex items-center justify-center animate-in fade-in duration-300" style={{ backgroundColor: '#110228' }}>
+          {/* Decorative background elements */}
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+          </div>
+
+          {/* Content */}
+          <div className="relative flex flex-col items-center gap-8 p-8">
+            {/* Logo */}
+            <div className="relative">
+              <div className="absolute inset-0 bg-white/20 rounded-3xl blur-xl animate-pulse" />
+              <div className="relative flex items-center justify-center w-32 h-32 bg-white rounded-3xl shadow-2xl p-5">
+                <Image
+                  src="/logos/logo.png"
+                  alt="Vendora"
+                  width={96}
+                  height={96}
+                  className="w-full h-full object-contain"
+                />
+              </div>
+            </div>
+
+            {/* Brand name */}
+            <h1 className="text-4xl font-bold text-white tracking-wide">Vendora</h1>
+
+            {/* Loading indicator */}
+            <div className="flex flex-col items-center gap-4 mt-2">
+              <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
+              <p className="text-purple-300 text-sm">Signing out...</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Sidebar Overlay (Mobile/Tablet) */}
       {sidebarOpen && (
         <div
@@ -258,12 +314,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           ${sidebarOpen ? "translate-x-0" : "-translate-x-full"}
           lg:translate-x-0
           ${isResizing ? "" : "transition-all duration-300"}
+          w-64 lg:w-[var(--sidebar-width)]
         `}
         style={{
           backgroundColor: '#110228',
-          width: isDesktop
-            ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
-            : '256px'
         }}
       >
         {/* Logo */}
@@ -478,27 +532,24 @@ export default function POSLayout({ children }: { children: ReactNode }) {
 
       {/* Main Content */}
       <main
-        className={`min-h-screen pt-16 ${mainBackgroundClass} overflow-x-hidden ${isResizing ? "" : "transition-all duration-300"
-          }`}
+        className={`
+          min-h-screen pt-16 ${mainBackgroundClass} overflow-x-hidden 
+          ${isResizing ? "" : "transition-all duration-300"}
+          ml-0 lg:ml-[var(--sidebar-width)]
+        `}
         style={{
-          marginLeft: isDesktop
-            ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
-            : '0'
         }}
       >
         {/* Header */}
         <header
-          className={`fixed top-0 left-0 z-30 flex items-center h-16 px-6 border-b w-full ${isResizing ? "" : "transition-all duration-300"
-            }`}
+          className={`
+            fixed top-0 left-0 z-30 flex items-center h-16 px-6 border-b w-full 
+            ${isResizing ? "" : "transition-all duration-300"}
+            lg:left-[var(--sidebar-width)] lg:w-[calc(100%-var(--sidebar-width))]
+          `}
           style={{
             backgroundColor: '#2e0f5f',
             borderColor: '#1f0a3d',
-            left: isDesktop
-              ? (sidebarCollapsed ? '80px' : `${sidebarWidth}px`)
-              : '0',
-            width: isDesktop
-              ? (sidebarCollapsed ? 'calc(100% - 80px)' : `calc(100% - ${sidebarWidth}px)`)
-              : '100%'
           }}
         >
           <div className="flex items-center justify-between flex-1">
@@ -536,98 +587,95 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               */}
             </div>
 
-            {/* Right Side - Notifications & User Profile */}
+            {/* Right Side - Theme Toggle, Notifications & User Profile */}
             <div className="flex items-center gap-3">
+              {/* Theme Toggle */}
+              <ThemeToggle />
+
               {/* Notifications */}
               <NotificationPanel />
 
               {/* User Profile Dropdown */}
-              {!isLoading && (
-                mounted ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
-                      >
-                        {/* Avatar */}
-                        <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
-                          {avatarLetter}
-                        </div>
-                        {/* User Info */}
-                        <div className="flex-col items-start hidden lg:flex">
-                          <span className="text-sm font-semibold text-white">{displayName}</span>
-                          <span className="text-xs text-white/70">{displayEmail}</span>
-                        </div>
-                        <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="w-56">
-                      <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                        <User className="w-4 h-4 mr-2 text-gray-600" />
-                        <span>Profile</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                        <Store className="w-4 h-4 mr-2 text-gray-600" />
-                        <span>My Store</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                        <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
-                        <span>Subscription</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                        <Settings className="w-4 h-4 mr-2 text-gray-600" />
-                        <span>Settings</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
-                        <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
-                        <span>Help & Support</span>
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
-                        onClick={async () => {
-                          try {
-                            // Clear tokens
-                            if (typeof window !== 'undefined') {
-                              document.cookie = 'vendora_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
-                              localStorage.removeItem('vendora_access_token')
-                              localStorage.removeItem('vendora_refresh_token')
-                              localStorage.removeItem('vendora_user_type')
-                              localStorage.removeItem('vendora_token_expiry')
-                            }
-                            window.location.href = "/pos/auth/login"
-                          } catch (error) {
-                            console.error('Logout error:', error)
-                            window.location.href = "/pos/auth/login"
-                          }
-                        }}
-                      >
-                        <LogOut className="w-4 h-4 mr-2" />
-                        <span>Log out</span>
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <Button
-                    variant="ghost"
-                    className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
-                  >
-                    {/* Avatar */}
-                    <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
-                      {avatarLetter}
-                    </div>
-                    {/* User Info */}
-                    <div className="flex-col items-start hidden lg:flex">
-                      <span className="text-sm font-semibold text-white">{displayName}</span>
-                      <span className="text-xs text-white/70">{displayEmail}</span>
-                    </div>
-                    <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
-                  </Button>
-                )
+              {mounted ? (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
+                    >
+                      {/* Avatar */}
+                      <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
+                        {avatarLetter}
+                      </div>
+                      {/* User Info */}
+                      <div className="flex-col items-start hidden lg:flex">
+                        <span className="text-sm font-semibold text-white">{displayName}</span>
+                        <span className="text-xs text-white/70">{displayEmail}</span>
+                      </div>
+                      <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                      <User className="w-4 h-4 mr-2 text-gray-600" />
+                      <span>Profile</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                      <Store className="w-4 h-4 mr-2 text-gray-600" />
+                      <span>My Store</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                      <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
+                      <span>Subscription</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                      <Settings className="w-4 h-4 mr-2 text-gray-600" />
+                      <span>Settings</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                      <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
+                      <span>Help & Support</span>
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
+                      onClick={async () => {
+                        setIsLoggingOut(true)
+                        try {
+                          await authService.pos.logout()
+                          sessionStorage.setItem('showLogout', 'true')
+                          window.location.href = "/pos/auth/login"
+                        } catch (error) {
+                          console.error('Logout error:', error)
+                          sessionStorage.setItem('showLogout', 'true')
+                          window.location.href = "/pos/auth/login"
+                        }
+                      }}
+                    >
+                      <LogOut className="w-4 h-4 mr-2" />
+                      <span>Log out</span>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              ) : (
+                <Button
+                  variant="ghost"
+                  className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
+                >
+                  {/* Avatar */}
+                  <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
+                    {avatarLetter}
+                  </div>
+                  {/* User Info */}
+                  <div className="flex-col items-start hidden lg:flex">
+                    <span className="text-sm font-semibold text-white">{displayName}</span>
+                    <span className="text-xs text-white/70">{displayEmail}</span>
+                  </div>
+                  <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
+                </Button>
               )}
             </div>
           </div>
@@ -652,94 +700,94 @@ export default function POSLayout({ children }: { children: ReactNode }) {
 
         {/* Mobile Bottom Navigation - Hidden on tablet and above */}
         <div className="fixed bottom-0 left-0 right-0 z-30 border-t sm:hidden" style={{ backgroundColor: '#110228', borderColor: '#2e0f5f' }}>
-            <div className="grid grid-cols-5 gap-1 px-2 py-2">
-              {/* First 4 visible items */}
-              {mobileVisibleItems.map((item) => {
-                const Icon = item.icon
-                const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
+          <div className="grid grid-cols-5 gap-1 px-2 py-2">
+            {/* First 4 visible items */}
+            {mobileVisibleItems.map((item) => {
+              const Icon = item.icon
+              const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
 
-                return (
-                  <Link
-                    key={item.href}
-                    href={item.href}
-                    className={`
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`
                     relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg
                     transition-all duration-200
                     ${isActive ? 'bg-white text-purple-700' : 'text-white/90'}
                   `}
-                  >
-                    <Icon className="flex-shrink-0 w-5 h-5" />
-                    <span className="text-[10px] font-medium truncate max-w-full">
-                      {item.label.split(' ')[0]}
-                    </span>
-                    {item.comingSoon && (
-                      <span className="absolute w-2 h-2 bg-purple-500 rounded-full shadow-sm top-1 right-1"></span>
-                    )}
-                  </Link>
-                )
-              })}
+                >
+                  <Icon className="flex-shrink-0 w-5 h-5" />
+                  <span className="text-[10px] font-medium truncate max-w-full">
+                    {item.label.split(' ')[0]}
+                  </span>
+                  {item.comingSoon && (
+                    <span className="absolute w-2 h-2 bg-purple-500 rounded-full shadow-sm top-1 right-1"></span>
+                  )}
+                </Link>
+              )
+            })}
 
-              {/* More dropdown */}
-              <div className="relative">
-                <button
-                  onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
-                  className={`
+            {/* More dropdown */}
+            <div className="relative">
+              <button
+                onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
+                className={`
                   w-full flex flex-col items-center justify-center gap-1 p-2 rounded-lg
                   transition-all duration-200
                   ${mobileMoreOpen ? 'bg-white text-purple-700' : 'text-white/90'}
                 `}
-                >
-                  <MoreVertical className="w-5 h-5" />
-                  <span className="text-[10px] font-medium">More</span>
-                </button>
+              >
+                <MoreVertical className="w-5 h-5" />
+                <span className="text-[10px] font-medium">More</span>
+              </button>
 
-                {/* More Items Dropdown - Always rendered, shown/hidden with CSS */}
-                <div
-                  className={`fixed inset-0 z-40 transition-opacity duration-200 ${mobileMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                    }`}
-                  onClick={() => setMobileMoreOpen(false)}
-                />
-                <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-                  }`}>
-                  <div className="p-2 border-b bg-gray-50">
-                    <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
-                  </div>
-                  <div className="p-1">
-                    {mobileMoreItems.map((item) => {
-                      const Icon = item.icon
-                      const isActive = pathname === item.href
+              {/* More Items Dropdown - Always rendered, shown/hidden with CSS */}
+              <div
+                className={`fixed inset-0 z-40 transition-opacity duration-200 ${mobileMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
+                  }`}
+                onClick={() => setMobileMoreOpen(false)}
+              />
+              <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
+                }`}>
+                <div className="p-2 border-b bg-gray-50">
+                  <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
+                </div>
+                <div className="p-1">
+                  {mobileMoreItems.map((item) => {
+                    const Icon = item.icon
+                    const isActive = pathname === item.href
 
-                      return (
-                        <Link
-                          key={item.href}
-                          href={item.href}
-                          onClick={() => setMobileMoreOpen(false)}
-                          className={`
+                    return (
+                      <Link
+                        key={item.href}
+                        href={item.href}
+                        onClick={() => setMobileMoreOpen(false)}
+                        className={`
                           relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
                           transition-all duration-200
                           ${isActive ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}
                         `}
-                        >
-                          <Icon className="flex-shrink-0 w-5 h-5" />
-                          <span className="flex-1">{item.label}</span>
-                          {item.comingSoon && (
-                            <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm">
-                              Soon
-                            </span>
-                          )}
-                        </Link>
-                      )
-                    })}
-                  </div>
+                      >
+                        <Icon className="flex-shrink-0 w-5 h-5" />
+                        <span className="flex-1">{item.label}</span>
+                        {item.comingSoon && (
+                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm">
+                            Soon
+                          </span>
+                        )}
+                      </Link>
+                    )
+                  })}
                 </div>
               </div>
             </div>
           </div>
+        </div>
       </main>
     </div>
   )
 }
-        {/*
+{/*
         Sidebar search (disabled per request)
         <div className={`px-4 py-3 flex-shrink-0 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
           <div className="relative">

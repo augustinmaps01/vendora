@@ -69,6 +69,18 @@ export const productEndpoints = {
   // DELETE /products/:id
   delete: (id: string | number) => buildUrl("/products/:id", { id }),
 
+  // GET /products/sku/:sku
+  getBySku: (sku: string) => buildUrl("/products/sku/:sku", { sku }),
+
+  // GET /products/barcode/:code
+  getByBarcode: (code: string) => buildUrl("/products/barcode/:code", { code }),
+
+  // PATCH /products/:id/stock
+  updateStock: (id: string | number) => buildUrl("/products/:id/stock", { id }),
+
+  // POST /products/bulk-stock-decrement
+  bulkStockDecrement: () => "/products/bulk-stock-decrement",
+
   // GET /products/:id/variants
   variants: (id: string | number) => buildUrl("/products/:id/variants", { id }),
 
@@ -148,6 +160,9 @@ export const orderEndpoints = {
 export const customerEndpoints = {
   // GET /customers
   list: () => "/customers",
+
+  // GET /customers/summary
+  summary: () => "/customers/summary",
 
   // GET /customers/:id
   get: (id: string | number) => buildUrl("/customers/:id", { id }),
@@ -230,6 +245,27 @@ export const inventoryEndpoints = {
  * Payment Endpoints
  */
 export const paymentEndpoints = {
+  // GET /payments
+  list: () => "/payments",
+
+  // GET /payments/summary
+  summary: () => "/payments/summary",
+
+  // POST /payments
+  create: () => "/payments",
+
+  // PATCH /payments/:id
+  update: (id: string | number) => buildUrl("/payments/:id", { id }),
+
+  // GET /payments/:id
+  get: (id: string | number) => buildUrl("/payments/:id", { id }),
+
+  // GET /payments/:id/status
+  status: (id: string | number) => buildUrl("/payments/:id/status", { id }),
+
+  // POST /payments/:id/refund
+  refund: (id: string | number) => buildUrl("/payments/:id/refund", { id }),
+
   // POST /payments/process
   process: () => "/payments/process",
 
@@ -241,15 +277,6 @@ export const paymentEndpoints = {
 
   // POST /payments/stripe
   stripe: () => "/payments/stripe",
-
-  // GET /payments/:id
-  get: (id: string | number) => buildUrl("/payments/:id", { id }),
-
-  // GET /payments/:id/status
-  status: (id: string | number) => buildUrl("/payments/:id/status", { id }),
-
-  // POST /payments/:id/refund
-  refund: (id: string | number) => buildUrl("/payments/:id/refund", { id }),
 }
 
 /**
@@ -364,6 +391,26 @@ export const settingsEndpoints = {
 }
 
 /**
+ * Store Endpoints
+ */
+export const storeEndpoints = {
+  // GET /stores
+  list: () => "/stores",
+
+  // GET /stores/:id
+  get: (id: string | number) => buildUrl("/stores/:id", { id }),
+
+  // POST /stores
+  create: () => "/stores",
+
+  // PATCH /stores/:id
+  update: (id: string | number) => buildUrl("/stores/:id", { id }),
+
+  // DELETE /stores/:id
+  delete: (id: string | number) => buildUrl("/stores/:id", { id }),
+}
+
+/**
  * Export all endpoints
  */
 export const endpoints = {
@@ -379,6 +426,7 @@ export const endpoints = {
   subscriptions: subscriptionEndpoints,
   user: userEndpoints,
   settings: settingsEndpoints,
+  stores: storeEndpoints,
 }
 
 export default endpoints

@@ -2,18 +2,22 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from "recharts"
-
-const data = [
-  { name: "POS", value: 62, color: "#7c3aed" },
-  { name: "Online", value: 38, color: "#a78bfa" },
-]
+import type { OrdersByChannel } from "@/types/dashboard"
 
 type OrdersByChannelChartProps = {
+  data?: OrdersByChannel | null
   className?: string
   contentClassName?: string
 }
 
-export function OrdersByChannelChart({ className, contentClassName }: OrdersByChannelChartProps) {
+export function OrdersByChannelChart({ data, className, contentClassName }: OrdersByChannelChartProps) {
+  // Transform API data to chart format
+  const chartData = data ? data.channels.map(channel => ({
+    name: channel.channel.toUpperCase(),
+    value: channel.percentage,
+    color: channel.channel === "pos" ? "#7c3aed" : "#a78bfa",
+  })) : []
+
   return (
     <Card className={className}>
       <CardHeader>
@@ -24,7 +28,7 @@ export function OrdersByChannelChart({ className, contentClassName }: OrdersByCh
         <ResponsiveContainer width="100%" height={250}>
           <PieChart>
             <Pie
-              data={data}
+              data={chartData}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -32,7 +36,7 @@ export function OrdersByChannelChart({ className, contentClassName }: OrdersByCh
               paddingAngle={5}
               dataKey="value"
             >
-              {data.map((entry, index) => (
+              {chartData.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
@@ -40,16 +44,13 @@ export function OrdersByChannelChart({ className, contentClassName }: OrdersByCh
           </PieChart>
         </ResponsiveContainer>
         <div className="mt-4 flex justify-around text-sm">
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-600"></div>
-            <span className="text-gray-600">POS</span>
-            <span className="font-semibold">62%</span>
-          </div>
-          <div className="flex items-center gap-2">
-            <div className="w-3 h-3 rounded-full bg-purple-400"></div>
-            <span className="text-gray-600">Online</span>
-            <span className="font-semibold">38%</span>
-          </div>
+          {chartData.map((item, index) => (
+            <div key={index} className="flex items-center gap-2">
+              <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
+              <span className="text-gray-600">{item.name}</span>
+              <span className="font-semibold">{item.value.toFixed(0)}%</span>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

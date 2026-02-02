@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import React, { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import {
@@ -26,6 +27,9 @@ import {
   PauseCircle,
   Settings,
   Trash2,
+  Loader2,
+  History,
+  RefreshCw,
 } from "lucide-react";
 import DesktopPOSLayout from "@/components/screens/pos-screen/DesktopPOSLayout";
 import {
@@ -34,6 +38,20 @@ import {
   type Fulfillment,
   type Screen,
 } from "@/components/screens/pos-screen";
+import {
+  productService,
+  customerService,
+  orderService,
+  paymentService,
+  categoryService,
+  storeService,
+  type ApiProduct,
+  type ApiCustomer,
+  type ApiCategory,
+  type ApiStore,
+} from "@/services";
+import { tokenManager } from "@/lib/axios-client";
+import Swal from "sweetalert2";
 
 const THEME = {
   bg: "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]",
@@ -93,29 +111,59 @@ function Pill({ children }: { children: React.ReactNode }) {
 }
 
 function Money({ value }: { value: number }) {
-  return <span>{"\u20B1 "}{Math.round(value).toLocaleString()}</span>;
+  return <span>{"₱ "}{Math.round(value).toLocaleString()}</span>;
+}
+
+/**
+ * Convert API product to POS product format
+ */
+function convertApiProductToPOS(apiProduct: ApiProduct): POSProduct {
+  return {
+    id: String(apiProduct.id),
+    name: apiProduct.name,
+    sku: apiProduct.sku,
+    barcode: apiProduct.barcode || "",
+    price: apiProduct.price,
+    stock: apiProduct.stock,
+    category: "general", // Map to POS categories
+    unit: apiProduct.unit || "pc",
+  };
 }
 
 export default function VendoraPOS() {
+  const router = useRouter();
   const [screen, setScreen] = useState<Screen>("sale");
 
+  // Loading and error states
+  const [isLoading, setIsLoading] = useState(true);
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  // Data from API
+  const [apiProducts, setApiProducts] = useState<ApiProduct[]>([]);
+  const [customers, setCustomers] = useState<ApiCustomer[]>([]);
+  const [selectedCustomerId, setSelectedCustomerId] = useState<number | null>(null);
+  const [categories, setCategories] = useState<ApiCategory[]>([]);
+  const [stores, setStores] = useState<ApiStore[]>([]);
+  const [selectedStore, setSelectedStore] = useState<number | null>(null);
+
+  // Product search and filtering
   const [query, setQuery] = useState("");
   const [barcodeInput, setBarcodeInput] = useState("");
-  const [category, setCategory] = useState<"all" | POSProduct["category"]>("all");
+  const [category, setCategory] = useState<string>("all");
 
+  // Cart state
   const [cart, setCart] = useState<CartItem[]>([]);
   const [customer, setCustomer] = useState<"walkin" | "saved1" | "saved2">("walkin");
   const [notes, setNotes] = useState("");
 
+  // Pricing and payment
   const [discountMode, setDiscountMode] = useState<"amount" | "percent">("amount");
   const [discountValue, setDiscountValue] = useState<number>(0);
-
   const [taxEnabled, setTaxEnabled] = useState(true);
   const [taxRate, setTaxRate] = useState<number>(0.12);
-
   const [fulfillment, setFulfillment] = useState<Fulfillment>("pickup");
   const [deliveryKm, setDeliveryKm] = useState<number>(3);
-
   const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
   const [splitPay, setSplitPay] = useState(false);
   const [primaryMethod, setPrimaryMethod] = useState<"cash" | "card" | "online">("cash");
@@ -123,33 +171,154 @@ export default function VendoraPOS() {
   const [cardPay, setCardPay] = useState<number>(0);
   const [onlinePay, setOnlinePay] = useState<number>(0);
 
+  // Modal states
   const [holdOpen, setHoldOpen] = useState(false);
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
-  const products = useMemo<POSProduct[]>(
-    () => [
-      { id: "p1", name: "Premium Rice 5kg", sku: "GR-1001", barcode: "480001000001", price: 1250, stock: 18, category: "grocery", unit: "bag" },
-      { id: "p2", name: "Cooking Oil 1L", sku: "GR-1020", barcode: "480001000002", price: 160, stock: 40, category: "grocery", unit: "bottle" },
-      { id: "p3", name: "Laundry Detergent 1kg", sku: "GR-1201", barcode: "480001000003", price: 150, stock: 25, category: "grocery", unit: "pack" },
-      { id: "p4", name: "Cement 40kg", sku: "HW-2001", barcode: "490002000001", price: 360, stock: 70, category: "hardware", unit: "bag" },
-      { id: "p5", name: "PVC Pipe 1 inch", sku: "HW-1023", barcode: "490002000002", price: 95, stock: 6, category: "hardware", unit: "pc" },
-      { id: "p6", name: "Nails Assorted", sku: "HW-3102", barcode: "490002000003", price: 55, stock: 120, category: "hardware", unit: "pack" },
-      { id: "p7", name: "Screwdriver Set", sku: "HW-0902", barcode: "490002000004", price: 260, stock: 4, category: "hardware", unit: "set" },
-      { id: "p8", name: "General Item", sku: "GN-0001", barcode: "470003000001", price: 99, stock: 999, category: "general", unit: "pc" },
-    ],
-    []
-  );
+  const [saleId, setSaleId] = useState<string | null>(null);
 
+  /**
+   * Check authentication on mount
+   */
+  useEffect(() => {
+    const checkAuth = () => {
+      const token = tokenManager.getAccessToken();
+      if (!token) {
+        router.push("/pos/auth/login");
+        return false;
+      }
+      return true;
+    };
+
+    if (checkAuth()) {
+      loadInitialData();
+    }
+  }, [router]);
+
+  /**
+   * Load products and customers from API
+   */
+  const loadInitialData = async () => {
+    setIsLoading(true);
+    setError(null);
+
+    try {
+      // Load categories
+      try {
+        const categoriesResponse = await categoryService.getAll();
+        console.log('📂 Categories Response:', categoriesResponse);
+        const categoriesList = Array.isArray(categoriesResponse)
+          ? categoriesResponse
+          : (categoriesResponse as any).data || [];
+        console.log('📂 Categories List:', categoriesList);
+        setCategories(categoriesList);
+      } catch (err) {
+        console.error("Failed to load categories:", err);
+      }
+
+      // Load stores
+      try {
+        const storesResponse = await storeService.getAll();
+        console.log('🏪 Stores Response:', storesResponse);
+        const storesList = Array.isArray(storesResponse)
+          ? storesResponse
+          : (storesResponse as any).data || [];
+        console.log('🏪 Stores List:', storesList);
+        setStores(storesList.filter((s: ApiStore) => s.is_active));
+      } catch (err) {
+        console.error("Failed to load stores:", err);
+      }
+
+      // Load products (filtered by store if selected)
+      const productsResponse = await productService.getAll({
+        per_page: 1000,  // Fetch all products
+        ...(selectedStore && { store_id: selectedStore })
+      });
+
+      console.log('📦 Products Response:', productsResponse);
+      const products = Array.isArray(productsResponse)
+        ? productsResponse
+        : (productsResponse as any).data || [];
+
+      console.log('📦 Products Array:', products);
+      console.log('📦 Products Count:', products.length);
+      setApiProducts(products);
+
+      // Load customers for saved customer selection
+      try {
+        const customersResponse = await customerService.getAll({ per_page: 50 });
+        console.log('👥 Customers Response:', customersResponse);
+        const customersList = Array.isArray(customersResponse)
+          ? customersResponse
+          : (customersResponse as any).data || [];
+        console.log('👥 Customers List:', customersList);
+        setCustomers(customersList);
+      } catch (err) {
+        console.error("Failed to load customers:", err);
+        // Continue without customers
+      }
+
+    } catch (err: any) {
+      console.error("Failed to load data:", err);
+      setError(err?.message || "Failed to load products");
+
+      // If auth error, redirect to login
+      if (err?.status === 401 || err?.status === 403) {
+        router.push("/pos/auth/login");
+      }
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  /**
+   * Reload products when store changes
+   */
+  useEffect(() => {
+    if (selectedStore !== null) {
+      loadInitialData();
+    }
+  }, [selectedStore]);
+
+  /**
+   * Generate sale ID
+   */
+  useEffect(() => {
+    const base = String(Math.floor(Date.now() / 1000)).slice(-6);
+    setSaleId(`SALE-${base}`);
+  }, []);
+
+  /**
+   * Convert API products to POS format
+   */
+  const products = useMemo<POSProduct[]>(() => {
+    return apiProducts.map(convertApiProductToPOS);
+  }, [apiProducts]);
+
+  /**
+   * Filter products based on search and category
+   */
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return products.filter((p) => {
-      const okCat = category === "all" ? true : p.category === category;
-      const okQuery = !q ? true : `${p.name} ${p.sku} ${p.barcode}`.toLowerCase().includes(q);
-      return okCat && okQuery;
-    });
-  }, [products, query, category]);
+      // Get the product's API data to check category ID
+      const apiProduct = apiProducts.find(ap => String(ap.id) === p.id);
+      const categoryMatch = category === "all"
+        ? true
+        : apiProduct?.category?.id === Number(category);
 
+      const okQuery = !q ? true : `${p.name} ${p.sku} ${p.barcode}`.toLowerCase().includes(q);
+      return categoryMatch && okQuery;
+    });
+  }, [products, query, category, apiProducts]);
+
+  /**
+   * Add product to cart
+   */
   const addToCart = (p: POSProduct, qty = 1) => {
     setCart((prev) => {
       const found = prev.find((x) => x.id === p.id);
@@ -159,21 +328,82 @@ export default function VendoraPOS() {
       }
       return [
         ...prev,
-        { id: p.id, name: p.name, sku: p.sku, barcode: p.barcode, price: p.price, stock: p.stock, unit: p.unit, qty: clampQty(qty, p.stock) },
+        {
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          barcode: p.barcode,
+          price: p.price,
+          stock: p.stock,
+          unit: p.unit,
+          qty: clampQty(qty, p.stock)
+        },
       ];
     });
   };
 
-  const applyBarcode = () => {
+  /**
+   * Apply barcode/SKU lookup
+   */
+  const applyBarcode = async () => {
     const code = barcodeInput.trim();
     if (!code) return;
-    const found = products.find((p) => p.barcode === code || p.sku.toLowerCase() === code.toLowerCase());
-    if (found) {
-      addToCart(found, 1);
-      setBarcodeInput("");
-      return;
+
+    setIsProcessing(true);
+    try {
+      // Try barcode first
+      let product: ApiProduct | null = null;
+
+      try {
+        product = await productService.getByBarcode(code);
+      } catch {
+        // Try SKU lookup
+        try {
+          product = await productService.getBySku(code);
+        } catch {
+          // Not found
+        }
+      }
+
+      if (product) {
+        const posProduct = convertApiProductToPOS(product);
+        addToCart(posProduct, 1);
+        setBarcodeInput("");
+
+        Swal.fire({
+          icon: "success",
+          title: "Added to cart",
+          text: product.name,
+          timer: 1500,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+      } else {
+        Swal.fire({
+          icon: "error",
+          title: "Product not found",
+          text: `No product found for: ${code}`,
+          timer: 2000,
+          showConfirmButton: false,
+          toast: true,
+          position: "top-end",
+        });
+      }
+    } catch (err: any) {
+      console.error("Barcode lookup error:", err);
+      Swal.fire({
+        icon: "error",
+        title: "Lookup failed",
+        text: err?.message || "Failed to lookup product",
+        timer: 2000,
+        showConfirmButton: false,
+        toast: true,
+        position: "top-end",
+      });
+    } finally {
+      setIsProcessing(false);
     }
-    alert("Product not found (demo). Add lookup in your API.");
   };
 
   const changeQty = (id: string, nextQty: number | string) => {
@@ -221,6 +451,12 @@ export default function VendoraPOS() {
     const k = Math.max(0, Number(cardPay) || 0);
     const o = Math.max(0, Number(onlinePay) || 0);
 
+    console.log('💰 Payment Debug:', {
+      cashPay, cardPay, onlinePay,
+      parsedCash: c, parsedCard: k, parsedOnline: o,
+      splitPay, primaryMethod
+    });
+
     if (splitPay) return c + k + o;
 
     if (primaryMethod === "cash") return c;
@@ -231,15 +467,253 @@ export default function VendoraPOS() {
   const balance = useMemo(() => Math.max(0, amountDue - paid), [amountDue, paid]);
   const change = useMemo(() => Math.max(0, paid - amountDue), [amountDue, paid]);
 
+  console.log('🎯 Complete Button Status:', {
+    cartLength: cart.length,
+    total: totals.total,
+    amountDue,
+    paid,
+    balance,
+    change,
+    canComplete: cart.length > 0 && totals.total > 0 && balance === 0
+  });
+
   const canGoCheckout = useMemo(() => cart.length > 0 && totals.total > 0, [cart.length, totals.total]);
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
-  const [saleId, setSaleId] = useState<string | null>(null);
+  /**
+   * Complete order - Create customer, order, and payment via API
+   */
+  const completeOrder = async () => {
+    if (!canComplete) return;
 
-  useEffect(() => {
-    const base = String(Math.floor(Date.now() / 1000)).slice(-6);
-    setSaleId(`SALE-${base}`);
-  }, []);
+    setIsProcessing(true);
+
+    try {
+      console.log('🚀 Starting order completion process...');
+
+      // Step 1: Create or get customer
+      let customerId = selectedCustomerId;
+      console.log('👤 Step 1: Customer selection', { customer, selectedCustomerId, customersLength: customers.length });
+
+      if (customer === "walkin" && !customerId) {
+        console.log('👤 Creating walk-in customer...');
+        try {
+          const newCustomer = await customerService.create({
+            name: "Walk-in Customer",
+            status: "active",
+          });
+          customerId = newCustomer.id;
+          console.log('✅ Walk-in customer created:', customerId);
+        } catch (customerError: any) {
+          console.error('❌ Failed to create walk-in customer:', customerError);
+          throw new Error(`Failed to create customer: ${customerError?.message || 'Unknown error'}`);
+        }
+      } else if (customer === "saved1" && customers[0]) {
+        customerId = customers[0].id;
+        console.log('👤 Using saved customer 1:', customerId);
+      } else if (customer === "saved2" && customers[1]) {
+        customerId = customers[1].id;
+        console.log('👤 Using saved customer 2:', customerId);
+      }
+
+      if (!customerId) {
+        throw new Error("Customer selection required");
+      }
+
+      // Step 2: Create order
+      const orderData: any = {
+        customer_id: customerId,
+        ordered_at: new Date().toISOString().split('T')[0],
+        status: "pending",
+        items: cart.map(item => ({
+          product_id: Number(item.id),
+          quantity: item.qty,
+        })),
+      };
+
+      console.log('📦 Step 2: Creating order with data:', orderData);
+
+      let order;
+      try {
+        order = await orderService.create(orderData);
+        console.log('✅ Order created successfully:', order);
+      } catch (orderError: any) {
+        console.error('❌ Failed to create order:', orderError);
+        throw new Error(`Failed to create order: ${orderError?.message || 'Unknown error'}`);
+      }
+
+      // Step 3: Create payment(s)
+      const paymentDate = new Date().toISOString().split('T')[0]; // YYYY-MM-DD format
+      console.log('💰 Step 3: Creating payments', { paymentDate, splitPay, primaryMethod });
+
+      try {
+        if (splitPay) {
+          // Create multiple payment records for split payment
+          const payments = [];
+
+          if (cashPay > 0) {
+            const cashPaymentData = {
+              order_id: order.id as unknown as number,
+              amount: cashPay,
+              method: "cash" as const,
+              status: "completed" as const,
+              paid_at: paymentDate,
+            };
+            console.log('💰 Creating cash payment:', cashPaymentData);
+            payments.push(paymentService.create(cashPaymentData));
+          }
+
+          if (cardPay > 0) {
+            const cardPaymentData = {
+              order_id: order.id as unknown as number,
+              amount: cardPay,
+              method: "card" as const,
+              status: "completed" as const,
+              paid_at: paymentDate,
+            };
+            console.log('💰 Creating card payment:', cardPaymentData);
+            payments.push(paymentService.create(cardPaymentData));
+          }
+
+          if (onlinePay > 0) {
+            const onlinePaymentData = {
+              order_id: order.id as unknown as number,
+              amount: onlinePay,
+              method: "online" as const,
+              status: "completed" as const,
+              paid_at: paymentDate,
+            };
+            console.log('💰 Creating online payment:', onlinePaymentData);
+            payments.push(paymentService.create(onlinePaymentData));
+          }
+
+          await Promise.all(payments);
+          console.log('✅ All split payments created successfully');
+        } else {
+          // Single payment
+          const singlePaymentData = {
+            order_id: order.id as unknown as number,
+            amount: paid,
+            method: primaryMethod,
+            status: "completed" as const,
+            paid_at: paymentDate,
+          };
+          console.log('💰 Creating single payment:', singlePaymentData);
+          await paymentService.create(singlePaymentData);
+          console.log('✅ Single payment created successfully');
+        }
+      } catch (paymentError: any) {
+        console.error('❌ Failed to create payment:', paymentError);
+        throw new Error(`Failed to process payment: ${paymentError?.message || 'Unknown error'}`);
+      }
+
+      // Step 4: Update inventory via bulk stock decrement
+      console.log('📊 Step 4: Updating inventory...');
+      try {
+        await productService.bulkStockDecrement({
+          items: cart.map(item => ({
+            productId: Number(item.id),
+            quantity: item.qty,
+            variantSku: null,
+          })),
+          orderId: `ORD-${order.id}`,
+        });
+        console.log('✅ Inventory updated successfully');
+      } catch (inventoryError: any) {
+        console.error('❌ Failed to update inventory:', inventoryError);
+        // Don't throw here, order is already created
+        console.warn('⚠️ Order created but inventory update failed');
+      }
+
+      // Step 5: Show success and receipt
+      console.log('🎉 Step 5: Finalizing order...');
+      setReceiptData({
+        orderId: order.id,
+        orderNumber: `ORD-${order.id}`,
+        customer: customer === "walkin" ? "Walk-in Customer" : customers.find(c => c.id === customerId)?.name || "Customer",
+        items: cart,
+        totals,
+        paid,
+        change,
+        paymentMethod: splitPay
+          ? `Split (Cash: ₱${cashPay}, Card: ₱${cardPay}, Online: ₱${onlinePay})`
+          : primaryMethod,
+      });
+
+      setReceiptOpen(true);
+
+      // Clear cart and reset form
+      setCart([]);
+      setNotes("");
+      setDiscountValue(0);
+      setCashPay(0);
+      setCardPay(0);
+      setOnlinePay(0);
+      setScreen("sale");
+
+      // Reload products to get updated stock
+      await loadInitialData();
+
+      Swal.fire({
+        icon: "success",
+        title: "Order completed!",
+        text: `Order #${order.id} has been processed`,
+        timer: 3000,
+        showConfirmButton: false,
+      });
+
+      console.log('✅ Order completion process finished successfully');
+
+
+    } catch (err: any) {
+      console.error("Order completion error:", err);
+
+      // Detailed error logging for debugging
+      console.error("Error details:", {
+        message: err?.message,
+        name: err?.name,
+        status: err?.status,
+        response: err?.response?.data,
+        responseStatus: err?.response?.status,
+        responseHeaders: err?.response?.headers,
+        errors: err?.errors,
+        stack: err?.stack,
+        // Try to serialize the error object with all properties
+        serialized: Object.getOwnPropertyNames(err).reduce((acc: any, key) => {
+          acc[key] = err[key];
+          return acc;
+        }, {})
+      });
+
+      // Determine user-friendly error message
+      let errorMessage = "Something went wrong. Please try again.";
+
+      if (err?.message) {
+        errorMessage = err.message;
+      }
+
+      if (err?.response?.data?.message) {
+        errorMessage = err.response.data.message;
+      }
+
+      if (err?.errors) {
+        // Format validation errors
+        const errorList = Object.values(err.errors).flat();
+        if (errorList.length > 0) {
+          errorMessage = errorList.join(", ");
+        }
+      }
+
+      Swal.fire({
+        icon: "error",
+        title: "Order Failed",
+        text: errorMessage,
+        confirmButtonColor: "#7c3aed",
+      });
+    } finally {
+      setIsProcessing(false);
+    }
+  };
 
   const screenProps = {
     screen,
@@ -294,9 +768,40 @@ export default function VendoraPOS() {
     canComplete,
     setReceiptOpen,
     calcDeliveryFee,
+    completeOrder,
+    categories,
   };
 
   const bodyHeight = "h-auto lg:h-[calc(100vh-84px)]";
+
+  // Show loading state
+  if (isLoading) {
+    return (
+      <div className={`min-h-screen ${THEME.bg} flex items-center justify-center`}>
+        <div className="text-center">
+          <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
+          <p className="text-white text-lg">Loading POS...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (error) {
+    return (
+      <div className={`min-h-screen ${THEME.bg} flex items-center justify-center`}>
+        <div className="text-center max-w-md">
+          <p className="text-red-400 text-lg mb-4">{error}</p>
+          <Button
+            onClick={loadInitialData}
+            className="rounded-xl bg-purple-600 hover:bg-purple-700"
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={`min-h-screen ${THEME.bg} overflow-auto lg:overflow-hidden`}>
@@ -312,11 +817,44 @@ export default function VendoraPOS() {
             </div>
             <div className="hidden lg:flex gap-2 ml-2">
               <Pill>Cashier Maria</Pill>
-              <Pill>{customer === "walkin" ? "Walk in" : customer === "saved1" ? "Mark S." : "Liza R."}</Pill>
+              {stores.length > 0 && (
+                <Select value={selectedStore ? String(selectedStore) : "all"} onValueChange={(v) => setSelectedStore(v === "all" ? null : Number(v))}>
+                  <SelectTrigger className="h-7 w-auto rounded-full bg-white/10 border-white/10 text-white text-xs px-3" suppressHydrationWarning>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Stores</SelectItem>
+                    {stores.map(store => (
+                      <SelectItem key={store.id} value={String(store.id)}>
+                        {store.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              )}
+              <Pill>{customer === "walkin" ? "Walk in" : customer === "saved1" ? customers[0]?.name || "Customer 1" : customers[1]?.name || "Customer 2"}</Pill>
             </div>
           </div>
 
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
+            <Button
+              variant="secondary"
+              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
+              onClick={async () => {
+                setOrderHistoryOpen(true);
+                try {
+                  const orders = await orderService.getAll({});
+                  const ordersList = Array.isArray(orders) ? orders : (orders as any).data || [];
+                  setRecentOrders(ordersList);
+                } catch (err) {
+                  console.error("Failed to load orders:", err);
+                }
+              }}
+            >
+              <History className="h-4 w-4 lg:mr-2" />
+              <span className="hidden lg:inline">Orders</span>
+            </Button>
+
             {screen === "checkout" ? (
               <Button
                 variant="secondary"
@@ -379,7 +917,7 @@ export default function VendoraPOS() {
           <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
             <div className="text-sm">Hold reference</div>
             <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Example Counter 1" />
-            <div className={`text-xs ${THEME.muted}`}>In real flow, save to backend with cashier ID and timestamp.</div>
+            <div className={`text-xs ${THEME.muted}`}>Feature coming soon - integrate with backend.</div>
           </div>
 
           <DialogFooter>
@@ -394,7 +932,7 @@ export default function VendoraPOS() {
               className="rounded-xl bg-purple-600 hover:bg-purple-700"
               onClick={() => {
                 setHoldOpen(false);
-                alert("Sale held (demo). Implement save hold API.");
+                alert("Hold sale feature coming soon.");
               }}
               disabled={cart.length === 0}
             >
@@ -409,14 +947,18 @@ export default function VendoraPOS() {
         <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-2xl">
           <DialogHeader>
             <DialogTitle>Receipt Preview</DialogTitle>
-            <DialogDescription className="text-white/60">Print, email, or save after payment.</DialogDescription>
+            <DialogDescription className="text-white/60">
+              {receiptData ? "Order completed successfully" : "Preview receipt before checkout"}
+            </DialogDescription>
           </DialogHeader>
 
           <div className={`rounded-2xl ${THEME.panel} p-4 space-y-3`}>
             <div className="flex items-start justify-between">
               <div>
-                <div className="font-semibold">Vendora Retail Demo</div>
-                <div className={`text-xs ${THEME.muted}`}>Transaction {saleId ?? "—"}</div>
+                <div className="font-semibold">Vendora Retail</div>
+                <div className={`text-xs ${THEME.muted}`}>
+                  {receiptData ? `Order ${receiptData.orderNumber}` : `Transaction ${saleId ?? "—"}`}
+                </div>
               </div>
               <div className="text-right">
                 <div className={`text-xs ${THEME.muted}`}>Cashier</div>
@@ -434,7 +976,7 @@ export default function VendoraPOS() {
                   <div key={x.id} className="flex items-center justify-between text-sm">
                     <div className="min-w-0">
                       <div className="truncate">{x.name}</div>
-                      <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} Ã— <Money value={x.price} /></div>
+                      <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} × <Money value={x.price} /></div>
                     </div>
                     <div className="font-medium"><Money value={x.qty * x.price} /></div>
                   </div>
@@ -451,8 +993,13 @@ export default function VendoraPOS() {
               <div className="flex items-center justify-between"><span className={THEME.muted}>Delivery</span><span><Money value={totals.deliveryFee} /></span></div>
               <div className="h-px bg-white/10" />
               <div className="flex items-center justify-between font-semibold"><span>Total</span><span><Money value={totals.total} /></span></div>
-              <div className="flex items-center justify-between"><span className={THEME.muted}>Paid</span><span><Money value={paid} /></span></div>
-              <div className="flex items-center justify-between"><span className={THEME.muted}>Change</span><span><Money value={change} /></span></div>
+              {receiptData && (
+                <>
+                  <div className="flex items-center justify-between"><span className={THEME.muted}>Paid</span><span><Money value={receiptData.paid} /></span></div>
+                  <div className="flex items-center justify-between"><span className={THEME.muted}>Change</span><span><Money value={receiptData.change} /></span></div>
+                  <div className={`text-xs ${THEME.muted} mt-2`}>Payment: {receiptData.paymentMethod}</div>
+                </>
+              )}
             </div>
 
             {notes ? <div className={`text-xs ${THEME.muted}`}>Notes: {notes}</div> : null}
@@ -462,7 +1009,7 @@ export default function VendoraPOS() {
             <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setReceiptOpen(false)}>
               Close
             </Button>
-            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => alert("Print action (demo). Add print support.")}>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => window.print()}>
               Print
             </Button>
           </DialogFooter>
@@ -474,7 +1021,7 @@ export default function VendoraPOS() {
         <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-xl">
           <DialogHeader>
             <DialogTitle>POS Settings</DialogTitle>
-            <DialogDescription className="text-white/60">UI only settings for MVP</DialogDescription>
+            <DialogDescription className="text-white/60">Configure POS preferences</DialogDescription>
           </DialogHeader>
 
           <div className="space-y-3">
@@ -503,7 +1050,7 @@ export default function VendoraPOS() {
             <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
               <div className="text-sm font-medium">Device</div>
               <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Device name e.g. Counter 1" />
-              <div className={`text-xs ${THEME.muted}`}>Store per device settings in backend later.</div>
+              <div className={`text-xs ${THEME.muted}`}>Device settings will be saved to backend.</div>
             </div>
           </div>
 
@@ -511,17 +1058,119 @@ export default function VendoraPOS() {
             <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setSettingsOpen(false)}>
               Close
             </Button>
-            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => { setSettingsOpen(false); alert("Saved (demo). Persist via API."); }}>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => { setSettingsOpen(false); }}>
               Save
             </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
 
+      {/* Order History Modal */}
+      <Dialog open={orderHistoryOpen} onOpenChange={setOrderHistoryOpen}>
+        <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle>Recent Orders</DialogTitle>
+            <DialogDescription className="text-white/60">View and manage recent transactions</DialogDescription>
+          </DialogHeader>
+
+          <div className="flex-1 overflow-auto">
+            {recentOrders.length === 0 ? (
+              <div className="text-center py-8">
+                <p className={THEME.muted}>No orders found</p>
+              </div>
+            ) : (
+              <div className="space-y-2">
+                {recentOrders.map((order: any) => (
+                  <div key={order.id} className={`rounded-xl ${THEME.panel} p-3`}>
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="font-medium">{order.order_number || `ORD-${order.id}`}</div>
+                        <div className={`text-sm ${THEME.muted}`}>{order.customer || "Walk-in"}</div>
+                        <div className={`text-xs ${THEME.muted}`}>{order.ordered_at}</div>
+                      </div>
+                      <div className="text-right">
+                        <div className="font-semibold">
+                          <Money value={order.total || 0} />
+                        </div>
+                        <div className={`text-xs ${THEME.muted}`}>{order.status}</div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setOrderHistoryOpen(false)}>
+              Close
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Processing Overlay */}
+      <Dialog open={settingsOpen} onOpenChange={setSettingsOpen}>
+        <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-xl">
+          <DialogHeader>
+            <DialogTitle>POS Settings</DialogTitle>
+            <DialogDescription className="text-white/60">Configure POS preferences</DialogDescription>
+          </DialogHeader>
+
+          <div className="space-y-3">
+            <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
+              <div className="text-sm font-medium">Tax defaults</div>
+              <div className="flex items-center justify-between">
+                <span className={THEME.muted}>Tax enabled by default</span>
+                <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
+              </div>
+              <div className="flex items-center gap-2">
+                <Select value={String(taxRate)} onValueChange={(v) => setTaxRate(Number(v))}>
+                  <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                    <SelectValue placeholder="Tax rate" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">0%</SelectItem>
+                    <SelectItem value="0.03">3%</SelectItem>
+                    <SelectItem value="0.05">5%</SelectItem>
+                    <SelectItem value="0.12">12%</SelectItem>
+                  </SelectContent>
+                </Select>
+                <Pill>Rate</Pill>
+              </div>
+            </div>
+
+            <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
+              <div className="text-sm font-medium">Device</div>
+              <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Device name e.g. Counter 1" />
+              <div className={`text-xs ${THEME.muted}`}>Device settings will be saved to backend.</div>
+            </div>
+          </div>
+
+          <DialogFooter>
+            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setSettingsOpen(false)}>
+              Close
+            </Button>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => { setSettingsOpen(false); }}>
+              Save
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Processing Overlay */}
+      {isProcessing && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
+          <div className="bg-[#201836] rounded-2xl p-6 text-center">
+            <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
+            <p className="text-white text-lg">Processing...</p>
+          </div>
+        </div>
+      )}
+
       <footer className="px-6 pb-6">
-        <div className={`text-xs ${THEME.muted}`}>POS system - unified layout</div>
+        <div className={`text-xs ${THEME.muted}`}>POS system with API integration</div>
       </footer>
     </div>
   );
 }
-

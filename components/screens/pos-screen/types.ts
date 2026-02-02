@@ -31,8 +31,8 @@ export interface POSScreenProps {
   setQuery: (value: string) => void;
   barcodeInput: string;
   setBarcodeInput: (value: string) => void;
-  category: "all" | POSProduct["category"];
-  setCategory: (value: "all" | POSProduct["category"]) => void;
+  category: string;
+  setCategory: (value: string) => void;
   customer: "walkin" | "saved1" | "saved2";
   setCustomer: (value: "walkin" | "saved1" | "saved2") => void;
   notes: string;
@@ -83,4 +83,6 @@ export interface POSScreenProps {
   canComplete: boolean;
   setReceiptOpen: (value: boolean) => void;
   calcDeliveryFee: (fulfillment: Fulfillment, deliveryKm: number) => number;
+  completeOrder?: () => Promise<void>;
+  categories?: any[];
 }

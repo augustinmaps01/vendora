@@ -12,18 +12,35 @@ export const tokenManager = {
   getAccessToken: (): string | null => {
     if (typeof window === 'undefined') return null
     // Try to get from cookie first, then localStorage
-    const cookieToken = document.cookie
+    const cookieEntry = document.cookie
       .split('; ')
       .find(row => row.startsWith('vendora_access_token='))
-      ?.split('=')[1]
-    return cookieToken || localStorage.getItem(TOKEN_CONFIG.ACCESS_TOKEN_KEY)
+    // Handle tokens that may contain '=' characters by only splitting on the first '='
+    // Also decode URL-encoded tokens from cookies
+    const cookieToken = cookieEntry
+      ? decodeURIComponent(cookieEntry.substring('vendora_access_token='.length))
+      : null
+    const token = cookieToken || localStorage.getItem(TOKEN_CONFIG.ACCESS_TOKEN_KEY)
+
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development' && token) {
+      console.log('🔑 Token retrieved:', token.substring(0, 15) + '...')
+    }
+
+    return token
   },
 
   setAccessToken: (token: string): void => {
     if (typeof window === 'undefined') return
     // Store in both cookie and localStorage
-    document.cookie = `vendora_access_token=${token}; path=/; max-age=86400; SameSite=Lax`
+    // URL encode token to handle special characters in cookies
+    document.cookie = `vendora_access_token=${encodeURIComponent(token)}; path=/; max-age=86400; SameSite=Lax`
     localStorage.setItem(TOKEN_CONFIG.ACCESS_TOKEN_KEY, token)
+
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔑 Token stored:', token.substring(0, 15) + '...')
+    }
   },
 
   getRefreshToken: (): string | null => {
@@ -38,18 +55,28 @@ export const tokenManager = {
 
   getUserType: (): 'admin' | 'vendor' | null => {
     if (typeof window === 'undefined') return null
-    return localStorage.getItem(TOKEN_CONFIG.USER_TYPE_KEY) as 'admin' | 'vendor' | null
+    // Try to get from cookie first, then localStorage
+    const cookieEntry = document.cookie
+      .split('; ')
+      .find(row => row.startsWith('vendora_user_type='))
+    const cookieUserType = cookieEntry
+      ? cookieEntry.substring('vendora_user_type='.length)
+      : null
+    return (cookieUserType || localStorage.getItem(TOKEN_CONFIG.USER_TYPE_KEY)) as 'admin' | 'vendor' | null
   },
 
   setUserType: (type: 'admin' | 'vendor'): void => {
     if (typeof window === 'undefined') return
+    // Store in both cookie and localStorage
+    document.cookie = `vendora_user_type=${type}; path=/; max-age=86400; SameSite=Lax`
     localStorage.setItem(TOKEN_CONFIG.USER_TYPE_KEY, type)
   },
 
   clearTokens: (): void => {
     if (typeof window === 'undefined') return
-    // Clear cookie
+    // Clear cookies
     document.cookie = 'vendora_access_token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
+    document.cookie = 'vendora_user_type=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT'
     // Clear localStorage
     localStorage.removeItem(TOKEN_CONFIG.ACCESS_TOKEN_KEY)
     localStorage.removeItem(TOKEN_CONFIG.REFRESH_TOKEN_KEY)
@@ -181,12 +208,12 @@ axiosClient.interceptors.response.use(
 
     // Handle network errors (no response from server)
     if (!error.response) {
-      console.error('❌ Network Error:', {
+      console.error('❌ Network Error Details:', JSON.stringify({
         message: error.message,
         url: error.config?.url,
         baseURL: error.config?.baseURL,
-        code: error.code,
-      })
+        method: error.config?.method,
+      }, null, 2))
 
       // Return a more user-friendly error
       const networkError = new Error(
@@ -199,11 +226,7 @@ axiosClient.interceptors.response.use(
 
     // If error is not 401, reject immediately
     if (error.response?.status !== 401) {
-      console.error('❌ Response Error:', {
-        status: error.response?.status,
-        message: error.response?.data?.message || error.message,
-        url: error.config?.url,
-      })
+      // Suppress noisy non-401 error logging to avoid console spam.
       return Promise.reject(error)
     }
 

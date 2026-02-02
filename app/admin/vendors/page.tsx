@@ -29,17 +29,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
-import { Search, MoreVertical, Store, Eye, CheckCircle, XCircle, Clock, Filter } from "lucide-react"
+import { Search, MoreVertical, Store, Eye, CheckCircle, XCircle, Clock, Filter, Plus } from "lucide-react"
+import Link from "next/link"
 
 // Mock data - Replace with actual API call
+// Structure matches the API response from POST /api/admin/vendors
 const vendors = [
   {
     id: 1,
-    businessName: "Tech Store",
-    ownerName: "John Doe",
+    name: "John Doe",
     email: "john@techstore.com",
+    user_type: "vendor",
+    vendor_profile: {
+      id: 1,
+      business_name: "Tech Store",
+      subscription_plan: "premium",
+    },
     phone: "+1 234-567-8900",
-    subscriptionPlan: "Premium",
     subscriptionStatus: "active",
     registrationDate: "2024-01-15",
     lastActive: "2 hours ago",
@@ -48,11 +54,15 @@ const vendors = [
   },
   {
     id: 2,
-    businessName: "Fashion Hub",
-    ownerName: "Jane Smith",
+    name: "Jane Smith",
     email: "jane@fashionhub.com",
+    user_type: "vendor",
+    vendor_profile: {
+      id: 2,
+      business_name: "Fashion Hub",
+      subscription_plan: "basic",
+    },
     phone: "+1 234-567-8901",
-    subscriptionPlan: "Standard",
     subscriptionStatus: "active",
     registrationDate: "2024-02-20",
     lastActive: "1 day ago",
@@ -61,11 +71,15 @@ const vendors = [
   },
   {
     id: 3,
-    businessName: "Food Market",
-    ownerName: "Mike Johnson",
+    name: "Mike Johnson",
     email: "mike@foodmarket.com",
+    user_type: "vendor",
+    vendor_profile: {
+      id: 3,
+      business_name: "Food Market",
+      subscription_plan: "premium",
+    },
     phone: "+1 234-567-8902",
-    subscriptionPlan: "Premium",
     subscriptionStatus: "trial",
     registrationDate: "2024-03-10",
     lastActive: "3 hours ago",
@@ -74,11 +88,15 @@ const vendors = [
   },
   {
     id: 4,
-    businessName: "Book Shop",
-    ownerName: "Sarah Williams",
+    name: "Sarah Williams",
     email: "sarah@bookshop.com",
+    user_type: "vendor",
+    vendor_profile: {
+      id: 4,
+      business_name: "Book Shop",
+      subscription_plan: "free",
+    },
     phone: "+1 234-567-8903",
-    subscriptionPlan: "Basic",
     subscriptionStatus: "expired",
     registrationDate: "2024-01-05",
     lastActive: "2 weeks ago",
@@ -87,11 +105,15 @@ const vendors = [
   },
   {
     id: 5,
-    businessName: "Electronics Plus",
-    ownerName: "David Brown",
+    name: "David Brown",
     email: "david@electronicsplus.com",
+    user_type: "vendor",
+    vendor_profile: {
+      id: 5,
+      business_name: "Electronics Plus",
+      subscription_plan: "premium",
+    },
     phone: "+1 234-567-8904",
-    subscriptionPlan: "Premium",
     subscriptionStatus: "active",
     registrationDate: "2024-02-28",
     lastActive: "5 hours ago",
@@ -106,8 +128,8 @@ export default function VendorsPage() {
 
   const filteredVendors = vendors.filter((vendor) => {
     const matchesSearch =
-      vendor.businessName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      vendor.ownerName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.vendor_profile.business_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      vendor.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
       vendor.email.toLowerCase().includes(searchQuery.toLowerCase())
 
     const matchesStatus = statusFilter === "all" || vendor.subscriptionStatus === statusFilter
@@ -129,26 +151,34 @@ export default function VendorsPage() {
   }
 
   const getPlanBadge = (plan: string) => {
-    switch (plan) {
-      case "Premium":
-        return <Badge variant="default">Premium</Badge>
-      case "Standard":
-        return <Badge variant="secondary">Standard</Badge>
-      case "Basic":
-        return <Badge variant="outline">Basic</Badge>
+    switch (plan.toLowerCase()) {
+      case "premium":
+        return <Badge className="bg-purple-600 hover:bg-purple-600">Premium</Badge>
+      case "basic":
+        return <Badge className="bg-blue-600 hover:bg-blue-600">Basic</Badge>
+      case "free":
+        return <Badge variant="outline">Free</Badge>
       default:
-        return <Badge variant="outline">{plan}</Badge>
+        return <Badge variant="outline" className="capitalize">{plan}</Badge>
     }
   }
 
   return (
     <DashboardLayout>
       {/* Page Header */}
-      <div className="mb-6">
-        <h1 className="text-3xl font-bold tracking-tight">Vendors Management</h1>
-        <p className="text-muted-foreground mt-2">
-          Monitor and manage all vendor accounts and their subscriptions
-        </p>
+      <div className="mb-6 flex items-center justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Vendors Management</h1>
+          <p className="text-muted-foreground mt-2">
+            Monitor and manage all vendor accounts and their subscriptions
+          </p>
+        </div>
+        <Button asChild className="bg-purple-600 hover:bg-purple-700">
+          <Link href="/admin/vendors/create">
+            <Plus className="mr-2 h-4 w-4" />
+            Add Vendor
+          </Link>
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -269,19 +299,19 @@ export default function VendorsPage() {
                     <TableCell className="font-medium">
                       <div className="flex items-center gap-2">
                         <div className="h-8 w-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-semibold">
-                          {vendor.businessName.substring(0, 2).toUpperCase()}
+                          {vendor.vendor_profile.business_name.substring(0, 2).toUpperCase()}
                         </div>
-                        {vendor.businessName}
+                        {vendor.vendor_profile.business_name}
                       </div>
                     </TableCell>
-                    <TableCell>{vendor.ownerName}</TableCell>
+                    <TableCell>{vendor.name}</TableCell>
                     <TableCell>
                       <div className="text-sm">
                         <div>{vendor.email}</div>
                         <div className="text-muted-foreground">{vendor.phone}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{getPlanBadge(vendor.subscriptionPlan)}</TableCell>
+                    <TableCell>{getPlanBadge(vendor.vendor_profile.subscription_plan)}</TableCell>
                     <TableCell>{getStatusBadge(vendor.subscriptionStatus)}</TableCell>
                     <TableCell className="font-medium">{vendor.totalRevenue}</TableCell>
                     <TableCell>{vendor.productsCount}</TableCell>

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState } from "react"
 import { Sidebar } from "./Sidebar"
 import { Header } from "./Header"
 
@@ -8,11 +9,25 @@ interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ children }: DashboardLayoutProps) {
-  return (
-    <div className="min-h-screen bg-background">
-      <Sidebar />
+  const [sidebarWidth, setSidebarWidth] = useState(256)
 
-      <div className="ml-64 transition-all duration-300">
+  return (
+    <div
+      className="min-h-screen bg-background"
+      style={{
+        '--sidebar-width': `${sidebarWidth}px`
+      } as React.CSSProperties}
+    >
+      <Sidebar
+        onWidthChange={setSidebarWidth}
+      />
+
+      <div
+        className="transition-all duration-300"
+        style={{
+          marginLeft: `${sidebarWidth}px`
+        }}
+      >
         <Header />
 
         <main className="p-6">

@@ -119,6 +119,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     canComplete = false,
     setReceiptOpen = () => { },
     calcDeliveryFee = () => 0,
+    completeOrder = async () => { },
+    categories = [],
   } = props || {};
   return (
     <div className="h-full">
@@ -160,10 +162,6 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       </Button>
                     </div>
                   </div>
-
-                  <div className="flex flex-wrap items-center gap-2">
-                    <Pill>Subtotal <Money value={totals.subtotal} /></Pill>
-                  </div>
                 </div>
               </CardContent>
             </Card>
@@ -189,10 +187,12 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="all">All</SelectItem>
-                      <SelectItem value="grocery">Grocery</SelectItem>
-                      <SelectItem value="hardware">Hardware</SelectItem>
-                      <SelectItem value="general">General</SelectItem>
+                      <SelectItem value="all">All Categories</SelectItem>
+                      {categories.map((cat: any) => (
+                        <SelectItem key={cat.id} value={String(cat.id)}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
@@ -208,11 +208,18 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     {filtered.map((p) => (
                       <div
                         key={p.id}
-                        className={`rounded-2xl ${THEME.panel} px-3 py-2 flex flex-col gap-1`}
+                        className={`rounded-2xl ${THEME.panel} px-3 py-2 flex flex-col gap-1 ${p.stock <= 0 ? 'opacity-60' : ''}`}
                       >
                         <div className="flex items-center gap-3">
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium truncate text-white">{p.name}</div>
+                            <div className="font-medium truncate text-white flex items-center gap-2">
+                              {p.name}
+                              {p.stock <= 0 && (
+                                <span className="text-[9px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-500/30">
+                                  Out of Stock
+                                </span>
+                              )}
+                            </div>
                           </div>
 
                           <div className="shrink-0 text-sm font-semibold text-white">
@@ -223,9 +230,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             size="sm"
                             disabled={p.stock <= 0}
                             onClick={() => addToCart(p, 1)}
-                            className="rounded-xl bg-purple-600 hover:bg-purple-700 shrink-0"
+                            className="rounded-xl bg-purple-600 hover:bg-purple-700 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
-                            Add
+                            {p.stock <= 0 ? 'Unavailable' : 'Add'}
                           </Button>
                         </div>
 
@@ -233,7 +240,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           <div className={`${THEME.muted}`}>
                             {p.sku} â€¢ {p.unit}
                           </div>
-                          <div className={`${THEME.muted}`}>
+                          <div className={`${THEME.muted} ${p.stock <= 0 ? 'text-red-400' : ''}`}>
                             Stock {p.stock}
                           </div>
                         </div>
@@ -246,8 +253,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           </div>
 
           {/* Right column - Cart */}
-          <div className="h-full xl:col-span-4 overflow-hidden">
-            <Card className={`rounded-2xl ${THEME.card} h-full overflow-hidden flex flex-col`}>
+          <div className="xl:col-span-4 overflow-hidden">
+            <Card className={`rounded-2xl ${THEME.card} overflow-hidden flex flex-col`}>
               <CardHeader className="pb-3 shrink-0">
                 <CardTitle className="text-base text-white flex items-center gap-2">
                   <ShoppingCart className="h-4 w-4 text-purple-200" /> Cart
@@ -255,9 +262,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                 <div className={`text-xs ${THEME.muted}`}>Adjust quantity then go checkout</div>
               </CardHeader>
 
-              <CardContent className="flex-1 overflow-hidden">
-                <div className="h-full flex flex-col gap-3 overflow-hidden">
-                  <div className="flex-1 overflow-auto pr-1">
+              <CardContent className="flex-1 overflow-hidden p-4 pt-0">
+                <div className="flex flex-col gap-3">
+                  <div className="max-h-[150px] sm:max-h-[180px] md:max-h-[200px] lg:max-h-[220px] xl:max-h-[280px] 2xl:max-h-[350px] overflow-auto pr-1">
                     {cart.length === 0 ? (
                       <div className="rounded-2xl border border-white/15 border-dashed p-6 text-center text-sm text-white/60">
                         Cart is empty
@@ -320,15 +327,14 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         ))}
                       </div>
                     )}
-
                   </div>
 
-                  <div className={`rounded-2xl ${THEME.panel} p-2 space-y-2 shrink-0`}>
-                    <div className="text-sm font-medium text-white">Notes</div>
+                  <div className={`rounded-2xl ${THEME.panel} p-2 space-y-1`}>
+                    <div className="text-xs font-medium text-white">Notes</div>
                     <Input
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="rounded-xl bg-white/10 border-white/10 text-white placeholder:text-white/40"
+                      className="rounded-xl bg-white/10 border-white/10 text-white placeholder:text-white/40 h-8 text-xs"
                       placeholder="Optional"
                     />
                     <div className="h-px bg-white/10" />
@@ -677,8 +683,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         className="rounded-xl bg-purple-600 hover:bg-purple-700"
                         disabled={!canComplete}
                         onClick={() => {
-                          setReceiptOpen(true);
-                          alert("Payment captured (demo). Replace with API call.");
+                          if (completeOrder) {
+                            completeOrder();
+                          }
                         }}
                       >
                         Complete

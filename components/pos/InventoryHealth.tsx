@@ -2,21 +2,28 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
-
-const inventoryData = [
-  { label: "In Stock", value: 78 },
-  { label: "Low Stock", value: 16 },
-  { label: "Out of Stock", value: 6 },
-]
+import type { InventoryHealth as InventoryHealthData } from "@/types/dashboard"
 
 type InventoryHealthProps = {
+  data?: InventoryHealthData | null
   variant?: "default" | "embedded"
 }
 
-export function InventoryHealth({ variant = "default" }: InventoryHealthProps) {
+export function InventoryHealth({ data, variant = "default" }: InventoryHealthProps) {
   const isEmbedded = variant === "embedded"
   const headerClass = isEmbedded ? "px-0 pt-0" : undefined
   const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  // Transform API data to percentage format
+  const inventoryData = data ? data.breakdown.map(item => {
+    const percentage = (item.count / data.total_items) * 100
+    const label = item.status === "in_stock" ? "In Stock" :
+                  item.status === "low_stock" ? "Low Stock" : "Out of Stock"
+    return {
+      label,
+      value: Math.round(percentage),
+    }
+  }) : []
 
   const content = (
     <>
@@ -24,7 +31,7 @@ export function InventoryHealth({ variant = "default" }: InventoryHealthProps) {
         <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
         <p className="text-sm text-gray-500">Stock status</p>
       </CardHeader>
-      <CardContent className={`space-y-6 ${contentClass ?? ""}`}>
+      <CardContent className={`space - y - 6 ${ contentClass ?? "" } `.trim()}>
         {inventoryData.map((item) => (
           <div key={item.label} className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -34,7 +41,7 @@ export function InventoryHealth({ variant = "default" }: InventoryHealthProps) {
             <div className="w-full bg-gray-200 rounded-full h-2">
               <div
                 className="bg-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `${item.value}%` }}
+                style={{ width: `${ item.value }% ` }}
               ></div>
             </div>
           </div>

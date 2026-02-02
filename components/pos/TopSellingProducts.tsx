@@ -4,26 +4,27 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, ResponsiveContainer, Tooltip, Legend } from "recharts"
 import { Eye } from "lucide-react"
 import { Button } from "@/components/ui/button"
-
-const products = [
-  { name: "Premium Rice 5kg", units: 84, revenue: 21000 },
-  { name: "Cooking Oil 1L", units: 75, revenue: 18000 },
-  { name: "Instant Noodles", units: 68, revenue: 16000 },
-  { name: "Canned Goods", units: 62, revenue: 14500 },
-  { name: "Soap Bar Pack", units: 55, revenue: 13500 },
-]
+import type { TopProducts } from "@/types/dashboard"
 
 type TopSellingProductsProps = {
+  data?: TopProducts | null
   variant?: "default" | "embedded"
 }
 
-export function TopSellingProducts({ variant = "default" }: TopSellingProductsProps) {
+export function TopSellingProducts({ data, variant = "default" }: TopSellingProductsProps) {
   const isEmbedded = variant === "embedded"
   const headerClass = isEmbedded ? "px-0 pt-0" : undefined
   const contentClass = isEmbedded ? "px-0 pb-0" : undefined
 
+  // Use API data or empty array
+  const products = data?.items.map(item => ({
+    name: item.name,
+    units: item.units_sold,
+    revenue: item.revenue,
+  })) || []
+
   // Calculate max revenue for percentage calculations
-  const maxRevenue = Math.max(...products.map(p => p.revenue))
+  const maxRevenue = products.length > 0 ? Math.max(...products.map(p => p.revenue)) : 1
 
   const content = (
     <>
@@ -46,7 +47,7 @@ export function TopSellingProducts({ variant = "default" }: TopSellingProductsPr
               <YAxis hide />
               <Tooltip
                 formatter={(value, name) => {
-                  if (name === 'revenue') return [`\u20B1 ${value.toLocaleString()}`, 'Revenue']
+                  if (name === 'revenue') return [`₱ ${value.toLocaleString()}`, 'Revenue']
                   return [value, 'Units']
                 }}
               />
@@ -72,7 +73,7 @@ export function TopSellingProducts({ variant = "default" }: TopSellingProductsPr
                   <div className="flex gap-3 text-xs">
                     <span className="text-gray-500">{product.units} units</span>
                     <span className="font-semibold text-purple-600 min-w-[80px] text-right">
-                      {"\u20B1 "}{product.revenue.toLocaleString()}
+                      {"₱ "}{product.revenue.toLocaleString()}
                     </span>
                   </div>
                 </div>
@@ -101,7 +102,3 @@ export function TopSellingProducts({ variant = "default" }: TopSellingProductsPr
     </Card>
   )
 }
-
-
-
-

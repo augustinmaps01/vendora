@@ -6,17 +6,52 @@
 
 export const API_ENDPOINTS = {
   // Admin Authentication Endpoints
+  // Note: Admin uses the same endpoints as vendor, differentiated by user_type field
   ADMIN: {
-    REGISTER: '/admin/auth/register',
-    LOGIN: '/admin/auth/login',
-    LOGOUT: '/admin/auth/logout',
-    REFRESH: '/admin/auth/refresh',
-    ME: '/admin/auth/me',
-    VERIFY_2FA: '/admin/auth/verify-2fa',
-    FORGOT_PASSWORD: '/admin/auth/forgot-password',
-    RESET_PASSWORD: '/admin/auth/reset-password',
-    VERIFY_EMAIL: '/admin/auth/verify-email',
-    RESEND_VERIFICATION: '/admin/auth/resend-verification',
+    REGISTER: '/auth/register',
+    LOGIN: '/auth/login',
+    LOGOUT: '/auth/logout',
+    REFRESH: '/auth/refresh',
+    ME: '/auth/me',
+    VERIFY_2FA: '/auth/verify-2fa',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_EMAIL: '/auth/verify-email',
+    RESEND_VERIFICATION: '/auth/resend-verification',
+    // Admin Management Endpoints
+    VENDORS: {
+      LIST: '/admin/vendors',
+      CREATE: '/admin/vendors',
+      GET: (id: number | string) => `/admin/vendors/${id}`,
+      UPDATE: (id: number | string) => `/admin/vendors/${id}`,
+      DELETE: (id: number | string) => `/admin/vendors/${id}`,
+    },
+    USERS: {
+      LIST: '/admin/users',
+      GET: (id: number | string) => `/admin/users/${id}`,
+      UPDATE: (id: number | string) => `/admin/users/${id}`,
+      SUSPEND: (id: number | string) => `/admin/users/${id}/suspend`,
+    },
+    PRODUCTS: {
+      LIST: '/admin/products',
+      GET: (id: number | string) => `/admin/products/${id}`,
+    },
+    ORDERS: {
+      LIST: '/admin/orders',
+      GET: (id: number | string) => `/admin/orders/${id}`,
+      SUMMARY: '/admin/orders/summary',
+    },
+    ANALYTICS: {
+      OVERVIEW: '/admin/analytics/overview',
+      REVENUE: '/admin/analytics/revenue',
+      VENDORS: '/admin/analytics/vendors',
+      USERS: '/admin/analytics/users',
+    },
+    PAYMENTS: {
+      LIST: '/admin/payments',
+      GET: (id: number | string) => `/admin/payments/${id}`,
+      SUMMARY: '/admin/payments/summary',
+    },
   },
 
   // Vendor Authentication Endpoints
@@ -24,13 +59,13 @@ export const API_ENDPOINTS = {
     REGISTER: '/auth/register',
     LOGIN: '/auth/login',
     LOGOUT: '/auth/logout',
-    REFRESH: '/vendor/auth/refresh',
-    ME: '/vendor/auth/me',
-    VERIFY_2FA: '/vendor/auth/verify-2fa',
-    FORGOT_PASSWORD: '/vendor/auth/forgot-password',
-    RESET_PASSWORD: '/vendor/auth/reset-password',
-    VERIFY_EMAIL: '/vendor/auth/verify-email',
-    RESEND_VERIFICATION: '/vendor/auth/resend-verification',
+    REFRESH: '/auth/refresh',
+    ME: '/auth/me',
+    VERIFY_2FA: '/auth/verify-2fa',
+    FORGOT_PASSWORD: '/auth/forgot-password',
+    RESET_PASSWORD: '/auth/reset-password',
+    VERIFY_EMAIL: '/auth/verify-email',
+    RESEND_VERIFICATION: '/auth/resend-verification',
   },
 
   // Payment Webhooks
@@ -43,5 +78,6 @@ export const API_ENDPOINTS = {
   // VENDOR_PRODUCTS: { ... },
   // etc.
 } as const
+
 
 export type ApiEndpoint = typeof API_ENDPOINTS

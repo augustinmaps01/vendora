@@ -2,6 +2,7 @@
 
 import { DashboardLayout } from "@/components/admin/layout/DashboardLayout"
 import { StatsCard } from "@/components/admin/dashboard/StatsCard"
+import { RevenueChart } from "@/components/admin/dashboard/RevenueChart"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import {
@@ -28,7 +29,7 @@ export default function AdminDashboardPage() {
 
       {/* Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-        <StatsCard 
+        <StatsCard
           title="Total Revenue"
           value="$45,231"
           change="+20.1% from last month"
@@ -73,13 +74,7 @@ export default function AdminDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="pl-2">
-            <div className="h-80 flex items-center justify-center text-muted-foreground">
-              <div className="text-center">
-                <Activity className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                <p>Revenue chart will be displayed here</p>
-                <p className="text-sm mt-2">Integration with charting library needed</p>
-              </div>
-            </div>
+            <RevenueChart />
           </CardContent>
         </Card>
 
@@ -178,11 +173,10 @@ export default function AdminDashboardPage() {
                     </div>
                   </div>
                   <span
-                    className={`text-xs px-2 py-1 rounded-full ${
-                      vendor.status === "Active"
-                        ? "bg-green-100 text-green-700"
-                        : "bg-yellow-100 text-yellow-700"
-                    }`}
+                    className={`text-xs px-2 py-1 rounded-full ${vendor.status === "Active"
+                      ? "bg-green-100 text-green-700"
+                      : "bg-yellow-100 text-yellow-700"
+                      }`}
                   >
                     {vendor.status}
                   </span>
@@ -229,9 +223,8 @@ export default function AdminDashboardPage() {
                       <TrendingDown className="h-4 w-4 text-red-600" />
                     )}
                     <span
-                      className={`text-xs font-medium ${
-                        vendor.trend === "up" ? "text-green-600" : "text-red-600"
-                      }`}
+                      className={`text-xs font-medium ${vendor.trend === "up" ? "text-green-600" : "text-red-600"
+                        }`}
                     >
                       {vendor.growth}
                     </span>

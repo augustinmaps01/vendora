@@ -51,9 +51,9 @@ const navItems: NavItem[] = [
     icon: Users,
   },
   {
-    title: "Inventory",
-    href: "/pos/inventory",
-    icon: Store,
+    title: "Credit Accounts",
+    href: "/pos/credit-accounts",
+    icon: CreditCard,
   },
   {
     title: "Categories",
