@@ -22,7 +22,7 @@ export function OrdersByChannelChart({ data, className, contentClassName }: Orde
     <Card className={className}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Orders by Channel</CardTitle>
-        <p className="text-sm text-gray-500">POS vs Online</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">POS vs Online</p>
       </CardHeader>
       <CardContent className={contentClassName}>
         <ResponsiveContainer width="100%" height={250}>
@@ -47,7 +47,7 @@ export function OrdersByChannelChart({ data, className, contentClassName }: Orde
           {chartData.map((item, index) => (
             <div key={index} className="flex items-center gap-2">
               <div className="w-3 h-3 rounded-full" style={{ backgroundColor: item.color }}></div>
-              <span className="text-gray-600">{item.name}</span>
+              <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
               <span className="font-semibold">{item.value.toFixed(0)}%</span>
             </div>
           ))}

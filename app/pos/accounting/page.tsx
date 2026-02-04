@@ -17,8 +17,8 @@ export default function AccountingPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Accounting</h1>
-          <p className="text-gray-600 mt-1">Manage finances, expenses, and accounting records</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Accounting</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Manage finances, expenses, and accounting records</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
@@ -28,11 +28,11 @@ export default function AccountingPage() {
 
       {/* Financial Overview */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱1,245,670</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱1,245,670</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +12.5% from last month
@@ -44,11 +44,11 @@ export default function AccountingPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Expenses</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱345,200</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Expenses</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱345,200</p>
               <p className="text-xs text-red-600 mt-2 flex items-center">
                 <TrendingDown className="h-3 w-3 mr-1" />
                 +5.2% from last month
@@ -60,11 +60,11 @@ export default function AccountingPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Net Profit</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱900,470</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Net Profit</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱900,470</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +15.8% from last month
@@ -76,11 +76,11 @@ export default function AccountingPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Profit Margin</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">72.3%</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Profit Margin</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">72.3%</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +2.1% from last month
@@ -95,57 +95,57 @@ export default function AccountingPage() {
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Invoices</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Invoices</h3>
             <FileText className="h-5 w-5 text-purple-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Create and manage customer invoices</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Create and manage customer invoices</p>
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Pending</span>
+              <span className="text-gray-600 dark:text-gray-400">Pending</span>
               <span className="font-semibold text-yellow-600">8</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Paid</span>
+              <span className="text-gray-600 dark:text-gray-400">Paid</span>
               <span className="font-semibold text-green-600">142</span>
             </div>
           </div>
           <Button className="w-full bg-purple-600 hover:bg-purple-700">Create Invoice</Button>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Expenses</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Expenses</h3>
             <TrendingDown className="h-5 w-5 text-red-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Track and categorize business expenses</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Track and categorize business expenses</p>
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">This Month</span>
+              <span className="text-gray-600 dark:text-gray-400">This Month</span>
               <span className="font-semibold">₱345,200</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Uncategorized</span>
+              <span className="text-gray-600 dark:text-gray-400">Uncategorized</span>
               <span className="font-semibold text-yellow-600">5</span>
             </div>
           </div>
           <Button className="w-full" variant="outline">Add Expense</Button>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Tax Records</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Tax Records</h3>
             <FileText className="h-5 w-5 text-blue-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Manage tax compliance and records</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Manage tax compliance and records</p>
           <div className="space-y-2 mb-4">
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Tax Collected</span>
+              <span className="text-gray-600 dark:text-gray-400">Tax Collected</span>
               <span className="font-semibold">₱149,480</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Next Filing</span>
+              <span className="text-gray-600 dark:text-gray-400">Next Filing</span>
               <span className="font-semibold text-orange-600">15 days</span>
             </div>
           </div>
@@ -154,8 +154,8 @@ export default function AccountingPage() {
       </div>
 
       {/* Recent Transactions */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Recent Transactions</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Transactions</h3>
         <div className="space-y-3">
           {[
             { type: "income", description: "Sales Revenue", date: "2026-01-10", amount: 12450, category: "Revenue" },
@@ -176,8 +176,8 @@ export default function AccountingPage() {
                   )}
                 </div>
                 <div>
-                  <div className="text-sm font-medium text-gray-900">{transaction.description}</div>
-                  <div className="text-xs text-gray-600 mt-1">
+                  <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{transaction.description}</div>
+                  <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
                     {transaction.date} • {transaction.category}
                   </div>
                 </div>

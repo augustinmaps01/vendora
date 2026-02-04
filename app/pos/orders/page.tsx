@@ -273,31 +273,31 @@ function DesktopOrdersLayout() {
             <ClipboardList className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Orders</h1>
-            <p className="text-sm sm:text-base text-gray-600 mt-0.5 sm:mt-1">View and manage customer orders</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Orders</h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">View and manage customer orders</p>
           </div>
         </div>
       </div>
 
       {loadError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           Failed to load orders: {loadError}
         </div>
       )}
 
       {isLoading && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
           Loading orders...
         </div>
       )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Total Orders</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{totalOrders}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 sm:mt-1">{totalOrders}</p>
             </div>
             <div className="bg-blue-100 p-2 sm:p-3 rounded-lg">
               <ClipboardList className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
@@ -305,18 +305,18 @@ function DesktopOrdersLayout() {
           </div>
         </div>
 
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600">Pending</p>
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Pending</p>
           <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{pendingOrders}</p>
         </div>
 
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600">Processing</p>
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Processing</p>
           <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">{processingOrders}</p>
         </div>
 
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600">Completed</p>
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Completed</p>
           <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{completedOrders}</p>
         </div>
       </div>
@@ -348,51 +348,51 @@ function DesktopOrdersLayout() {
       </div>
 
       {/* Orders Table - Desktop */}
-      <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Order ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Items
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50">
+                <tr key={order.id} className="hover:bg-gray-50 dark:bg-gray-900">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{order.id}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{order.customer}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{order.customer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{order.date}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{order.date}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{order.items} items</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{order.items} items</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">₱{order.total.toFixed(2)}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">₱{order.total.toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {order.status === "completed" && (
@@ -428,11 +428,11 @@ function DesktopOrdersLayout() {
       {/* Orders Cards - Mobile */}
       <div className="md:hidden space-y-3">
         {filteredOrders.map((order) => (
-          <div key={order.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+          <div key={order.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <div className="text-sm font-medium text-gray-900">{order.id}</div>
-                <div className="text-sm text-gray-600 mt-0.5">{order.customer}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.id}</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{order.customer}</div>
               </div>
               <div>
                 {order.status === "completed" && (
@@ -451,16 +451,16 @@ function DesktopOrdersLayout() {
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm mb-3">
               <div>
-                <span className="text-gray-500">Date:</span>
-                <span className="text-gray-900 ml-1">{order.date}</span>
+                <span className="text-gray-500 dark:text-gray-400">Date:</span>
+                <span className="text-gray-900 dark:text-gray-100 ml-1">{order.date}</span>
               </div>
               <div>
-                <span className="text-gray-500">Items:</span>
-                <span className="text-gray-900 ml-1">{order.items}</span>
+                <span className="text-gray-500 dark:text-gray-400">Items:</span>
+                <span className="text-gray-900 dark:text-gray-100 ml-1">{order.items}</span>
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500">Total:</span>
-                <span className="text-gray-900 font-medium ml-1">₱{order.total.toFixed(2)}</span>
+                <span className="text-gray-500 dark:text-gray-400">Total:</span>
+                <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">₱{order.total.toFixed(2)}</span>
               </div>
             </div>
             <div className="flex gap-2 pt-3 border-t border-gray-100">
@@ -489,26 +489,26 @@ function DesktopOrdersLayout() {
 
           {isLoadingDetails ? (
             <div className="text-center py-8">
-              <p className="text-gray-600">Loading order details...</p>
+              <p className="text-gray-600 dark:text-gray-400">Loading order details...</p>
             </div>
           ) : orderDetails ? (
             <div className="space-y-4">
               {/* Order Header */}
               <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
                 <div>
-                  <p className="text-sm text-gray-600">Order Number</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Order Number</p>
                   <p className="font-medium">{orderDetails.order_number || `ORD-${orderDetails.id}`}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Date</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Date</p>
                   <p className="font-medium">{orderDetails.ordered_at || orderDetails.created_at}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Customer</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Customer</p>
                   <p className="font-medium">{orderDetails.customer?.name || orderDetails.customer || "Walk-in"}</p>
                 </div>
                 <div>
-                  <p className="text-sm text-gray-600">Status</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Status</p>
                   <Badge className={
                     orderDetails.status === "completed" ? "bg-green-100 text-green-800" :
                       orderDetails.status === "pending" ? "bg-yellow-100 text-yellow-800" :
@@ -525,12 +525,12 @@ function DesktopOrdersLayout() {
                 <h3 className="font-semibold mb-2">Order Items</h3>
                 <div className="border rounded-lg overflow-hidden">
                   <table className="w-full">
-                    <thead className="bg-gray-50">
+                    <thead className="bg-gray-50 dark:bg-gray-900">
                       <tr>
-                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600">Product</th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">Qty</th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">Price</th>
-                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600">Total</th>
+                        <th className="px-4 py-2 text-left text-sm font-medium text-gray-600 dark:text-gray-400">Product</th>
+                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Qty</th>
+                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Price</th>
+                        <th className="px-4 py-2 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Total</th>
                       </tr>
                     </thead>
                     <tbody className="divide-y">
@@ -553,18 +553,18 @@ function DesktopOrdersLayout() {
               <div className="border-t pt-4">
                 <div className="space-y-2 max-w-sm ml-auto">
                   <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Subtotal</span>
+                    <span className="text-gray-600 dark:text-gray-400">Subtotal</span>
                     <span>₱{Number(orderDetails.subtotal || orderDetails.total || 0).toFixed(2)}</span>
                   </div>
                   {orderDetails.tax > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Tax</span>
+                      <span className="text-gray-600 dark:text-gray-400">Tax</span>
                       <span>₱{Number(orderDetails.tax || 0).toFixed(2)}</span>
                     </div>
                   )}
                   {orderDetails.delivery_fee > 0 && (
                     <div className="flex justify-between text-sm">
-                      <span className="text-gray-600">Delivery Fee</span>
+                      <span className="text-gray-600 dark:text-gray-400">Delivery Fee</span>
                       <span>₱{Number(orderDetails.delivery_fee || 0).toFixed(2)}</span>
                     </div>
                   )}
@@ -578,15 +578,15 @@ function DesktopOrdersLayout() {
               {/* Payment Info */}
               {orderDetails.payment_method && (
                 <div className="bg-blue-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Payment Method</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Payment Method</p>
                   <p className="font-medium capitalize">{orderDetails.payment_method}</p>
                 </div>
               )}
 
               {/* Notes */}
               {orderDetails.notes && (
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-sm text-gray-600">Notes</p>
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Notes</p>
                   <p className="text-sm">{orderDetails.notes}</p>
                 </div>
               )}

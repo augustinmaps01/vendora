@@ -17,8 +17,8 @@ export default function ReportsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Reports and Analytics</h1>
-          <p className="text-gray-600 mt-1">View business performance and insights</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Reports and Analytics</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">View business performance and insights</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
@@ -28,11 +28,11 @@ export default function ReportsPage() {
 
       {/* Key Metrics */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Sales</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱1,245,670</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Sales</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱1,245,670</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +12.5% from last month
@@ -44,11 +44,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Orders</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">1,248</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">1,248</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +8.2% from last month
@@ -60,11 +60,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">New Customers</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">342</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">New Customers</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">342</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +15.3% from last month
@@ -76,11 +76,11 @@ export default function ReportsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Avg. Order Value</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱998</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Avg. Order Value</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱998</p>
               <p className="text-xs text-green-600 mt-2 flex items-center">
                 <TrendingUp className="h-3 w-3 mr-1" />
                 +3.8% from last month
@@ -96,69 +96,69 @@ export default function ReportsPage() {
       {/* Report Categories */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
         {/* Sales Report */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Sales Report</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Sales Report</h3>
             <BarChart3 className="h-5 w-5 text-purple-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">View detailed sales analytics, trends, and performance metrics</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">View detailed sales analytics, trends, and performance metrics</p>
           <Button className="w-full bg-purple-600 hover:bg-purple-700">View Report</Button>
         </div>
 
         {/* Inventory Report */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Inventory Report</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Inventory Report</h3>
             <ShoppingCart className="h-5 w-5 text-blue-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Monitor stock levels, turnover rates, and inventory health</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Monitor stock levels, turnover rates, and inventory health</p>
           <Button className="w-full" variant="outline">View Report</Button>
         </div>
 
         {/* Customer Report */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Customer Report</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Customer Report</h3>
             <Users className="h-5 w-5 text-green-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Analyze customer behavior, retention, and lifetime value</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Analyze customer behavior, retention, and lifetime value</p>
           <Button className="w-full" variant="outline">View Report</Button>
         </div>
 
         {/* Product Performance */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Product Performance</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Product Performance</h3>
             <TrendingUp className="h-5 w-5 text-orange-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Track best sellers, slow movers, and product trends</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Track best sellers, slow movers, and product trends</p>
           <Button className="w-full" variant="outline">View Report</Button>
         </div>
 
         {/* Financial Report */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Financial Report</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Financial Report</h3>
             <DollarSign className="h-5 w-5 text-purple-600" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Review revenue, expenses, profit margins, and cash flow</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Review revenue, expenses, profit margins, and cash flow</p>
           <Button className="w-full" variant="outline">View Report</Button>
         </div>
 
         {/* Custom Reports */}
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm hover:shadow-md transition-shadow">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900">Custom Reports</h3>
-            <BarChart3 className="h-5 w-5 text-gray-600" />
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Custom Reports</h3>
+            <BarChart3 className="h-5 w-5 text-gray-600 dark:text-gray-400" />
           </div>
-          <p className="text-sm text-gray-600 mb-4">Create and manage custom reports tailored to your needs</p>
+          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">Create and manage custom reports tailored to your needs</p>
           <Button className="w-full" variant="outline">Create Report</Button>
         </div>
       </div>
 
       {/* Recent Activity */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm p-6">
-        <h3 className="text-lg font-semibold text-gray-900 mb-4">Top Selling Products</h3>
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm p-6">
+        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Selling Products</h3>
         <div className="space-y-3">
           {[
             { name: "Premium Rice 5kg", sales: 145, revenue: 181250 },
@@ -169,11 +169,11 @@ export default function ReportsPage() {
             <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
               <div className="flex items-center gap-3">
                 <Badge className="bg-purple-100 text-purple-800">{idx + 1}</Badge>
-                <span className="text-sm font-medium text-gray-900">{product.name}</span>
+                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">{product.name}</span>
               </div>
               <div className="text-right">
-                <div className="text-sm font-semibold text-gray-900">₱{product.revenue.toLocaleString()}</div>
-                <div className="text-xs text-gray-600">{product.sales} units sold</div>
+                <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">₱{product.revenue.toLocaleString()}</div>
+                <div className="text-xs text-gray-600 dark:text-gray-400">{product.sales} units sold</div>
               </div>
             </div>
           ))}

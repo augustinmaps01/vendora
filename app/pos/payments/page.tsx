@@ -28,8 +28,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Payments</h1>
-          <p className="text-gray-600 mt-1">Track and manage payment transactions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Payments</h1>
+          <p className="text-gray-600 dark:text-gray-400 mt-1">Track and manage payment transactions</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
@@ -39,11 +39,11 @@ export default function PaymentsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱125,450</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱125,450</p>
             </div>
             <div className="bg-green-100 p-3 rounded-lg">
               <DollarSign className="h-6 w-6 text-green-600" />
@@ -51,11 +51,11 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Cash Payments</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱45,200</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Cash Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱45,200</p>
             </div>
             <div className="bg-blue-100 p-3 rounded-lg">
               <DollarSign className="h-6 w-6 text-blue-600" />
@@ -63,11 +63,11 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Card Payments</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱58,750</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Card Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱58,750</p>
             </div>
             <div className="bg-purple-100 p-3 rounded-lg">
               <CreditCard className="h-6 w-6 text-purple-600" />
@@ -75,11 +75,11 @@ export default function PaymentsPage() {
           </div>
         </div>
 
-        <div className="bg-white p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600">Online Payments</p>
-              <p className="text-2xl font-bold text-gray-900 mt-1">₱21,500</p>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Online Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱21,500</p>
             </div>
             <div className="bg-orange-100 p-3 rounded-lg">
               <TrendingUp className="h-6 w-6 text-orange-600" />
@@ -100,51 +100,51 @@ export default function PaymentsPage() {
       </div>
 
       {/* Payments Table */}
-      <div className="bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Payment ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Order
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Date & Time
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {payments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50">
+                <tr key={payment.id} className="hover:bg-gray-50 dark:bg-gray-900">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900">{payment.id}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{payment.id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{payment.order}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{payment.order}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">{payment.customer}</div>
+                    <div className="text-sm text-gray-900 dark:text-gray-100">{payment.customer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600">{payment.date}</div>
+                    <div className="text-sm text-gray-600 dark:text-gray-400">{payment.date}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900">₱{payment.amount.toFixed(2)}</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-gray-100">₱{payment.amount.toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant="outline">{payment.method}</Badge>

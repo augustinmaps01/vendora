@@ -31,7 +31,7 @@ export function TopSellingProducts({ data, variant = "default" }: TopSellingProd
       <CardHeader className={`flex flex-row items-center justify-between ${headerClass ?? ""}`}>
         <div>
           <CardTitle className="text-lg font-semibold">Top Selling Products</CardTitle>
-          <p className="text-sm text-gray-500">Units and revenue</p>
+          <p className="text-sm text-gray-500 dark:text-gray-400">Units and revenue</p>
         </div>
         <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50">
           <Eye className="w-4 h-4 mr-1" />
@@ -71,7 +71,7 @@ export function TopSellingProducts({ data, variant = "default" }: TopSellingProd
                 <div className="flex items-center justify-between text-sm">
                   <span className="text-gray-700 font-medium">{product.name}</span>
                   <div className="flex gap-3 text-xs">
-                    <span className="text-gray-500">{product.units} units</span>
+                    <span className="text-gray-500 dark:text-gray-400">{product.units} units</span>
                     <span className="font-semibold text-purple-600 min-w-[80px] text-right">
                       {"₱ "}{product.revenue.toLocaleString()}
                     </span>

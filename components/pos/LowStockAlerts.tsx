@@ -5,14 +5,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { AlertTriangle, Package, RefreshCw } from "lucide-react"
 import { dashboardService } from "@/services/dashboard.service"
-import type { InventoryItem } from "@/types/dashboard"
+import type { LowStockAlert } from "@/types/dashboard"
 
 type LowStockAlertsProps = {
   variant?: "default" | "embedded"
 }
 
 export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
-  const [items, setItems] = useState<InventoryItem[]>([])
+  const [items, setItems] = useState<LowStockAlert[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const isEmbedded = variant === "embedded"
   const headerClass = isEmbedded ? "px-0 pt-0" : undefined
@@ -21,8 +21,8 @@ export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
   useEffect(() => {
     const fetchLowStock = async () => {
       try {
-        const data = await dashboardService.getLowStock()
-        setItems(data)
+        const data = await dashboardService.getLowStockAlerts()
+        setItems(data.items)
       } catch (error) {
         console.error("Failed to fetch low stock alerts:", error)
       } finally {
@@ -42,7 +42,7 @@ export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
               <AlertTriangle className="w-5 h-5 text-orange-500" />
               Low Stock Alerts
             </CardTitle>
-            <p className="text-sm text-gray-500">
+            <p className="text-sm text-gray-500 dark:text-gray-400">
               {isLoading ? "Checking inventory..." : `${items.length} items need attention`}
             </p>
           </div>
@@ -54,7 +54,7 @@ export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
             <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
           </div>
         ) : items.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 text-sm">
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
             No low stock alerts. Inventory is healthy!
           </div>
         ) : (
@@ -69,8 +69,8 @@ export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
                     <Package className="w-5 h-5 text-orange-600" />
                   </div>
                   <div>
-                    <p className="font-medium text-gray-900 text-sm">{item.name}</p>
-                    <p className="text-xs text-gray-500">
+                    <p className="font-medium text-gray-900 dark:text-gray-100 text-sm">{item.name}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
                       Stock: {item.stock} / Min: {item.min_stock}
                     </p>
                   </div>

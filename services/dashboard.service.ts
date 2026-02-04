@@ -9,7 +9,8 @@ import type {
     InventoryHealth,
     RecentActivity,
     DateRangeParams,
-    InventoryItem,
+    LowStockAlerts,
+    PendingOrders,
 } from '@/types/dashboard'
 
 // Standard API Response wrapper
@@ -138,32 +139,20 @@ export const dashboardService = {
     },
 
     /**
-     * Get low stock items
-     * Uses product list with stock sorting since specific endpoint might not exist
+     * Get low stock alerts
+     * Returns items that are below minimum stock thresholds
      */
-    async getLowStock(): Promise<InventoryItem[]> {
-        // Fetch products sorted by lowest stock first
-        // We use the same endpoint logic as we did in inventory service
-        // Since we are inside dashboard service which uses axiosClient (centralized), 
-        // we need to adapt the call slightly if we want to call /products which is a general endpoint
-        // But to keep it efficient and consolidated, implementing it here is fine.
+    async getLowStockAlerts(): Promise<LowStockAlerts> {
+        const { data } = await axiosClient.get<ApiResponse<LowStockAlerts>>('/dashboard/low-stock-alerts')
+        return data.data
+    },
 
-        // Note: axiosClient baseURL is configured, so we just pass the path
-        const { data } = await axiosClient.get<any>('/products', {
-            params: {
-                sort: 'stock',
-                direction: 'asc',
-                per_page: 50
-            }
-        })
-
-        const products = Array.isArray(data.data) ? data.data : []
-
-        // Filter to strictly low stock items
-        return products.filter((item: any) =>
-            (item.is_low_stock) ||
-            (item.stock <= (item.min_stock || 5)) ||
-            (item.stock === 0)
-        )
+    /**
+     * Get pending orders
+     * Returns unprocessed/pending orders for dashboard display
+     */
+    async getPendingOrders(): Promise<PendingOrders> {
+        const { data } = await axiosClient.get<ApiResponse<PendingOrders>>('/dashboard/pending-orders')
+        return data.data
     },
 }

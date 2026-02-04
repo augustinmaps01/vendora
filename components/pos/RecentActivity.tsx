@@ -25,7 +25,7 @@ function getActivityStyle(action: string, modelType: string) {
     return { icon: Box, color: "text-blue-600 bg-blue-50" }
   }
   // Default
-  return { icon: FileText, color: "text-gray-600 bg-gray-50" }
+  return { icon: FileText, color: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900" }
 }
 
 // Helper function to format relative time
@@ -65,7 +65,7 @@ export function RecentActivity({ data, variant = "default" }: RecentActivityProp
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-        <p className="text-sm text-gray-500">Live updates</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Live updates</p>
       </CardHeader>
       <CardContent className={contentClass}>
         <div className="space-y-3">
@@ -78,7 +78,7 @@ export function RecentActivity({ data, variant = "default" }: RecentActivityProp
                 </div>
                 <div className="flex-1">
                   <p className="text-sm text-gray-700">{activity.title}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{activity.time}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{activity.time}</p>
                 </div>
               </div>
             )

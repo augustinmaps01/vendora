@@ -40,7 +40,7 @@ export function QuickActions({ variant = "default" }: QuickActionsProps) {
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
-        <p className="text-sm text-gray-500">Common tasks</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Common tasks</p>
       </CardHeader>
       <CardContent className={contentClass}>
         <div className="space-y-2">

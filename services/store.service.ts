@@ -6,6 +6,7 @@
 
 import api from "@/lib/api-client"
 import { endpoints } from "@/lib/api-endpoints"
+import type { ApiProduct } from "./product.service"
 
 /**
  * Store data from API
@@ -74,5 +75,13 @@ export const storeService = {
      */
     delete: async (id: string | number): Promise<void> => {
         return api.delete(endpoints.stores.delete(id))
+    },
+
+    /**
+     * Get products for a specific store
+     * GET /api/stores/{store}/products
+     */
+    getProducts: async (storeId: string | number, params?: { search?: string; per_page?: number }): Promise<ApiProduct[]> => {
+        return api.get<ApiProduct[]>(endpoints.stores.products(storeId), { params })
     },
 }

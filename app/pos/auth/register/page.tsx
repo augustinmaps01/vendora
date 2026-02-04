@@ -144,18 +144,22 @@ export default function VendorRegisterPage() {
     <>
       {step === 2 ? (
         // Step 2: Full viewport layout without wrapper
-        <div className="min-h-screen w-full flex flex-col lg:flex-row">
-          {/* Left Column - Image (60% width) */}
-          <div className="relative w-full h-64 sm:h-80 lg:h-screen lg:w-3/5 bg-slate-900">
+        <div className="min-h-screen w-full flex flex-col md:flex-row">
+          {/* Left Column - Image */}
+          {/* Mobile: Short banner | Tablet: 50% width | Desktop: 60% width */}
+          <div className="relative w-full h-48 sm:h-64 md:h-screen md:w-1/2 lg:w-3/5 bg-slate-900">
             <img
               src="/images/Register.jpg"
               alt="Register Background"
-              className="absolute inset-0 w-full h-full object-cover object-left"
+              className="absolute inset-0 w-full h-full object-cover object-center md:object-left"
             />
+            {/* Overlay gradient for better text readability on tablet */}
+            <div className="hidden md:block lg:hidden absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
           </div>
 
-          {/* Right Column - Registration Form (40% width) */}
-          <div className="w-full lg:w-2/5 lg:h-screen flex flex-col bg-white">
+          {/* Right Column - Registration Form */}
+          {/* Mobile: Full width | Tablet: 50% width | Desktop: 40% width */}
+          <div className="w-full md:w-1/2 lg:w-2/5 md:h-screen flex flex-col bg-white">
             {/* Progress Steps - Inside right column */}
             <div className="border-b bg-white py-4 px-6">
               <div className="flex items-start justify-center gap-3">
@@ -192,7 +196,7 @@ export default function VendorRegisterPage() {
             </div>
 
             {/* Form Container */}
-            <div className="flex-1 flex items-center justify-center p-6 lg:p-8">
+            <div className="flex-1 flex items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12">
               <div className="w-full max-w-sm space-y-4">
                 <div className="text-left">
                   <h2 className="text-2xl font-bold text-gray-900">Create Your Account</h2>

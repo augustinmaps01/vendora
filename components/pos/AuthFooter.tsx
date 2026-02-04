@@ -21,7 +21,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
               className={`transition-colors font-light ${
                 isDark
                   ? "text-white/50 hover:text-white/80"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Help Center
@@ -32,7 +32,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
               className={`transition-colors font-light ${
                 isDark
                   ? "text-white/50 hover:text-white/80"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Privacy Policy
@@ -43,7 +43,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
               className={`transition-colors font-light ${
                 isDark
                   ? "text-white/50 hover:text-white/80"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Terms of Service
@@ -54,7 +54,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
               className={`transition-colors font-light ${
                 isDark
                   ? "text-white/50 hover:text-white/80"
-                  : "text-gray-500 hover:text-gray-900"
+                  : "text-gray-500 dark:text-gray-400 hover:text-gray-900 dark:text-gray-100"
               }`}
             >
               Contact
@@ -64,7 +64,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
           {/* Right - Security Badge */}
           <div className="flex items-center gap-2">
             <Shield className={`h-3.5 w-3.5 ${isDark ? "text-purple-400" : "text-purple-600"}`} />
-            <span className={`text-xs font-light ${isDark ? "text-white/40" : "text-gray-500"}`}>
+            <span className={`text-xs font-light ${isDark ? "text-white/40" : "text-gray-500 dark:text-gray-400"}`}>
               Secured with SSL
             </span>
           </div>
@@ -73,7 +73,7 @@ export function AuthFooter({ variant = "default", className = "" }: AuthFooterPr
         {/* Copyright Section */}
         <div className="py-6 border-t border-opacity-10" style={{ borderColor: isDark ? "rgba(255,255,255,0.1)" : "rgba(0,0,0,0.1)" }}>
           <div className="flex flex-col sm:flex-row items-center justify-between gap-3 text-xs">
-            <p className={`font-light tracking-wide ${isDark ? "text-white/40" : "text-gray-500"}`}>
+            <p className={`font-light tracking-wide ${isDark ? "text-white/40" : "text-gray-500 dark:text-gray-400"}`}>
               © 2026 Vendora POS. All rights reserved.
             </p>
             <p className={`font-light ${isDark ? "text-white/30" : "text-gray-400"}`}>

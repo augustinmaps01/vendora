@@ -115,8 +115,8 @@ export function NotificationPanel() {
       <DropdownMenuContent align="end" className="w-96 max-h-[500px] overflow-y-auto">
         <div className="flex items-center justify-between p-3 border-b">
           <div>
-            <h3 className="font-semibold text-gray-900">Notifications</h3>
-            <p className="text-xs text-gray-500">{unreadCount} unread notifications</p>
+            <h3 className="font-semibold text-gray-900 dark:text-gray-100">Notifications</h3>
+            <p className="text-xs text-gray-500 dark:text-gray-400">{unreadCount} unread notifications</p>
           </div>
           <Button variant="ghost" size="sm" className="text-xs text-purple-600 hover:text-purple-700 hover:bg-purple-50">
             Mark all as read
@@ -138,12 +138,12 @@ export function NotificationPanel() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <div className="flex items-start justify-between gap-2">
-                      <h4 className="text-sm font-semibold text-gray-900">{notification.title}</h4>
+                      <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{notification.title}</h4>
                       {notification.unread && (
                         <div className="w-2 h-2 bg-blue-600 rounded-full flex-shrink-0 mt-1"></div>
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 mt-1 line-clamp-2">{notification.message}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">{notification.message}</p>
                     <p className="text-xs text-gray-400 mt-1">{notification.time}</p>
                   </div>
                 </div>

@@ -402,15 +402,15 @@ function DesktopInventoryLayout() {
 
   /**
    * Load products from API
-   * GET /api/products
+   * GET /api/products/my - Get current vendor's products
    */
   const loadProducts = async () => {
     setIsLoading(true)
     setLoadError(null)
     try {
-      console.log('📦 [Products Page] Fetching products from API...')
-      // Fetch with large per_page to get all products
-      const response = await productService.getAll({ per_page: 1000 })
+      console.log('📦 [Products Page] Fetching products from /api/products/my...')
+      // Fetch vendor's products with large per_page to get all
+      const response = await productService.getMy({ per_page: 1000 })
       console.log('📦 [Products Page] Raw API Response:', response)
       const items = extractDataArray(response)
       console.log('📦 [Products Page] Extracted items:', items)
@@ -821,7 +821,7 @@ function DesktopInventoryLayout() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-          <p className="text-gray-600">Checking authentication...</p>
+          <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
         </div>
       </div>
     )
@@ -833,7 +833,7 @@ function DesktopInventoryLayout() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-          <p className="text-gray-600">Redirecting to login...</p>
+          <p className="text-gray-600 dark:text-gray-400">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -844,8 +844,8 @@ function DesktopInventoryLayout() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900">Product Management</h1>
-          <p className="text-sm sm:text-base text-gray-600 mt-0.5 sm:mt-1">Track stock levels and manage products</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Product Management</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">Track stock levels and manage products</p>
         </div>
         <Button
           className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
@@ -857,31 +857,31 @@ function DesktopInventoryLayout() {
       </div>
 
       {loadError && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           Failed to load inventory: {loadError}
         </div>
       )}
 
       {isLoading && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 flex items-center gap-2">
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading inventory...
         </div>
       )}
 
       {actionError && !isAddProductOpen && (
-        <div className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700">
+        <div className="rounded-lg border border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-900/20 px-4 py-3 text-sm text-red-700 dark:text-red-400">
           {actionError}
         </div>
       )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Total Items</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 mt-0.5 sm:mt-1">{totalItems}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Items</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 sm:mt-1">{totalItems}</p>
             </div>
             <div className="h-9 w-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
               <PackageOpen className="h-5 w-5" />
@@ -889,10 +889,10 @@ function DesktopInventoryLayout() {
           </div>
         </div>
 
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Low Stock</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Low Stock</p>
               <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{lowStockCount}</p>
             </div>
             <div className="h-9 w-9 rounded-lg bg-yellow-100 text-yellow-600 flex items-center justify-center">
@@ -901,10 +901,10 @@ function DesktopInventoryLayout() {
           </div>
         </div>
 
-        <div className="bg-white p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 shadow-sm col-span-2 sm:col-span-2 md:col-span-1">
+        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm col-span-2 sm:col-span-2 md:col-span-1">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600">Out of Stock</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Out of Stock</p>
               <p className="text-xl sm:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1">{outOfStockCount}</p>
             </div>
             <div className="h-9 w-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
@@ -926,12 +926,12 @@ function DesktopInventoryLayout() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
           Showing{" "}
-          <span className="font-medium text-gray-900">
+          <span className="font-medium text-gray-900 dark:text-gray-100">
             {sortedItems.length === 0 ? 0 : pageStart + 1}-{Math.min(pageEnd, sortedItems.length)}
           </span>{" "}
-          of <span className="font-medium text-gray-900">{sortedItems.length}</span> items
+          of <span className="font-medium text-gray-900 dark:text-gray-100">{sortedItems.length}</span> items
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -987,13 +987,13 @@ function DesktopInventoryLayout() {
       </div>
 
       {/* Inventory Table - Desktop */}
-      <div className="hidden md:block bg-white rounded-lg border border-gray-200 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 border-b border-gray-200">
+            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
               <tr>
                 {visibleColumns.product && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("name")}
@@ -1009,7 +1009,7 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.sku && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("sku")}
@@ -1025,7 +1025,7 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.category && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("category")}
@@ -1041,7 +1041,7 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.price && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("price")}
@@ -1057,7 +1057,7 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.stock && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("stock")}
@@ -1073,7 +1073,7 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.status && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("status")}
@@ -1089,13 +1089,13 @@ function DesktopInventoryLayout() {
                   </th>
                 )}
                 {visibleColumns.actions && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                     Actions
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {paginatedItems.map((item) => {
                 const status =
                   item.stock <= 0
@@ -1104,12 +1104,12 @@ function DesktopInventoryLayout() {
                       ? "low"
                       : "ok"
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50">
+                  <tr key={item.id} className="hover:bg-gray-50 dark:bg-gray-900">
                     {visibleColumns.product && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           {item.image && (
-                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
                               <NextImage
                                 src={item.image}
                                 alt={item.name}
@@ -1120,30 +1120,30 @@ function DesktopInventoryLayout() {
                               />
                             </div>
                           )}
-                          <div className="text-sm font-medium text-gray-900">{item.name}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
                         </div>
                       </td>
                     )}
                     {visibleColumns.sku && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">{item.sku}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{item.sku}</div>
                       </td>
                     )}
                     {visibleColumns.category && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600">{item.category?.name || "—"}</div>
+                        <div className="text-sm text-gray-600 dark:text-gray-400">{item.category?.name || "—"}</div>
                       </td>
                     )}
                     {visibleColumns.price && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900">
+                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
                           {item.currency} {item.price.toLocaleString()}
                         </div>
                       </td>
                     )}
                     {visibleColumns.stock && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900">{item.stock} {item.unit}</div>
+                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.stock} {item.unit}</div>
                       </td>
                     )}
                     {visibleColumns.status && (
@@ -1182,7 +1182,7 @@ function DesktopInventoryLayout() {
               })}
               {!isLoading && sortedItems.length === 0 && (
                 <tr>
-                  <td colSpan={visibleColumnCount} className="px-6 py-8 text-center text-gray-500">
+                  <td colSpan={visibleColumnCount} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
                     {searchQuery ? "No products match your search." : "No products found. Add your first product."}
                   </td>
                 </tr>
@@ -1191,9 +1191,9 @@ function DesktopInventoryLayout() {
           </table>
         </div>
         <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3">
-          <div className="text-sm text-gray-600">
-            Page <span className="font-medium text-gray-900">{safePage}</span> of{" "}
-            <span className="font-medium text-gray-900">{totalPages}</span>
+          <div className="text-sm text-gray-600 dark:text-gray-400">
+            Page <span className="font-medium text-gray-900 dark:text-gray-100">{safePage}</span> of{" "}
+            <span className="font-medium text-gray-900 dark:text-gray-100">{totalPages}</span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -1252,11 +1252,11 @@ function DesktopInventoryLayout() {
                 ? "low"
                 : "ok"
           return (
-            <div key={item.id} className="bg-white p-4 rounded-lg border border-gray-200 shadow-sm">
+            <div key={item.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3 flex-1">
                   {item.image && (
-                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
+                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
                       <NextImage
                         src={item.image}
                         alt={item.name}
@@ -1268,9 +1268,9 @@ function DesktopInventoryLayout() {
                     </div>
                   )}
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900">{item.name}</h3>
-                    <p className="text-xs text-gray-500 mt-0.5">SKU: {item.sku}</p>
-                    <p className="text-xs text-gray-500">{item.category?.name || "Uncategorized"}</p>
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">SKU: {item.sku}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.category?.name || "Uncategorized"}</p>
                   </div>
                 </div>
                 <div>
@@ -1287,24 +1287,24 @@ function DesktopInventoryLayout() {
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Price</p>
-                  <p className="text-lg font-bold text-gray-900">{item.currency} {item.price.toLocaleString()}</p>
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Price</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.currency} {item.price.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-gray-50 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 mb-1">Stock</p>
-                  <p className="text-lg font-bold text-gray-900">{item.stock}</p>
-                  <p className="text-xs text-gray-500">{item.unit}</p>
+                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Stock</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.stock}</p>
+                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
                 </div>
               </div>
 
               {(status === "low" || status === "critical") && (
-                <div className={`mt-3 p-2 rounded-lg flex items-center gap-2 ${status === "critical" ? "bg-red-50" : "bg-yellow-50"
+                <div className={`mt-3 p-2 rounded-lg flex items-center gap-2 ${status === "critical" ? "bg-red-50" : "bg-yellow-50 dark:bg-yellow-900/20"
                   }`}>
                   <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${status === "critical" ? "text-red-600" : "text-yellow-600"
                     }`} />
-                  <p className={`text-xs ${status === "critical" ? "text-red-700" : "text-yellow-700"
+                  <p className={`text-xs ${status === "critical" ? "text-red-700 dark:text-red-400" : "text-yellow-700 dark:text-yellow-400"
                     }`}>
                     {status === "critical"
                       ? "Out of stock! Restock urgently."
@@ -1332,7 +1332,7 @@ function DesktopInventoryLayout() {
           )
         })}
         {!isLoading && sortedItems.length === 0 && (
-          <div className="bg-white p-8 rounded-lg border border-gray-200 text-center text-gray-500">
+          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg border border-gray-200 text-center text-gray-500 dark:text-gray-400">
             {searchQuery ? "No products match your search." : "No products found. Add your first product."}
           </div>
         )}
@@ -1347,9 +1347,9 @@ function DesktopInventoryLayout() {
         >
           Prev
         </Button>
-        <div className="text-sm text-gray-600">
-          Page <span className="font-medium text-gray-900">{safePage}</span> of{" "}
-          <span className="font-medium text-gray-900">{totalPages}</span>
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          Page <span className="font-medium text-gray-900 dark:text-gray-100">{safePage}</span> of{" "}
+          <span className="font-medium text-gray-900 dark:text-gray-100">{totalPages}</span>
         </div>
         <Button
           variant="outline"

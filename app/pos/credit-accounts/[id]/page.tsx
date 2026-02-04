@@ -186,8 +186,8 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <AlertCircle className="w-12 h-12 text-gray-300 mb-3" />
-                <h2 className="text-lg font-medium text-gray-900 mb-1">Account Not Found</h2>
-                <p className="text-sm text-gray-500 mb-4">This credit account doesn't exist.</p>
+                <h2 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-1">Account Not Found</h2>
+                <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">This credit account doesn't exist.</p>
                 <Button asChild size="sm">
                     <Link href="/pos/credit-accounts">
                         <ArrowLeft className="w-4 h-4 mr-1.5" />
@@ -203,7 +203,7 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             active: { className: "bg-blue-50 text-blue-700", text: "Active" },
             paid: { className: "bg-emerald-50 text-emerald-700", text: "Paid" },
             overdue: { className: "bg-red-50 text-red-700", text: "Overdue" },
-            defaulted: { className: "bg-gray-100 text-gray-700", text: "Defaulted" },
+            defaulted: { className: "bg-gray-100 text-gray-700 dark:text-gray-300", text: "Defaulted" },
         }
         const config = variants[status]
         return (
@@ -236,16 +236,16 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                         variant="ghost"
                         size="icon"
                         onClick={() => router.push('/pos/credit-accounts')}
-                        className="h-8 w-8 rounded-full border border-gray-200"
+                        className="h-8 w-8 rounded-full border border-gray-200 dark:border-gray-700"
                     >
                         <ArrowLeft className="h-4 w-4" />
                     </Button>
                     <div>
                         <div className="flex items-center gap-2">
-                            <h1 className="text-lg font-bold text-gray-900">{account.customer.name}</h1>
+                            <h1 className="text-lg font-bold text-gray-900 dark:text-gray-100">{account.customer.name}</h1>
                             {getStatusBadge(account.status)}
                         </div>
-                        <p className="text-xs text-gray-500">{account.customer.phone}</p>
+                        <p className="text-xs text-gray-500 dark:text-gray-400">{account.customer.phone}</p>
                     </div>
                 </div>
                 {account.remainingBalance > 0 && (
@@ -261,19 +261,19 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             </div>
 
             {/* Compact Summary - Single Row */}
-            <div className="flex items-center gap-4 p-3 bg-white rounded-lg border border-gray-100 text-sm">
+            <div className="flex items-center gap-4 p-3 bg-white dark:bg-gray-800 rounded-lg border border-gray-100 text-sm">
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Total:</span>
-                    <span className="font-semibold text-gray-900">₱{account.totalAmount.toLocaleString()}</span>
+                    <span className="text-gray-500 dark:text-gray-400">Total:</span>
+                    <span className="font-semibold text-gray-900 dark:text-gray-100">₱{account.totalAmount.toLocaleString()}</span>
                 </div>
                 <div className="w-px h-4 bg-gray-200" />
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Paid:</span>
+                    <span className="text-gray-500 dark:text-gray-400">Paid:</span>
                     <span className="font-semibold text-emerald-600">₱{account.paidAmount.toLocaleString()}</span>
                 </div>
                 <div className="w-px h-4 bg-gray-200" />
                 <div className="flex items-center gap-2">
-                    <span className="text-gray-500">Balance:</span>
+                    <span className="text-gray-500 dark:text-gray-400">Balance:</span>
                     <span className={`font-bold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                         ₱{account.remainingBalance.toLocaleString()}
                     </span>
@@ -281,7 +281,7 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             </div>
 
             {/* Tabs */}
-            <div className="border-b border-gray-200">
+            <div className="border-b border-gray-200 dark:border-gray-700">
                 <nav className="flex gap-4">
                     {[
                         { id: 'overview', label: 'Overview', icon: User },
@@ -311,33 +311,33 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             <div>
                 {/* Overview Tab */}
                 {activeTab === 'overview' && (
-                    <div className="bg-white rounded-lg border border-gray-100 p-4">
-                        <h3 className="text-sm font-semibold text-gray-900 mb-3">Customer Information</h3>
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 p-4">
+                        <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Customer Information</h3>
                         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600">
+                            <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                 <User className="w-4 h-4 text-gray-400" />
                                 <span>{account.customer.name}</span>
                             </div>
                             {account.customer.phone && (
-                                <div className="flex items-center gap-2 text-gray-600">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                     <Phone className="w-4 h-4 text-gray-400" />
                                     <span>{account.customer.phone}</span>
                                 </div>
                             )}
                             {account.customer.email && (
-                                <div className="flex items-center gap-2 text-gray-600">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                     <Mail className="w-4 h-4 text-gray-400" />
                                     <span>{account.customer.email}</span>
                                 </div>
                             )}
                             {account.customer.address && (
-                                <div className="flex items-center gap-2 text-gray-600 sm:col-span-2">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400 sm:col-span-2">
                                     <MapPin className="w-4 h-4 text-gray-400 flex-shrink-0" />
                                     <span>{account.customer.address}</span>
                                 </div>
                             )}
                             {account.customer.memberSince && (
-                                <div className="flex items-center gap-2 text-gray-600">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
                                     <Calendar className="w-4 h-4 text-gray-400" />
                                     <span>Member since {formatDate(account.customer.memberSince)}</span>
                                 </div>
@@ -348,16 +348,16 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
 
                 {/* Transactions Tab */}
                 {activeTab === 'transactions' && (
-                    <div className="bg-white rounded-lg border border-gray-100 overflow-hidden">
+                    <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-100 overflow-hidden">
                         <div className="overflow-x-auto">
                             <table className="w-full text-sm">
                                 <thead>
                                     <tr className="bg-gray-50 border-b border-gray-100">
-                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600">Item</th>
-                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600">Qty</th>
-                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600">Price</th>
-                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600">Total</th>
-                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600">Status</th>
+                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 dark:text-gray-400">Item</th>
+                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Qty</th>
+                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 dark:text-gray-400">Price</th>
+                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 dark:text-gray-400">Total</th>
+                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 dark:text-gray-400">Status</th>
                                     </tr>
                                 </thead>
                                 <tbody className="divide-y divide-gray-50">
@@ -367,12 +367,12 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                                             className={`${index % 2 === 0 ? 'bg-white' : 'bg-gray-50/30'} hover:bg-purple-50/30`}
                                         >
                                             <td className="px-4 py-3">
-                                                <div className="font-medium text-gray-900">{item.name}</div>
+                                                <div className="font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
                                                 <div className="text-xs text-gray-400">{item.invoiceNo} • {formatDate(item.date)}</div>
                                             </td>
-                                            <td className="px-4 py-3 text-center text-gray-600">{item.quantity}</td>
-                                            <td className="px-4 py-3 text-right text-gray-600">₱{item.unitPrice.toLocaleString()}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-gray-900">₱{item.total.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-center text-gray-600 dark:text-gray-400">{item.quantity}</td>
+                                            <td className="px-4 py-3 text-right text-gray-600 dark:text-gray-400">₱{item.unitPrice.toLocaleString()}</td>
+                                            <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-gray-100">₱{item.total.toLocaleString()}</td>
                                             <td className="px-4 py-3 text-center">
                                                 {getItemStatusBadge(item.status, item.paidAmount, item.total)}
                                             </td>
@@ -380,9 +380,9 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                                     ))}
                                 </tbody>
                                 <tfoot>
-                                    <tr className="bg-gray-50 border-t border-gray-200">
-                                        <td colSpan={3} className="px-4 py-2.5 text-right text-sm font-medium text-gray-600">Total:</td>
-                                        <td className="px-4 py-2.5 text-right text-base font-bold text-gray-900">₱{account.totalAmount.toLocaleString()}</td>
+                                    <tr className="bg-gray-50 border-t border-gray-200 dark:border-gray-700">
+                                        <td colSpan={3} className="px-4 py-2.5 text-right text-sm font-medium text-gray-600 dark:text-gray-400">Total:</td>
+                                        <td className="px-4 py-2.5 text-right text-base font-bold text-gray-900 dark:text-gray-100">₱{account.totalAmount.toLocaleString()}</td>
                                         <td></td>
                                     </tr>
                                 </tfoot>
@@ -395,20 +395,20 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                 {activeTab === 'payments' && (
                     <div className="space-y-2">
                         {account.payments.length === 0 ? (
-                            <div className="bg-white p-8 text-center rounded-lg border border-dashed border-gray-200">
+                            <div className="bg-white dark:bg-gray-800 p-8 text-center rounded-lg border border-dashed border-gray-200 dark:border-gray-700">
                                 <Banknote className="w-10 h-10 text-gray-300 mx-auto mb-2" />
-                                <p className="text-sm text-gray-500">No payments recorded yet</p>
+                                <p className="text-sm text-gray-500 dark:text-gray-400">No payments recorded yet</p>
                             </div>
                         ) : (
                             account.payments.map((payment) => (
-                                <div key={payment.id} className="bg-white p-3 rounded-lg border border-gray-100 flex items-center justify-between gap-3">
+                                <div key={payment.id} className="bg-white dark:bg-gray-800 p-3 rounded-lg border border-gray-100 flex items-center justify-between gap-3">
                                     <div className="flex items-center gap-3">
                                         <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
                                             <Banknote className="w-4 h-4 text-emerald-600" />
                                         </div>
                                         <div>
                                             <div className="text-sm font-semibold text-emerald-600">+₱{payment.amount.toLocaleString()}</div>
-                                            <div className="text-xs text-gray-500">{formatDate(payment.paymentDate)} • {payment.method}</div>
+                                            <div className="text-xs text-gray-500 dark:text-gray-400">{formatDate(payment.paymentDate)} • {payment.method}</div>
                                         </div>
                                     </div>
                                     <div className="text-right text-xs text-gray-400">

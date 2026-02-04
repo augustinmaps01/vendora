@@ -11,6 +11,7 @@ export * from "./order.service"
 export * from "./payment.service"
 export * from "./customer.service"
 export * from "./store.service"
+export * from "./dashboard.service"
 
 // Re-export types for convenience
 export type {

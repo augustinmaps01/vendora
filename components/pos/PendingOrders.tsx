@@ -1,38 +1,37 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
-import { ShoppingBag, Clock } from "lucide-react"
-
-const pendingOrders = [
-  {
-    id: "ORD-10492",
-    customer: "Mark S.",
-    items: "Delivery • Preparing • Partial",
-    amount: "₱ 1,850",
-  },
-  {
-    id: "ORD-10493",
-    customer: "Lisa R.",
-    items: "Pickup • Ready • Paid",
-    amount: "₱ 820",
-  },
-  {
-    id: "ORD-10494",
-    customer: "Ana C.",
-    items: "Delivery • Pending • Awaiting",
-    amount: "₱ 2,560",
-  },
-]
+import { ShoppingBag, Clock, RefreshCw } from "lucide-react"
+import { dashboardService } from "@/services/dashboard.service"
+import type { PendingOrder } from "@/types/dashboard"
 
 type PendingOrdersProps = {
   variant?: "default" | "embedded"
 }
 
 export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
+  const [orders, setOrders] = useState<PendingOrder[]>([])
+  const [isLoading, setIsLoading] = useState(true)
   const isEmbedded = variant === "embedded"
   const headerClass = isEmbedded ? "px-0 pt-0" : undefined
   const contentClass = isEmbedded ? "px-0 pb-0" : undefined
+
+  useEffect(() => {
+    const fetchPendingOrders = async () => {
+      try {
+        const data = await dashboardService.getPendingOrders()
+        setOrders(data.items)
+      } catch (error) {
+        console.error("Failed to fetch pending orders:", error)
+      } finally {
+        setIsLoading(false)
+      }
+    }
+
+    fetchPendingOrders()
+  }, [])
 
   const content = (
     <>
@@ -41,36 +40,50 @@ export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
           <Clock className="w-5 h-5 text-blue-500" />
           Pending Orders
         </CardTitle>
-        <p className="text-sm text-gray-500">Fulfillment queue</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">
+          {isLoading ? "Loading orders..." : `${orders.length} orders in queue`}
+        </p>
       </CardHeader>
       <CardContent className={contentClass}>
-        <div className="space-y-3">
-          {pendingOrders.map((order) => (
-            <div
-              key={order.id}
-              className="flex items-center justify-between p-3 border border-blue-100 bg-blue-50/30 rounded-lg"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                  <ShoppingBag className="w-5 h-5 text-blue-600" />
+        {isLoading ? (
+          <div className="flex justify-center py-8">
+            <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+            No pending orders. All caught up!
+          </div>
+        ) : (
+          <div className="space-y-3">
+            {orders.map((order) => (
+              <div
+                key={order.id}
+                className="flex items-center justify-between p-3 border border-blue-100 bg-blue-50/30 rounded-lg"
+              >
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{order.order_number}</p>
+                    <p className="text-xs text-gray-600 dark:text-gray-400">{order.customer}</p>
+                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                      {order.items_count} items • {order.ordered_at}
+                    </p>
+                  </div>
                 </div>
-                <div>
-                  <p className="font-semibold text-gray-900 text-sm">{order.id}</p>
-                  <p className="text-xs text-gray-600">{order.customer}</p>
-                  <p className="text-xs text-gray-500">{order.items}</p>
+                <div className="text-right">
+                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                    ₱ {order.total.toLocaleString()}
+                  </p>
+                  <Button size="sm" variant="default" className="text-xs bg-blue-600 hover:bg-blue-700">
+                    View
+                  </Button>
                 </div>
               </div>
-              <div className="text-right">
-                <p className="font-semibold text-gray-900 text-sm mb-1">
-                  {order.amount}
-                </p>
-                <Button size="sm" variant="default" className="text-xs bg-blue-600 hover:bg-blue-700">
-                  View
-                </Button>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </>
   )

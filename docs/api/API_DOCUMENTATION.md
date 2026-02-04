@@ -20,6 +20,73 @@ Authorization: Bearer <your_token>
 
 ### Admin
 
+#### List Users (Admin only)
+```
+GET /api/admin/users
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| search | string | Search by name/email |
+| user_type | string | Filter by user type |
+| status | string | Filter by status |
+| page | integer | Page number |
+| per_page | integer | Items per page |
+
+#### Create User (Admin only)
+```
+POST /api/admin/users
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ✅ | "John Doe" |
+| email | string (email) | ✅ | "user@example.com" |
+| password | string | ✅ | "password" |
+| user_type | string | ✅ | "vendor" \| "buyer" \| "admin" |
+
+#### Get User (Admin only)
+```
+GET /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+#### Update User (Admin only)
+```
+PUT /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ❌ | "John Doe" |
+| email | string (email) | ❌ | "user@example.com" |
+| user_type | string | ❌ | "vendor" |
+
+#### Delete User (Admin only)
+```
+DELETE /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+#### Update User Status (Admin only)
+```
+PATCH /api/admin/users/{id}/status
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| status | string | ✅ | "active" \| "inactive" \| "suspended" |
+
+---
+
 #### Create Vendor (Admin only)
 ```
 POST /api/admin/vendors
@@ -450,6 +517,51 @@ GET /api/dashboard/recent-activity
 }
 ```
 
+#### Low Stock Alerts
+```
+GET /api/dashboard/low-stock-alerts
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "name": "PVC Pipe 1 inch",
+      "stock": 4,
+      "min_stock": 10,
+      "status": "low_stock"
+    }
+  ]
+}
+```
+
+#### Pending Orders
+```
+GET /api/dashboard/pending-orders
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "items": [
+    {
+      "id": 1,
+      "order_number": "ORD-10492",
+      "customer": "Michael S.",
+      "ordered_at": "2026-01-10",
+      "items_count": 3,
+      "total": 2560,
+      "currency": "PHP",
+      "status": "pending"
+    }
+  ]
+}
+```
+
 ---
 
 ### Inventory
@@ -708,25 +820,21 @@ PATCH /api/payments/{payment}
 
 ### Products
 
-#### List Products (Public)
+#### Get My Products (Vendor)
 ```
-GET /api/products
+GET /api/products/my
 ```
+🔒 **Requires Authentication**
+
+Returns products belonging to the currently authenticated vendor. Use this endpoint for POS and product management.
 
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
 | search | string | Search term |
 | category_id | integer | Filter by category |
-| store_id | integer | Filter by store (for POS) |
-| user_id | integer | Filter by vendor/owner ID |
-| min_price | integer | Minimum price filter |
-| max_price | integer | Maximum price filter |
-| in_stock | boolean | Filter in-stock items only |
-| sort | string | Sort field |
-| direction | string | Sort direction (asc/desc) |
-| page | integer | Page number |
 | per_page | integer | Items per page |
+| page | integer | Page number |
 
 **Response (`200`):**
 ```json
@@ -736,27 +844,14 @@ GET /api/products
       "id": 1,
       "name": "Premium Rice 5kg",
       "sku": "GR-1001",
-      "category": { "id": 3, "name": "Grocery" },
       "price": 1250,
-      "currency": "PHP",
-      "stock": 18,
-      "is_low_stock": true,
-      "is_active": true,
-      "is_ecommerce": true,
-      "image_url": "https://...",
-      "created_at": "2026-01-10T10:00:00Z",
-      "updated_at": "2026-01-10T10:00:00Z"
+      "stock": 18
     }
-  ],
-  "meta": {
-    "current_page": 1,
-    "per_page": 15,
-    "total": 120
-  }
+  ]
 }
 ```
 
-#### Get Product (Public)
+#### Get Product
 ```
 GET /api/products/{product}
 ```

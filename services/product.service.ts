@@ -167,6 +167,16 @@ export const productService = {
   },
 
   /**
+   * Get current vendor's products
+   * GET /api/products/my
+   */
+  getMy: async (filters?: ProductFilters): Promise<PaginatedProductResponse> => {
+    return api.get<PaginatedProductResponse>(endpoints.products.my(), {
+      params: filters,
+    })
+  },
+
+  /**
    * Get single product by ID
    * GET /api/products/{product}
    */

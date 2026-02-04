@@ -41,7 +41,7 @@ export function SalesTrendChart({ data, className, contentClassName }: SalesTren
     <Card className={`col-span-2 flex flex-col ${className ?? ""}`.trim()}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Sales Trend</CardTitle>
-        <p className="text-sm text-gray-500">Compare POS and Online sales</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Compare POS and Online sales</p>
       </CardHeader>
       <CardContent className={`flex-1 ${contentClassName ?? ""}`.trim()}>
         <div className="min-h-[260px] h-[260px] sm:h-[300px] lg:h-full">

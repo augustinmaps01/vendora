@@ -57,6 +57,9 @@ export const productEndpoints = {
   // GET /products
   list: () => "/products",
 
+  // GET /products/my - Get current vendor's products
+  my: () => "/products/my",
+
   // GET /products/:id
   get: (id: string | number) => buildUrl("/products/:id", { id }),
 
@@ -408,6 +411,9 @@ export const storeEndpoints = {
 
   // DELETE /stores/:id
   delete: (id: string | number) => buildUrl("/stores/:id", { id }),
+
+  // GET /stores/:id/products
+  products: (id: string | number) => buildUrl("/stores/:id/products", { id }),
 }
 
 /**

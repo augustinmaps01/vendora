@@ -102,7 +102,7 @@ export interface DateRangeParams {
 
 // Re-using ApiProduct structure for consistency, but making it available in dashboard types
 // In a real app we might import from product types, but this keeps dashboard types self-contained for now
-// or we can import it. Let's define it loosely or import if possible. 
+// or we can import it. Let's define it loosely or import if possible.
 // Actually, let's just make it a simple interface that matches what the dashboard needs.
 export interface InventoryItem {
     id: number
@@ -110,4 +110,31 @@ export interface InventoryItem {
     stock: number
     min_stock: number
     stock_status?: 'in_stock' | 'low_stock' | 'out_of_stock'
+}
+
+export interface LowStockAlert {
+    id: number
+    name: string
+    stock: number
+    min_stock: number
+    status: 'low_stock' | 'out_of_stock'
+}
+
+export interface LowStockAlerts {
+    items: LowStockAlert[]
+}
+
+export interface PendingOrder {
+    id: number
+    order_number: string
+    customer: string
+    ordered_at: string
+    items_count: number
+    total: number
+    currency: string
+    status: 'pending'
+}
+
+export interface PendingOrders {
+    items: PendingOrder[]
 }

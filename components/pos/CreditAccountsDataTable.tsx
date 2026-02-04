@@ -185,9 +185,9 @@ export function CreditAccountsDataTable({
                             {customer.name.charAt(0)}
                         </div>
                         <div>
-                            <div className="font-medium text-gray-900">{customer.name}</div>
+                            <div className="font-medium text-gray-900 dark:text-gray-100">{customer.name}</div>
                             {customer.phone && (
-                                <div className="text-xs text-gray-500 flex items-center gap-1">
+                                <div className="text-xs text-gray-500 dark:text-gray-400 flex items-center gap-1">
                                     <Phone className="w-3 h-3" />
                                     {customer.phone}
                                 </div>
@@ -227,7 +227,7 @@ export function CreditAccountsDataTable({
                 </Button>
             ),
             cell: ({ row }) => (
-                <span className="font-semibold text-gray-900">
+                <span className="font-semibold text-gray-900 dark:text-gray-100">
                     ₱{row.original.totalAmount.toLocaleString()}
                 </span>
             ),
@@ -284,7 +284,7 @@ export function CreditAccountsDataTable({
                 </Button>
             ),
             cell: ({ row }) => (
-                <span className="text-gray-600">
+                <span className="text-gray-600 dark:text-gray-400">
                     {row.original.dueDate ? formatDate(row.original.dueDate) : '-'}
                 </span>
             ),
@@ -340,7 +340,7 @@ export function CreditAccountsDataTable({
     return (
         <div className="space-y-4">
             {/* Table */}
-            <div className="bg-white rounded-xl border border-gray-100 shadow-sm overflow-hidden">
+            <div className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm overflow-hidden">
                 <Table>
                     <TableHeader>
                         {table.getHeaderGroups().map((headerGroup) => (
@@ -379,7 +379,7 @@ export function CreditAccountsDataTable({
                             <TableRow>
                                 <TableCell
                                     colSpan={columns.length}
-                                    className="h-32 text-center text-gray-500"
+                                    className="h-32 text-center text-gray-500 dark:text-gray-400"
                                 >
                                     No credit accounts found.
                                 </TableCell>
@@ -391,13 +391,13 @@ export function CreditAccountsDataTable({
 
             {/* Pagination Controls */}
             <div className="flex flex-col sm:flex-row items-center justify-between gap-4 px-2">
-                <div className="flex items-center gap-2 text-sm text-gray-600">
+                <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
                     <span>Show</span>
                     <Select
                         value={String(table.getState().pagination.pageSize)}
                         onValueChange={(value) => table.setPageSize(Number(value))}
                     >
-                        <SelectTrigger className="h-8 w-[70px] border-gray-200">
+                        <SelectTrigger className="h-8 w-[70px] border-gray-200 dark:border-gray-700">
                             <SelectValue />
                         </SelectTrigger>
                         <SelectContent>
@@ -412,7 +412,7 @@ export function CreditAccountsDataTable({
                 </div>
 
                 <div className="flex items-center gap-2">
-                    <span className="text-sm text-gray-600">
+                    <span className="text-sm text-gray-600 dark:text-gray-400">
                         Page {table.getState().pagination.pageIndex + 1} of{" "}
                         {table.getPageCount() || 1}
                     </span>
@@ -420,7 +420,7 @@ export function CreditAccountsDataTable({
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 border-gray-200"
+                            className="h-8 w-8 border-gray-200 dark:border-gray-700"
                             onClick={() => table.setPageIndex(0)}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -429,7 +429,7 @@ export function CreditAccountsDataTable({
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 border-gray-200"
+                            className="h-8 w-8 border-gray-200 dark:border-gray-700"
                             onClick={() => table.previousPage()}
                             disabled={!table.getCanPreviousPage()}
                         >
@@ -438,7 +438,7 @@ export function CreditAccountsDataTable({
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 border-gray-200"
+                            className="h-8 w-8 border-gray-200 dark:border-gray-700"
                             onClick={() => table.nextPage()}
                             disabled={!table.getCanNextPage()}
                         >
@@ -447,7 +447,7 @@ export function CreditAccountsDataTable({
                         <Button
                             variant="outline"
                             size="icon"
-                            className="h-8 w-8 border-gray-200"
+                            className="h-8 w-8 border-gray-200 dark:border-gray-700"
                             onClick={() => table.setPageIndex(table.getPageCount() - 1)}
                             disabled={!table.getCanNextPage()}
                         >

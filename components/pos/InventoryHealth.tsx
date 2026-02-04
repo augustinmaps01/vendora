@@ -29,7 +29,7 @@ export function InventoryHealth({ data, variant = "default" }: InventoryHealthPr
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
-        <p className="text-sm text-gray-500">Stock status</p>
+        <p className="text-sm text-gray-500 dark:text-gray-400">Stock status</p>
       </CardHeader>
       <CardContent className={`space - y - 6 ${ contentClass ?? "" } `.trim()}>
         {inventoryData.map((item) => (
