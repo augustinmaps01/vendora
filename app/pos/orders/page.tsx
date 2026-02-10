@@ -204,19 +204,15 @@ function DesktopOrdersLayout() {
 
   const printInvoice = async (orderId: number) => {
     try {
-      const blob = await orderService.getInvoice(orderId)
-      const url = window.URL.createObjectURL(blob)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = `invoice-${orderId}.pdf`
-      link.click()
-      window.URL.revokeObjectURL(url)
+      // Load order details and open modal
+      await loadOrderDetails(orderId)
+      // Wait for modal to render, then trigger print
+      setTimeout(() => {
+        window.print()
+      }, 500)
     } catch (error: any) {
-      console.error("Failed to download invoice:", error)
-      const errorMsg = error?.response?.status === 404
-        ? "Invoice not available for this order. The backend endpoint may not be implemented yet."
-        : "Failed to download invoice. Please try again."
-      alert(errorMsg)
+      console.error("Failed to load invoice:", error)
+      alert("Failed to load invoice. Please try again.")
     }
   }
 
