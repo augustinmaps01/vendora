@@ -663,42 +663,42 @@ function DesktopOrdersLayout() {
 
               {/* Printable Invoice (Hidden, for printing only) */}
               <div id="printable-invoice" className="hidden print:block">
-                <div style={{ width: '210mm', minHeight: '297mm', padding: '20mm', fontFamily: 'Arial, sans-serif', background: 'white', color: '#000' }}>
+                <div style={{ width: '210mm', minHeight: '297mm', padding: '15mm', fontFamily: 'Arial, sans-serif', background: 'white', color: '#000' }}>
                   {/* Print Header */}
-                  <div style={{ borderBottom: '3px solid #7c3aed', paddingBottom: '20px', marginBottom: '30px' }}>
+                  <div style={{ borderBottom: '2px solid #000', paddingBottom: '15px', marginBottom: '20px' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'start' }}>
                       <div>
-                        <h1 style={{ fontSize: '40px', fontWeight: 'bold', color: '#000', margin: 0 }}>INVOICE</h1>
-                        <p style={{ fontSize: '16px', color: '#333', margin: '5px 0 0 0', fontWeight: '500' }}>Vendora POS System</p>
+                        <h1 style={{ fontSize: '32px', fontWeight: 'bold', color: '#000', margin: 0, lineHeight: '1' }}>INVOICE</h1>
+                        <p style={{ fontSize: '13px', color: '#333', margin: '5px 0 0 0', fontWeight: '500' }}>Vendora POS System</p>
                       </div>
-                      <div style={{ textAlign: 'right', background: '#f3f4f6', padding: '16px 20px', borderRadius: '8px', border: '1px solid #d1d5db' }}>
-                        <p style={{ fontSize: '12px', color: '#333', margin: 0, fontWeight: '600' }}>Invoice No.</p>
-                        <p style={{ fontSize: '20px', fontWeight: 'bold', margin: '5px 0 0 0', color: '#000' }}>{orderDetails.order_number || `INV-${orderDetails.id}`}</p>
+                      <div style={{ textAlign: 'right', background: '#f3f4f6', padding: '10px 15px', borderRadius: '6px', border: '1px solid #d1d5db' }}>
+                        <p style={{ fontSize: '10px', color: '#333', margin: 0, fontWeight: '600' }}>Invoice No.</p>
+                        <p style={{ fontSize: '16px', fontWeight: 'bold', margin: '3px 0 0 0', color: '#000' }}>{orderDetails.order_number || `INV-${orderDetails.id}`}</p>
                       </div>
                     </div>
                   </div>
 
                   {/* Print Details */}
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '40px', marginBottom: '30px' }}>
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '30px', marginBottom: '20px' }}>
                     <div>
-                      <p style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', marginBottom: '10px', fontWeight: '600', letterSpacing: '0.5px' }}>Billed To</p>
-                      <p style={{ fontSize: '18px', fontWeight: 'bold', margin: 0, color: '#000' }}>{orderDetails.customer?.name || orderDetails.customer || "Walk-in Customer"}</p>
-                      {orderDetails.customer?.email && <p style={{ fontSize: '14px', color: '#333', margin: '8px 0 0 0' }}>{orderDetails.customer.email}</p>}
-                      {orderDetails.customer?.phone && <p style={{ fontSize: '14px', color: '#333', margin: '5px 0 0 0' }}>{orderDetails.customer.phone}</p>}
+                      <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginBottom: '6px', fontWeight: '600', letterSpacing: '0.5px' }}>Billed To</p>
+                      <p style={{ fontSize: '14px', fontWeight: 'bold', margin: 0, color: '#000' }}>{orderDetails.customer?.name || orderDetails.customer || "Walk-in Customer"}</p>
+                      {orderDetails.customer?.email && <p style={{ fontSize: '11px', color: '#333', margin: '5px 0 0 0' }}>{orderDetails.customer.email}</p>}
+                      {orderDetails.customer?.phone && <p style={{ fontSize: '11px', color: '#333', margin: '3px 0 0 0' }}>{orderDetails.customer.phone}</p>}
                     </div>
                     <div style={{ textAlign: 'right' }}>
-                      <div style={{ marginBottom: '20px' }}>
-                        <p style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>Invoice Date</p>
-                        <p style={{ fontSize: '15px', fontWeight: '600', color: '#000', margin: 0 }}>{orderDetails.ordered_at || orderDetails.created_at}</p>
+                      <div style={{ marginBottom: '12px' }}>
+                        <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginBottom: '6px', fontWeight: '600', letterSpacing: '0.5px' }}>Invoice Date</p>
+                        <p style={{ fontSize: '12px', fontWeight: '600', color: '#000', margin: 0 }}>{orderDetails.ordered_at || orderDetails.created_at}</p>
                       </div>
                       <div>
-                        <p style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>Status</p>
+                        <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginBottom: '6px', fontWeight: '600', letterSpacing: '0.5px' }}>Status</p>
                         <span style={{
-                          padding: '6px 16px',
-                          borderRadius: '6px',
-                          fontSize: '13px',
+                          padding: '4px 12px',
+                          borderRadius: '4px',
+                          fontSize: '11px',
                           fontWeight: '700',
-                          border: '2px solid',
+                          border: '1.5px solid',
                           display: 'inline-block',
                           background: orderDetails.status === "completed" ? '#d1fae5' : orderDetails.status === "pending" ? '#fef3c7' : '#dbeafe',
                           color: orderDetails.status === "completed" ? '#065f46' : orderDetails.status === "pending" ? '#92400e' : '#1e40af',
@@ -711,74 +711,74 @@ function DesktopOrdersLayout() {
                   </div>
 
                   {/* Print Items Table */}
-                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '30px', border: '2px solid #e5e7eb' }}>
+                  <table style={{ width: '100%', borderCollapse: 'collapse', marginBottom: '20px', border: '1.5px solid #d1d5db' }}>
                     <thead>
-                      <tr style={{ background: '#f9fafb', borderBottom: '2px solid #d1d5db' }}>
-                        <th style={{ padding: '14px', textAlign: 'left', fontSize: '12px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Item Description</th>
-                        <th style={{ padding: '14px', textAlign: 'center', fontSize: '12px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Qty</th>
-                        <th style={{ padding: '14px', textAlign: 'right', fontSize: '12px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Unit Price</th>
-                        <th style={{ padding: '14px', textAlign: 'right', fontSize: '12px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.5px' }}>Amount</th>
+                      <tr style={{ background: '#f9fafb', borderBottom: '1.5px solid #d1d5db' }}>
+                        <th style={{ padding: '10px 8px', textAlign: 'left', fontSize: '10px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.3px', width: '45%' }}>Item Description</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'center', fontSize: '10px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.3px', width: '15%' }}>Qty</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '10px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.3px', width: '20%' }}>Unit Price</th>
+                        <th style={{ padding: '10px 8px', textAlign: 'right', fontSize: '10px', fontWeight: '700', color: '#000', textTransform: 'uppercase', letterSpacing: '0.3px', width: '20%' }}>Amount</th>
                       </tr>
                     </thead>
                     <tbody>
                       {orderDetails.items?.map((item: any, idx: number) => (
                         <tr key={idx} style={{ borderBottom: '1px solid #e5e7eb' }}>
-                          <td style={{ padding: '14px', fontSize: '14px', color: '#000' }}>{item.product?.name || item.name || "Product"}</td>
-                          <td style={{ padding: '14px', fontSize: '14px', textAlign: 'center', color: '#000', fontWeight: '600' }}>{item.quantity}</td>
-                          <td style={{ padding: '14px', fontSize: '14px', textAlign: 'right', color: '#000' }}>₱{Number(item.price || 0).toFixed(2)}</td>
-                          <td style={{ padding: '14px', fontSize: '14px', textAlign: 'right', fontWeight: '600', color: '#000' }}>₱{(Number(item.quantity) * Number(item.price || 0)).toFixed(2)}</td>
+                          <td style={{ padding: '10px 8px', fontSize: '11px', color: '#000' }}>{item.product?.name || item.name || "Product"}</td>
+                          <td style={{ padding: '10px 8px', fontSize: '11px', textAlign: 'center', color: '#000', fontWeight: '600' }}>{item.quantity}</td>
+                          <td style={{ padding: '10px 8px', fontSize: '11px', textAlign: 'right', color: '#000' }}>₱{Number(item.price || 0).toFixed(2)}</td>
+                          <td style={{ padding: '10px 8px', fontSize: '11px', textAlign: 'right', fontWeight: '600', color: '#000' }}>₱{(Number(item.quantity) * Number(item.price || 0)).toFixed(2)}</td>
                         </tr>
                       ))}
                     </tbody>
                   </table>
 
                   {/* Print Totals */}
-                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '30px' }}>
-                    <div style={{ width: '320px' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #d1d5db' }}>
-                        <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>Subtotal</span>
-                        <span style={{ fontSize: '15px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.subtotal || orderDetails.total || 0).toFixed(2)}</span>
+                  <div style={{ display: 'flex', justifyContent: 'flex-end', marginBottom: '20px' }}>
+                    <div style={{ width: '280px' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #d1d5db' }}>
+                        <span style={{ fontSize: '11px', color: '#333', fontWeight: '500' }}>Subtotal</span>
+                        <span style={{ fontSize: '12px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.subtotal || orderDetails.total || 0).toFixed(2)}</span>
                       </div>
                       {orderDetails.tax > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #d1d5db' }}>
-                          <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>Tax (12%)</span>
-                          <span style={{ fontSize: '15px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.tax || 0).toFixed(2)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #d1d5db' }}>
+                          <span style={{ fontSize: '11px', color: '#333', fontWeight: '500' }}>Tax (12%)</span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.tax || 0).toFixed(2)}</span>
                         </div>
                       )}
                       {orderDetails.delivery_fee > 0 && (
-                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 0', borderBottom: '1px solid #d1d5db' }}>
-                          <span style={{ fontSize: '14px', color: '#333', fontWeight: '500' }}>Delivery Fee</span>
-                          <span style={{ fontSize: '15px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.delivery_fee || 0).toFixed(2)}</span>
+                        <div style={{ display: 'flex', justifyContent: 'space-between', padding: '8px 0', borderBottom: '1px solid #d1d5db' }}>
+                          <span style={{ fontSize: '11px', color: '#333', fontWeight: '500' }}>Delivery Fee</span>
+                          <span style={{ fontSize: '12px', fontWeight: '600', color: '#000' }}>₱{Number(orderDetails.delivery_fee || 0).toFixed(2)}</span>
                         </div>
                       )}
-                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '18px 20px', background: '#f3f4f6', borderRadius: '8px', marginTop: '12px', border: '2px solid #d1d5db' }}>
-                        <span style={{ fontSize: '18px', fontWeight: '700', color: '#000' }}>Total Amount</span>
-                        <span style={{ fontSize: '26px', fontWeight: 'bold', color: '#000' }}>₱{Number(orderDetails.total || 0).toFixed(2)}</span>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', padding: '12px 15px', background: '#f3f4f6', borderRadius: '6px', marginTop: '10px', border: '2px solid #000' }}>
+                        <span style={{ fontSize: '14px', fontWeight: '700', color: '#000' }}>Total Amount</span>
+                        <span style={{ fontSize: '18px', fontWeight: 'bold', color: '#000' }}>₱{Number(orderDetails.total || 0).toFixed(2)}</span>
                       </div>
                     </div>
                   </div>
 
                   {/* Print Footer */}
                   {(orderDetails.payment_method || orderDetails.notes) && (
-                    <div style={{ marginTop: '35px', paddingTop: '25px', borderTop: '2px solid #d1d5db' }}>
+                    <div style={{ marginTop: '25px', paddingTop: '15px', borderTop: '1.5px solid #d1d5db' }}>
                       {orderDetails.payment_method && (
-                        <div style={{ marginBottom: '20px' }}>
-                          <p style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>Payment Method</p>
-                          <p style={{ fontSize: '15px', fontWeight: '600', textTransform: 'capitalize', color: '#000', margin: 0 }}>{orderDetails.payment_method}</p>
+                        <div style={{ marginBottom: '12px' }}>
+                          <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginBottom: '5px', fontWeight: '600', letterSpacing: '0.3px' }}>Payment Method</p>
+                          <p style={{ fontSize: '12px', fontWeight: '600', textTransform: 'capitalize', color: '#000', margin: 0 }}>{orderDetails.payment_method}</p>
                         </div>
                       )}
                       {orderDetails.notes && (
                         <div>
-                          <p style={{ fontSize: '12px', color: '#333', textTransform: 'uppercase', marginBottom: '8px', fontWeight: '600', letterSpacing: '0.5px' }}>Notes</p>
-                          <p style={{ fontSize: '14px', color: '#000', margin: 0 }}>{orderDetails.notes}</p>
+                          <p style={{ fontSize: '10px', color: '#333', textTransform: 'uppercase', marginBottom: '5px', fontWeight: '600', letterSpacing: '0.3px' }}>Notes</p>
+                          <p style={{ fontSize: '11px', color: '#000', margin: 0 }}>{orderDetails.notes}</p>
                         </div>
                       )}
                     </div>
                   )}
 
-                  <div style={{ textAlign: 'center', marginTop: '60px', paddingTop: '25px', borderTop: '2px solid #e5e7eb' }}>
-                    <p style={{ fontSize: '15px', color: '#333', fontWeight: '500', margin: 0 }}>Thank you for your business!</p>
-                    <p style={{ fontSize: '13px', color: '#666', marginTop: '8px' }}>This invoice was generated by Vendora POS System</p>
+                  <div style={{ textAlign: 'center', marginTop: '40px', paddingTop: '15px', borderTop: '1.5px solid #d1d5db' }}>
+                    <p style={{ fontSize: '12px', color: '#333', fontWeight: '500', margin: 0 }}>Thank you for your business!</p>
+                    <p style={{ fontSize: '10px', color: '#666', marginTop: '5px', margin: 0 }}>This invoice was generated by Vendora POS System</p>
                   </div>
                 </div>
               </div>
