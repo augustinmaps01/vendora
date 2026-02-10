@@ -644,6 +644,11 @@ function DesktopInventoryLayout() {
       setActionError("Price must be greater than 0.")
       return
     }
+    // Validate image is required for new products
+    if (!isEditing && !imageFile && !imagePreview) {
+      setActionError("Product image is required.")
+      return
+    }
 
     setIsSaving(true)
     setActionError(null)
@@ -1485,7 +1490,10 @@ function DesktopInventoryLayout() {
 
                 {/* Media */}
                 <section className="space-y-4 sm:rounded-2xl sm:border sm:border-white/10 sm:bg-white/[0.04] sm:p-4">
-                  <h3 className="text-sm font-semibold">Media</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Media {!isEditing && <span className="text-red-400">*</span>}</h3>
+                    {!isEditing && <span className="text-[11px] text-white/50">Image required for new products</span>}
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button
                       className={`rounded-2xl border-2 border-dashed p-4 text-center transition ${hasCamera
