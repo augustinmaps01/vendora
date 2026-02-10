@@ -20,12 +20,16 @@ import {
   Trash2,
   Loader2,
   History,
+  CheckCircle2,
+  Printer,
+  Share2,
 } from "lucide-react";
 import {
   type POSProduct,
   type CartItem,
   type Fulfillment,
   type Screen,
+  type ReceiptData,
 } from "@/components/screens/pos-screen";
 import {
   productService,
@@ -185,7 +189,8 @@ export default function VendoraPOS() {
   const [receiptOpen, setReceiptOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [orderHistoryOpen, setOrderHistoryOpen] = useState(false);
-  const [receiptData, setReceiptData] = useState<any>(null);
+  const [successModalOpen, setSuccessModalOpen] = useState(false);
+  const [receiptData, setReceiptData] = useState<ReceiptData | null>(null);
   const [recentOrders, setRecentOrders] = useState<any[]>([]);
 
   const [saleId, setSaleId] = useState<string | null>(null);
@@ -422,23 +427,64 @@ export default function VendoraPOS() {
       if (!customerId) throw new Error("Customer selection required");
 
       // Create order - API uses snake_case format
-      const order = await orderService.create({
-        customer_id: customerId,
+      const orderPayload = {
+        customer_id: Number(customerId),
         ordered_at: new Date().toISOString().split('T')[0],
         status: "pending",
-        items: cart.map(item => ({ product_id: Number(item.id), quantity: item.qty })),
-      } as unknown as import("@/types").Order);
+        store_id: selectedStore || undefined,  // Add store_id if selected
+        total: Math.round(totals.total),  // Add total amount
+        items: cart.map(item => ({
+          product_id: Number(item.id),
+          quantity: item.qty,
+          price: Math.round(item.price)  // Add price per item
+        })),
+      };
+      console.log("Creating order with payload:", JSON.stringify(orderPayload, null, 2));
 
-      // Create payment(s)
-      const paymentDate = new Date().toISOString().split('T')[0];
-      if (splitPay) {
-        const payments = [];
-        if (cashPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: cashPay, method: "cash", status: "completed", paid_at: paymentDate }));
-        if (cardPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: cardPay, method: "card", status: "completed", paid_at: paymentDate }));
-        if (onlinePay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: onlinePay, method: "online", status: "completed", paid_at: paymentDate }));
-        await Promise.all(payments);
-      } else {
-        await paymentService.create({ order_id: order.id as unknown as number, amount: paid, method: primaryMethod, status: "completed", paid_at: paymentDate });
+      let order;
+      try {
+        order = await orderService.create(orderPayload as unknown as import("@/types").Order);
+        console.log("Order created successfully:", order);
+      } catch (orderErr: any) {
+        // Enhanced error logging for debugging
+        console.error("=== ORDER CREATION ERROR - FULL DETAILS ===");
+        console.error("Status:", orderErr?.response?.status);
+        console.error("Status Text:", orderErr?.response?.statusText);
+        console.error("Response Data:", JSON.stringify(orderErr?.response?.data, null, 2));
+        console.error("Response Headers:", orderErr?.response?.headers);
+        console.error("Request URL:", orderErr?.config?.url);
+        console.error("Request Method:", orderErr?.config?.method);
+        console.error("Request Payload:", JSON.stringify(orderPayload, null, 2));
+        console.error("Error Message:", orderErr?.message);
+        console.error("Cart Data:", JSON.stringify(cart, null, 2));
+        console.error("Customer ID:", customerId, typeof customerId);
+        console.error("==========================================");
+        throw orderErr;
+      }
+
+      // Create payment(s) - paid_at needs datetime format "YYYY-MM-DD HH:mm"
+      const paymentTime = new Date();
+      const paidAt = `${paymentTime.toISOString().split('T')[0]} ${paymentTime.toTimeString().slice(0, 5)}`;
+      console.log("Creating payment with paid_at:", paidAt);
+
+      try {
+        if (splitPay) {
+          const payments = [];
+          if (cashPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(cashPay), method: "cash", status: "completed", paid_at: paidAt }));
+          if (cardPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(cardPay), method: "card", status: "completed", paid_at: paidAt }));
+          if (onlinePay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(onlinePay), method: "online", status: "completed", paid_at: paidAt }));
+          await Promise.all(payments);
+        } else {
+          await paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(paid), method: primaryMethod, status: "completed", paid_at: paidAt });
+        }
+        console.log("Payment(s) created successfully");
+      } catch (paymentErr: any) {
+        console.error("Payment creation failed:", {
+          status: paymentErr?.response?.status,
+          data: paymentErr?.response?.data,
+          message: paymentErr?.message,
+        });
+        throw paymentErr;
       }
 
       // Update inventory (non-blocking)
@@ -447,39 +493,140 @@ export default function VendoraPOS() {
         orderId: `ORD-${order.id}`,
       }).catch(() => { /* Silent fail */ });
 
-      // Show receipt
-      setReceiptData({
-        orderId: order.id,
-        orderNumber: `ORD-${order.id}`,
-        customer: customer === "walkin" ? "Walk-in Customer" : customers.find(c => c.id === customerId)?.name || "Customer",
-        items: cart,
-        totals,
-        paid,
+      // Generate transaction number: TXN-YYYYMMDD-XXXX
+      const now = new Date();
+      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
+      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
+      const txnNumber = `TXN-${dateStr}-${rand}`;
+
+      // Build discount label
+      let discountLabel = "Discount";
+      if (discountValue > 0) {
+        discountLabel = discountMode === "percent" ? `Discount (${discountValue}%)` : "Discount";
+      }
+
+      // Build tax label
+      const taxLabel = taxEnabled ? `Tax (${Math.round(taxRate * 100)}% VAT)` : "Tax (VAT Exempt)";
+
+      // Determine payment method label
+      let paymentMethodLabel: string;
+      if (splitPay) {
+        const parts: string[] = [];
+        if (cashPay > 0) parts.push("Cash");
+        if (cardPay > 0) parts.push("Card");
+        if (onlinePay > 0) parts.push("Online");
+        paymentMethodLabel = `Split (${parts.join(", ")})`;
+      } else {
+        paymentMethodLabel = primaryMethod.charAt(0).toUpperCase() + primaryMethod.slice(1);
+      }
+
+      const customerName = customer === "walkin"
+        ? "Walk-in Customer"
+        : customers.find(c => c.id === customerId)?.name || "Customer";
+
+      // Build receipt data
+      const receipt: ReceiptData = {
+        transactionNumber: txnNumber,
+        date: now.toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          year: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+          hour12: true,
+        }),
+        customerName,
+        items: [...cart],
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        discountLabel,
+        tax: totals.tax,
+        taxLabel,
+        deliveryFee: totals.deliveryFee,
+        total: totals.total,
+        paymentMethod: paymentMethodLabel,
+        amountTendered: paid,
         change,
-        paymentMethod: splitPay ? `Split (Cash: ₱${cashPay}, Card: ₱${cardPay}, Online: ₱${onlinePay})` : primaryMethod,
-      });
-      setReceiptOpen(true);
+      };
 
-      // Reset
-      setCart([]);
-      setNotes("");
-      setDiscountValue(0);
-      setCashPay(0);
-      setCardPay(0);
-      setOnlinePay(0);
-      setScreen("sale");
+      setReceiptData(receipt);
+      setSuccessModalOpen(true);  // Open success modal instead of changing screen
 
-      Swal.fire({ icon: "success", title: "Order completed!", text: `Order #${order.id} has been processed`, timer: 3000, showConfirmButton: false });
-
-      // Reload products in background
-      loadInitialData();
+      // Don't reset cart yet - wait for user to click "New Transaction"
 
     } catch (err: any) {
-      Swal.fire({ icon: "error", title: "Order Failed", text: err?.message || "Something went wrong", confirmButtonColor: "#7c3aed" });
+      // Extract full error details for debugging
+      const responseData = err?.response?.data;
+      const status = err?.response?.status;
+      console.error("Complete order error:", {
+        status,
+        responseData: JSON.stringify(responseData, null, 2),
+        message: err?.message,
+        fullError: JSON.stringify(err, null, 2),
+      });
+
+      // Extract validation errors if present
+      const validationErrors = responseData?.errors
+        ? Object.values(responseData.errors).flat().join(", ")
+        : err?.errors
+          ? Object.values(err.errors).flat().join(", ")
+          : "";
+
+      // Get server message from response data
+      const serverMsg = responseData?.message
+        || err?.message
+        || "Something went wrong";
+
+      // For 500 errors, provide more context
+      const displayMsg = status === 500
+        ? `Server error: ${serverMsg}. Please contact support if this persists.`
+        : validationErrors || serverMsg;
+
+      Swal.fire({
+        icon: "error",
+        title: status === 500 ? "Server Error" : "Order Failed",
+        text: displayMsg,
+        confirmButtonColor: "#7c3aed",
+      });
     } finally {
       setIsProcessing(false);
     }
   }, [canComplete, customer, customers, selectedCustomerId, cart, splitPay, cashPay, cardPay, onlinePay, paid, primaryMethod, totals, change, loadInitialData]);
+
+  const startNewTransaction = useCallback(() => {
+    // Close success modal
+    setSuccessModalOpen(false);
+    setReceiptData(null);
+
+    // Reset to sale screen
+    setScreen("sale");
+
+    // Reset cart and payment state
+    setCart([]);
+    setNotes("");
+    setDiscountValue(0);
+    setCashPay(0);
+    setCardPay(0);
+    setOnlinePay(0);
+
+    // Reset customer and payment settings
+    setSelectedCustomerId(null);
+    setCustomer("walkin");
+    setFulfillment("pickup");
+    setPaymentType("full");
+    setSplitPay(false);
+    setPrimaryMethod("cash");
+    setTaxEnabled(true);
+    setTaxRate(0.12);
+    setDiscountMode("amount");
+
+    // Generate new sale ID
+    const base = String(Math.floor(Date.now() / 1000)).slice(-6);
+    setSaleId(`SALE-${base}`);
+
+    // Refresh products in background
+    loadInitialData();
+  }, [loadInitialData]);
 
   const screenProps = useMemo(() => ({
     screen, cart, query, setQuery, barcodeInput, setBarcodeInput, category, setCategory,
@@ -490,11 +637,12 @@ export default function VendoraPOS() {
     splitPay, setSplitPay, primaryMethod, setPrimaryMethod, cashPay, setCashPay,
     cardPay, setCardPay, onlinePay, setOnlinePay, amountDue, paid, balance, change,
     canComplete, setReceiptOpen, calcDeliveryFee, completeOrder, categories,
+    receiptData, startNewTransaction,
   }), [screen, cart, query, barcodeInput, category, customer, notes, filtered, addToCart,
     applyBarcode, changeQty, removeItem, totals, discountAmount, canGoCheckout, discountMode,
     discountValue, taxEnabled, taxRate, fulfillment, deliveryKm, paymentType, splitPay,
     primaryMethod, cashPay, cardPay, onlinePay, amountDue, paid, balance, change,
-    canComplete, completeOrder, categories]);
+    canComplete, completeOrder, categories, receiptData, startNewTransaction]);
 
   // Show loading
   if (isLoading) {
@@ -525,7 +673,7 @@ export default function VendoraPOS() {
             </div>
             <div className="leading-tight min-w-0">
               <div className="font-semibold text-white truncate">Vendora POS</div>
-              <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : "Checkout"} - Txn {saleId ?? "—"}</div>
+              <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : screen === "checkout" ? "Checkout" : "Receipt"} - Txn {saleId ?? "—"}</div>
             </div>
             <div className="hidden lg:flex gap-2 ml-2">
               <Pill>Cashier</Pill>
@@ -562,8 +710,8 @@ export default function VendoraPOS() {
               <span className="hidden lg:inline">Orders</span>
             </Button>
 
-            {screen === "checkout" && (
-              <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setScreen("sale")}>
+            {screen !== "sale" && (
+              <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setScreen(screen === "receipt" ? "sale" : "sale")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
@@ -604,7 +752,11 @@ export default function VendoraPOS() {
         {receiptOpen && <InlineReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} cart={cart} totals={totals} saleId={saleId} notes={notes} receiptData={receiptData} />}
         {settingsOpen && <InlineSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} taxEnabled={taxEnabled} setTaxEnabled={setTaxEnabled} taxRate={taxRate} setTaxRate={setTaxRate} />}
         {orderHistoryOpen && <InlineOrderHistoryDialog open={orderHistoryOpen} onOpenChange={setOrderHistoryOpen} recentOrders={recentOrders} />}
+        {successModalOpen && <TransactionSuccessDialog open={successModalOpen} onOpenChange={setSuccessModalOpen} receiptData={receiptData} onNewTransaction={startNewTransaction} />}
       </Suspense>
+
+      {/* Hidden thermal receipt for printing */}
+      {receiptData && <ThermalReceipt receiptData={receiptData} />}
 
       {/* Processing Overlay */}
       {isProcessing && (
@@ -787,5 +939,241 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
         </DialogFooter>
       </DialogContent>
     </Dialog>
+  );
+}
+
+// Transaction Success Modal - Uses the original receipt design
+function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction }: any) {
+  const THEME = {
+    muted: "text-white/60",
+  };
+
+  if (!receiptData) return null;
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-transparent border-0 p-0">
+        {/* Visually hidden title for accessibility */}
+        <DialogTitle className="sr-only">Transaction Successful</DialogTitle>
+
+        {/* Close button */}
+        <button
+          onClick={() => onOpenChange(false)}
+          className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-colors"
+        >
+          <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+
+        {/* Original Receipt Design */}
+        <div className="rounded-3xl bg-gradient-to-b from-[#2d1f5e] to-[#3a2570] border border-white/10 overflow-hidden shadow-2xl">
+          {/* Header - Checkmark + Title */}
+          <div className="pt-10 pb-6 text-center">
+            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
+              <CheckCircle2 className="h-12 w-12 text-emerald-400" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Transaction Successful!</h2>
+            <p className={`text-sm ${THEME.muted} mt-1 tracking-wider uppercase`}>Vendora POS</p>
+          </div>
+
+          <div className="px-6 pb-8 space-y-0">
+            {/* Transaction Details */}
+            <div className="border-t border-white/10 py-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Transaction #</span>
+                <span className="text-white font-medium">{receiptData.transactionNumber}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Date</span>
+                <span className="text-white">{receiptData.date}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Customer</span>
+                <span className="text-white">{receiptData.customerName}</span>
+              </div>
+            </div>
+
+            {/* Items */}
+            <div className="border-t border-white/10 py-4">
+              <h3 className="text-sm font-semibold text-white mb-3">Items</h3>
+              <div className="space-y-2">
+                {receiptData.items.map((item: any) => (
+                  <div key={item.id} className="flex items-center justify-between text-sm">
+                    <span className={THEME.muted}>
+                      {item.name} <span className="text-white/40">x{item.qty}</span>
+                    </span>
+                    <span className="text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+
+            {/* Totals */}
+            <div className="border-t border-white/10 py-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Subtotal</span>
+                <span className="text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
+              </div>
+              {receiptData.discount > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>{receiptData.discountLabel}</span>
+                  <span className="text-emerald-400">- ₱ {receiptData.discount.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>{receiptData.taxLabel}</span>
+                <span className="text-white">₱ {receiptData.tax.toFixed(2)}</span>
+              </div>
+              {receiptData.deliveryFee > 0 && (
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Delivery Fee</span>
+                  <span className="text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
+                </div>
+              )}
+              <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+                <span className="text-white font-bold">Total</span>
+                <span className="text-emerald-400 font-bold text-lg">₱ {receiptData.total.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Payment Info */}
+            <div className="border-t border-white/10 py-4 space-y-2">
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Payment Method</span>
+                <span className="text-white font-medium">{receiptData.paymentMethod}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Amount Tendered</span>
+                <span className="text-white">₱ {receiptData.amountTendered.toFixed(2)}</span>
+              </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Change</span>
+                <span className="text-emerald-400 font-medium">₱ {receiptData.change.toFixed(2)}</span>
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="border-t border-white/10 pt-6 space-y-3">
+              <Button
+                className="w-full rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-semibold py-6 text-base"
+                onClick={onNewTransaction}
+              >
+                New Transaction
+              </Button>
+              <div className="grid grid-cols-2 gap-3">
+                <Button
+                  variant="secondary"
+                  className="rounded-2xl bg-white/10 hover:bg-white/20 text-white py-5"
+                  onClick={() => window.print()}
+                >
+                  <Printer className="h-4 w-4 mr-2" />
+                  Print
+                </Button>
+                <Button
+                  variant="secondary"
+                  className="rounded-2xl bg-white/10 hover:bg-white/20 text-white py-5"
+                  onClick={() => {
+                    if (navigator.share) {
+                      navigator.share({
+                        title: "Transaction Receipt",
+                        text: `Transaction ${receiptData.transactionNumber} - Total: ₱${receiptData.total.toFixed(2)}`,
+                      }).catch(() => {});
+                    }
+                  }}
+                >
+                  <Share2 className="h-4 w-4 mr-2" />
+                  Share
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// Thermal Receipt Component (Hidden, for printing only)
+function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
+  return (
+    <div id="thermal-receipt" className="hidden print:block print:p-0 print:m-0">
+      <div className="thermal-receipt" style={{ width: '80mm', fontFamily: 'monospace', fontSize: '12px', lineHeight: '1.5' }}>
+        {/* Header */}
+        <div style={{ textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '10px' }}>
+          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>VENDORA POS</div>
+          <div style={{ fontSize: '11px' }}>Point of Sale System</div>
+        </div>
+
+        {/* Transaction Info */}
+        <div style={{ marginBottom: '10px', fontSize: '11px' }}>
+          <div>TXN: {receiptData.transactionNumber}</div>
+          <div>Date: {receiptData.date}</div>
+          <div>Customer: {receiptData.customerName}</div>
+          <div>Cashier: Staff</div>
+        </div>
+
+        {/* Items */}
+        <div style={{ borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '10px 0' }}>
+          {receiptData.items.map((item, index) => (
+            <div key={index} style={{ marginBottom: '8px' }}>
+              <div style={{ fontWeight: 'bold' }}>{item.name}</div>
+              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+                <span>{item.qty} x ₱{item.price.toLocaleString()}</span>
+                <span>₱{(item.qty * item.price).toLocaleString()}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+
+        {/* Totals */}
+        <div style={{ marginTop: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span>Subtotal:</span>
+            <span>₱{receiptData.subtotal.toLocaleString()}</span>
+          </div>
+          {receiptData.discount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span>{receiptData.discountLabel}:</span>
+              <span>-₱{receiptData.discount.toLocaleString()}</span>
+            </div>
+          )}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span>{receiptData.taxLabel}:</span>
+            <span>₱{receiptData.tax.toLocaleString()}</span>
+          </div>
+          {receiptData.deliveryFee > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+              <span>Delivery Fee:</span>
+              <span>₱{receiptData.deliveryFee.toLocaleString()}</span>
+            </div>
+          )}
+          <div style={{ borderTop: '1px solid #000', marginTop: '5px', paddingTop: '5px' }}>
+            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+              <span>TOTAL:</span>
+              <span>₱{receiptData.total.toLocaleString()}</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Payment */}
+        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #000' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+            <span>Payment ({receiptData.paymentMethod}):</span>
+            <span>₱{receiptData.amountTendered.toLocaleString()}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
+            <span>Change:</span>
+            <span>₱{receiptData.change.toLocaleString()}</span>
+          </div>
+        </div>
+
+        {/* Footer */}
+        <div style={{ textAlign: 'center', marginTop: '15px', paddingTop: '10px', borderTop: '1px dashed #000', fontSize: '11px' }}>
+          <div>Thank you for your purchase!</div>
+          <div style={{ marginTop: '5px' }}>Please come again</div>
+        </div>
+      </div>
+    </div>
   );
 }
