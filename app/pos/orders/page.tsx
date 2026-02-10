@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api-client"
+import { orderService } from "@/services"
 import { posOrderEndpoints } from "./api-endpoints"
 import {
   Select,
@@ -75,7 +76,8 @@ const normalizeOrder = (raw: any): OrderRow => {
   const items = Array.isArray(raw?.items)
     ? raw.items.length
     : Number(raw?.items_count || raw?.item_count || 0)
-  const total = Number(raw?.total ?? raw?.grand_total ?? 0)
+  // Convert from centavos to pesos (divide by 100)
+  const total = Number(raw?.total ?? raw?.grand_total ?? 0) / 100
   const status = normalizeStatus(raw?.status)
   const date = formatDate(raw?.createdAt ?? raw?.created_at ?? raw?.date)
 
@@ -86,6 +88,29 @@ const normalizeOrder = (raw: any): OrderRow => {
     total,
     status,
     items,
+  }
+}
+
+/**
+ * Normalize order details response - convert centavos to pesos
+ */
+const normalizeOrderDetails = (raw: any): any => {
+  if (!raw) return null
+
+  return {
+    ...raw,
+    total: Number(raw?.total ?? 0) / 100,
+    subtotal: Number(raw?.subtotal ?? 0) / 100,
+    tax: Number(raw?.tax ?? 0) / 100,
+    delivery_fee: Number(raw?.delivery_fee ?? 0) / 100,
+    discount: Number(raw?.discount ?? 0) / 100,
+    items: Array.isArray(raw?.items)
+      ? raw.items.map((item: any) => ({
+          ...item,
+          price: Number(item?.price ?? 0) / 100,
+          total: Number(item?.total ?? 0) / 100,
+        }))
+      : [],
   }
 }
 
@@ -168,7 +193,7 @@ function DesktopOrdersLayout() {
     setIsDetailsModalOpen(true)
     try {
       const response = await api.get(posOrderEndpoints.get(orderId))
-      setOrderDetails(response)
+      setOrderDetails(normalizeOrderDetails(response))
     } catch (error) {
       console.error("Failed to load order details:", error)
       setOrderDetails(null)
@@ -179,18 +204,19 @@ function DesktopOrdersLayout() {
 
   const printInvoice = async (orderId: number) => {
     try {
-      const response = await api.get(`/orders/${orderId}/invoice`, {
-        responseType: 'blob'
-      })
-      const url = window.URL.createObjectURL(response as any)
+      const blob = await orderService.getInvoice(orderId)
+      const url = window.URL.createObjectURL(blob)
       const link = document.createElement('a')
       link.href = url
       link.download = `invoice-${orderId}.pdf`
       link.click()
       window.URL.revokeObjectURL(url)
-    } catch (error) {
+    } catch (error: any) {
       console.error("Failed to download invoice:", error)
-      alert("Failed to download invoice. Please try again.")
+      const errorMsg = error?.response?.status === 404
+        ? "Invoice not available for this order. The backend endpoint may not be implemented yet."
+        : "Failed to download invoice. Please try again."
+      alert(errorMsg)
     }
   }
 
