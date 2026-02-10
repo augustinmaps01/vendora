@@ -956,16 +956,6 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
         {/* Visually hidden title for accessibility */}
         <DialogTitle className="sr-only">Transaction Successful</DialogTitle>
 
-        {/* Close button */}
-        <button
-          onClick={() => onOpenChange(false)}
-          className="absolute right-4 top-4 z-50 rounded-full bg-white/10 p-2 hover:bg-white/20 transition-colors"
-        >
-          <svg className="h-4 w-4 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-          </svg>
-        </button>
-
         {/* Original Receipt Design */}
         <div className="rounded-3xl bg-gradient-to-b from-[#2d1f5e] to-[#3a2570] border border-white/10 overflow-hidden shadow-2xl">
           {/* Header - Checkmark + Title */}
