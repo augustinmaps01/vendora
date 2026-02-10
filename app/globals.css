@@ -314,3 +314,49 @@
   border-color: #ef4444 !important;
   color: #ef4444 !important;
 }
+
+/* ===== POS Receipt Print Styles ===== */
+@media print {
+  /* Hide everything except the thermal receipt */
+  body * {
+    visibility: hidden !important;
+  }
+
+  #thermal-receipt,
+  #thermal-receipt * {
+    visibility: visible !important;
+  }
+
+  #thermal-receipt {
+    position: absolute !important;
+    left: 50% !important;
+    top: 0 !important;
+    transform: translateX(-50%) !important;
+    width: 80mm !important;
+    max-width: 80mm !important;
+    padding: 4mm !important;
+    margin: 0 !important;
+    background: white !important;
+    color: black !important;
+    font-family: "Courier New", Courier, monospace !important;
+    font-size: 12px !important;
+    line-height: 1.5 !important;
+  }
+
+  /* Thermal receipt specific styles */
+  #thermal-receipt .thermal-receipt {
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+
+  #thermal-receipt div {
+    page-break-inside: avoid !important;
+  }
+
+  @page {
+    size: 80mm auto;
+    margin: 0 !important;
+    padding: 0 !important;
+  }
+}
