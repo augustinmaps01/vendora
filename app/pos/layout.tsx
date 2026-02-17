@@ -39,6 +39,9 @@ import {
 } from "lucide-react"
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
 import { ThemeToggle } from "@/components/pos/ThemeToggle"
+import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
+import { OfflineBanner } from "@/components/pos/OfflineBanner"
+import { useOfflineInit } from "@/hooks/use-offline-init"
 import { authService } from "@/services/auth-jwt.service"
 import { tokenManager } from "@/lib/axios-client"
 import { TOKEN_CONFIG } from "@/config/api.config"
@@ -90,6 +93,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
   const [isLoading, setIsLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
+
+  // Initialize offline support for all POS pages
+  const offline = useOfflineInit()
 
   useEffect(() => {
     setMounted(true)
@@ -216,11 +222,11 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const isPOSDashboard = pathname === "/pos/dashboard"
   const isPOSScreen = pathname === "/pos/pos-screen"
   const pageBackgroundClass = isPOSDashboard
-    ? "bg-white dark:bg-[#0a0118]"
+    ? "bg-white dark:bg-[#0b0b1a]"
     : isPOSScreen
-      ? "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]"
+      ? "bg-gray-50 dark:bg-gradient-to-br dark:from-[#1f1633] dark:via-[#241a3a] dark:to-[#2b1f4a]"
       : "bg-background"
-  const mainBackgroundClass = isPOSScreen ? "bg-transparent" : "bg-gray-100 dark:bg-[#0d0420]"
+  const mainBackgroundClass = isPOSScreen ? "bg-transparent" : "bg-gray-100 dark:bg-[#0f0f23]"
 
   // Calculate effective sidebar width for styles
   const effectiveSidebarWidth = sidebarCollapsed ? 80 : sidebarWidth
@@ -250,7 +256,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               <div className="absolute inset-0 bg-white/20 rounded-3xl blur-xl animate-pulse" />
               <div className="relative flex items-center justify-center w-32 h-32 bg-white rounded-3xl shadow-2xl p-5">
                 <Image
-                  src="/logos/logo.png"
+                  src="/new-logo/vendora 2.png"
                   alt="Vendora"
                   width={96}
                   height={96}
@@ -294,7 +300,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             variant="outline"
             size="icon"
             onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100"
+            className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-[#1a1a35]"
           >
             {sidebarCollapsed ? (
               <ChevronRight className="w-4 h-4 text-purple-700" />
@@ -324,7 +330,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         <div className={`flex items-center h-16 px-6 border-b border-white/20 transition-all duration-300 flex-shrink-0 ${sidebarCollapsed ? 'lg:px-2 lg:justify-center' : ''}`}>
           <div className={`flex items-center gap-2 transition-all duration-300 ${sidebarCollapsed ? 'lg:justify-center lg:w-full' : ''}`}>
             <div className="relative flex items-center justify-center w-8 h-8 rounded">
-              <Image src="/logos/logo.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
+              <Image src="/new-logo/vendora 2 white.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
             </div>
             <div className={`overflow-hidden transition-all duration-300 ${sidebarCollapsed ? 'lg:hidden' : ''}`}>
               <h1 className="text-lg font-bold text-white whitespace-nowrap">Vendora</h1>
@@ -533,23 +539,32 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       {/* Main Content */}
       <main
         className={`
-          min-h-screen pt-16 ${mainBackgroundClass} overflow-x-hidden 
+          min-h-screen ${mainBackgroundClass} overflow-x-hidden
           ${isResizing ? "" : "transition-all duration-300"}
           ml-0 lg:ml-[var(--sidebar-width)]
         `}
         style={{
+          paddingTop: mounted && (!offline.isOnline || offline.networkQuality === 'poor') ? 'calc(4rem + 28px)' : '4rem',
         }}
       >
+        {/* Offline Banner */}
+        <OfflineBanner
+          isOnline={offline.isOnline}
+          networkQuality={offline.networkQuality}
+          pendingCount={offline.pendingCount}
+        />
+
         {/* Header */}
         <header
           className={`
-            fixed top-0 left-0 z-30 flex items-center h-16 px-6 border-b w-full 
+            fixed left-0 z-30 flex items-center h-16 px-6 border-b w-full
             ${isResizing ? "" : "transition-all duration-300"}
             lg:left-[var(--sidebar-width)] lg:w-[calc(100%-var(--sidebar-width))]
           `}
           style={{
             backgroundColor: '#2e0f5f',
             borderColor: '#1f0a3d',
+            top: mounted && (!offline.isOnline || offline.networkQuality === 'poor') ? '28px' : '0',
           }}
         >
           <div className="flex items-center justify-between flex-1">
@@ -564,7 +579,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                 className="flex items-center gap-2 lg:hidden"
               >
                 <div className="relative flex items-center justify-center w-8 h-8 rounded">
-                  <Image src="/logos/logo.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
+                  <Image src="/new-logo/vendora 2 white.png" alt="Vendora Logo" width={32} height={32} className="object-contain" />
                 </div>
                 <div>
                   <h1 className="text-lg font-bold text-white">Vendora</h1>
@@ -587,8 +602,17 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               */}
             </div>
 
-            {/* Right Side - Theme Toggle, Notifications & User Profile */}
+            {/* Right Side - Network Status, Theme Toggle, Notifications & User Profile */}
             <div className="flex items-center gap-3">
+              {/* Network Status */}
+              <NetworkStatusBadge
+                isOnline={offline.isOnline}
+                networkQuality={offline.networkQuality}
+                pendingCount={offline.pendingCount}
+                isSyncing={offline.isSyncing}
+                onSync={offline.triggerSync}
+              />
+
               {/* Theme Toggle */}
               <ThemeToggle />
 
@@ -618,24 +642,24 @@ export default function POSLayout({ children }: { children: ReactNode }) {
                   <DropdownMenuContent align="end" className="w-56">
                     <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
                       <User className="w-4 h-4 mr-2 text-gray-600" />
                       <span>Profile</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
                       <Store className="w-4 h-4 mr-2 text-gray-600" />
                       <span>My Store</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
                       <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
                       <span>Subscription</span>
                     </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
                       <Settings className="w-4 h-4 mr-2 text-gray-600" />
                       <span>Settings</span>
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50">
+                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
                       <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
                       <span>Help & Support</span>
                     </DropdownMenuItem>
@@ -749,7 +773,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               />
               <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
                 }`}>
-                <div className="p-2 border-b bg-gray-50">
+                <div className="p-2 border-b bg-gray-50 dark:bg-[#1a1a35]">
                   <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
                 </div>
                 <div className="p-1">

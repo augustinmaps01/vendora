@@ -15,7 +15,10 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { Shield, Clock, Eye, EyeOff, Loader2, LogOut } from "lucide-react"
 import { VendorLoginCredentials } from "@/types/auth"
 import { authService } from "@/services/auth-jwt.service"
+import { TOKEN_CONFIG } from "@/config/api.config"
+import { db } from "@/lib/db"
 import { toast } from "sonner"
+import { WifiOff } from "lucide-react"
 
 // Professional error messages for different scenarios
 const ERROR_MESSAGES = {
@@ -73,6 +76,19 @@ function VendorLoginContent() {
   const [lockoutTime, setLockoutTime] = useState<string | null>(null)
   const [showPassword, setShowPassword] = useState(false)
   const [isNavigating, setIsNavigating] = useState(false)
+  const [isOffline, setIsOffline] = useState(false)
+
+  // Track online/offline status
+  useEffect(() => {
+    const update = () => setIsOffline(!navigator.onLine)
+    update()
+    window.addEventListener('online', update)
+    window.addEventListener('offline', update)
+    return () => {
+      window.removeEventListener('online', update)
+      window.removeEventListener('offline', update)
+    }
+  }, [])
 
   // Auto-dismiss error message after 3 seconds
   useEffect(() => {
@@ -115,10 +131,78 @@ function VendorLoginContent() {
     resolver: zodResolver(loginSchema),
   })
 
+  // Hash password for offline credential caching (not for security, just verification)
+  const hashPassword = async (password: string): Promise<string> => {
+    const encoder = new TextEncoder()
+    const data = encoder.encode(password + 'vendora-offline-salt')
+    const hash = await crypto.subtle.digest('SHA-256', data)
+    return Array.from(new Uint8Array(hash)).map(b => b.toString(16).padStart(2, '0')).join('')
+  }
+
+  // Cache credentials for offline login
+  const cacheCredentials = async (email: string, password: string) => {
+    try {
+      const passwordHash = await hashPassword(password)
+      const profile = localStorage.getItem(TOKEN_CONFIG.USER_PROFILE_KEY) || '{}'
+      const parsed = JSON.parse(profile)
+      await db.cachedCredentials.put({
+        email,
+        passwordHash,
+        userName: parsed.business_name || parsed.full_name || parsed.name || email,
+        userEmail: email,
+        userProfile: profile,
+        cachedAt: new Date(),
+      })
+    } catch (err) {
+      console.warn('Failed to cache credentials for offline use:', err)
+    }
+  }
+
+  // Attempt offline login using cached credentials
+  const attemptOfflineLogin = async (email: string, password: string): Promise<boolean> => {
+    try {
+      const cached = await db.cachedCredentials.get(email)
+      if (!cached) return false
+
+      const passwordHash = await hashPassword(password)
+      if (cached.passwordHash !== passwordHash) return false
+
+      // Restore user profile from cache
+      localStorage.setItem(TOKEN_CONFIG.USER_PROFILE_KEY, cached.userProfile)
+
+      toast.info("Offline Mode", {
+        description: "Signed in with cached credentials. Some features may be limited.",
+        icon: <WifiOff className="w-5 h-5 text-orange-500" />,
+      })
+
+      return true
+    } catch {
+      return false
+    }
+  }
+
   const onSubmit = async (data: LoginForm) => {
     setIsLoading(true)
     setError(null)
     setAccountLocked(false)
+
+    // If offline, try cached credentials
+    if (isOffline) {
+      const offlineSuccess = await attemptOfflineLogin(data.email, data.password)
+      setIsLoading(false)
+
+      if (offlineSuccess) {
+        sessionStorage.setItem('showWelcome', 'true')
+        setIsNavigating(true)
+        router.push(redirectTo)
+      } else {
+        setError({
+          title: "Offline login failed",
+          description: "No cached credentials found. Please connect to internet for first login.",
+        })
+      }
+      return
+    }
 
     try {
       const credentials: VendorLoginCredentials = {
@@ -140,6 +224,9 @@ function VendorLoginContent() {
         })
         return
       }
+
+      // Cache credentials for offline use
+      cacheCredentials(data.email, data.password)
 
       // Set flag for welcome message on dashboard
       sessionStorage.setItem('showWelcome', 'true')
@@ -265,7 +352,7 @@ function VendorLoginContent() {
             <div className="absolute inset-0 bg-white/20 rounded-3xl blur-xl animate-pulse" />
             <div className="relative flex items-center justify-center w-32 h-32 bg-white rounded-3xl shadow-2xl p-5">
               <Image
-                src="/logos/logo.png"
+                src="/new-logo/vendora 2.png"
                 alt="Vendora"
                 width={96}
                 height={96}
@@ -372,6 +459,14 @@ function VendorLoginContent() {
             <p className="text-gray-500 mt-2 text-sm">Sign in to your management dashboard</p>
           </div>
 
+          {/* Offline Mode Indicator */}
+          {isOffline && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-md bg-orange-50 border border-orange-200">
+              <WifiOff className="w-4 h-4 text-orange-500 flex-shrink-0" />
+              <span className="text-orange-700 text-sm">Offline Mode - using cached credentials</span>
+            </div>
+          )}
+
           <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
             {/* Error Message */}
             {error && !accountLocked && (
@@ -398,7 +493,7 @@ function VendorLoginContent() {
                 id="email"
                 type="email"
                 placeholder="vendor@example.com"
-                className="h-9 bg-gray-50 border-gray-200 focus:bg-white"
+                className="h-9 bg-gray-50 dark:bg-[#1a1a35] border-gray-200 focus:bg-white"
                 disabled={isLoading}
               />
               {errors.email && <p className="text-xs text-red-500">{errors.email.message}</p>}
@@ -415,13 +510,13 @@ function VendorLoginContent() {
                   id="password"
                   type={showPassword ? "text" : "password"}
                   placeholder="Enter your password"
-                  className="h-9 bg-gray-50 border-gray-200 focus:bg-white pr-10"
+                  className="h-9 bg-gray-50 dark:bg-[#1a1a35] border-gray-200 focus:bg-white pr-10"
                   disabled={isLoading}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 dark:text-[#9898b8] hover:text-gray-600 focus:outline-none focus:text-gray-600 transition-colors"
                   tabIndex={-1}
                   aria-label={showPassword ? "Hide password" : "Show password"}
                 >
@@ -468,7 +563,7 @@ function VendorLoginContent() {
                 <div className="w-full border-t border-gray-100"></div>
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="px-2 text-gray-400 bg-white">OR</span>
+                <span className="px-2 text-gray-400 dark:text-[#9898b8] bg-white">OR</span>
               </div>
             </div>
 

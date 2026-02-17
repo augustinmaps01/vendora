@@ -28,8 +28,8 @@ export default function PaymentsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Payments</h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Track and manage payment transactions</p>
+          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments</h1>
+          <p className="text-gray-600 dark:text-[#b4b4d0] mt-1">Track and manage payment transactions</p>
         </div>
         <Button variant="outline">
           <Download className="w-4 h-4 mr-2" />
@@ -39,49 +39,49 @@ export default function PaymentsPage() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱125,450</p>
+              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Total Revenue</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱125,450</p>
             </div>
-            <div className="bg-green-100 p-3 rounded-lg">
+            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
               <DollarSign className="h-6 w-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Cash Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱45,200</p>
+              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Cash Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱45,200</p>
             </div>
-            <div className="bg-blue-100 p-3 rounded-lg">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
               <DollarSign className="h-6 w-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Card Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱58,750</p>
+              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Card Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱58,750</p>
             </div>
-            <div className="bg-purple-100 p-3 rounded-lg">
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
               <CreditCard className="h-6 w-6 text-purple-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Online Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">₱21,500</p>
+              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Online Payments</p>
+              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱21,500</p>
             </div>
-            <div className="bg-orange-100 p-3 rounded-lg">
+            <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg">
               <TrendingUp className="h-6 w-6 text-orange-600" />
             </div>
           </div>
@@ -90,7 +90,7 @@ export default function PaymentsPage() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
         <Input
           placeholder="Search payments by ID, order, or customer..."
           value={searchQuery}
@@ -100,64 +100,64 @@ export default function PaymentsPage() {
       </div>
 
       {/* Payments Table */}
-      <div className="bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-200 dark:border-[#2d1b69]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Payment ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Order
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Date & Time
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Amount
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Method
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Status
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white dark:bg-[#13132a] divide-y divide-gray-200 dark:divide-[#2d1b69]">
               {payments.map((payment) => (
-                <tr key={payment.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                <tr key={payment.id} className="hover:bg-gray-50 dark:hover:bg-[#1a1a35]">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{payment.id}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{payment.id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{payment.order}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">{payment.order}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{payment.customer}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">{payment.customer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{payment.date}</div>
+                    <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{payment.date}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-bold text-gray-900 dark:text-gray-100">₱{payment.amount.toFixed(2)}</div>
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">₱{payment.amount.toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     <Badge variant="outline">{payment.method}</Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {payment.status === "completed" && (
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
                     )}
                     {payment.status === "pending" && (
-                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>
+                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
                     )}
                     {payment.status === "refunded" && (
-                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Refunded</Badge>
+                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Refunded</Badge>
                     )}
                   </td>
                 </tr>

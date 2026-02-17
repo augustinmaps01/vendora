@@ -29,15 +29,18 @@ import {
   Banknote,
   Wallet,
   ArrowRight,
+  CheckCircle2,
+  Printer,
+  Share2,
 } from "lucide-react";
 import { type POSScreenProps } from "./types";
 
 const THEME = {
-  bg: "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]",
-  card: "bg-white/5 border border-white/10 backdrop-blur",
-  panel: "bg-white/5 border border-white/10",
-  muted: "text-white/60",
-  text: "text-white",
+  bg: "bg-gray-50 dark:bg-gradient-to-br dark:from-[#1f1633] dark:via-[#241a3a] dark:to-[#2b1f4a]",
+  card: "bg-white border border-gray-200 shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur dark:shadow-none",
+  panel: "bg-white border border-gray-200 dark:bg-white/5 dark:border-white/10",
+  muted: "text-gray-500 dark:text-gray-500 dark:text-white/60",
+  text: "text-gray-900 dark:text-white",
 };
 
 function Pill({ children }: { children: React.ReactNode }) {
@@ -56,7 +59,7 @@ function StatRow({ label, value, strong }: { label: string; value: React.ReactNo
   return (
     <div className={`flex items-center justify-between text-sm ${strong ? "font-semibold" : ""}`}>
       <span className={THEME.muted}>{label}</span>
-      <span className={strong ? "text-white" : "text-white"}>{value}</span>
+      <span className={strong ? "text-gray-900 dark:text-white" : "text-gray-900 dark:text-white"}>{value}</span>
     </div>
   );
 }
@@ -121,7 +124,213 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     calcDeliveryFee = () => 0,
     completeOrder = async () => { },
     categories = [],
+    receiptData = null,
+    startNewTransaction = () => { },
   } = props || {};
+  if (screen === "receipt" && receiptData) {
+    return (
+      <div className="h-full flex items-start justify-center overflow-auto py-4">
+        <div className="w-full max-w-lg">
+          <div className="rounded-3xl bg-gradient-to-b from-purple-50 to-purple-100 dark:from-[#2d1f5e] dark:to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
+            {/* Header - Checkmark + Title */}
+            <div className="pt-10 pb-6 text-center">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
+                <CheckCircle2 className="h-12 w-12 text-emerald-400" />
+              </div>
+              <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Transaction Successful!</h2>
+              <p className={`text-sm ${THEME.muted} mt-1 tracking-wider uppercase`}>Vendora POS</p>
+            </div>
+
+            <div className="px-6 pb-8 space-y-0">
+              {/* Transaction Details */}
+              <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Transaction #</span>
+                  <span className="text-gray-900 dark:text-white font-medium">{receiptData.transactionNumber}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Date</span>
+                  <span className="text-gray-900 dark:text-white">{receiptData.date}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Customer</span>
+                  <span className="text-gray-900 dark:text-white">{receiptData.customerName}</span>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="border-t border-gray-200 dark:border-white/10 py-4">
+                <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Items</h3>
+                <div className="space-y-2">
+                  {receiptData.items.map((item) => (
+                    <div key={item.id} className="flex items-center justify-between text-sm">
+                      <span className={THEME.muted}>
+                        {item.name} <span className="text-gray-400 dark:text-white/40">x{item.qty}</span>
+                      </span>
+                      <span className="text-gray-900 dark:text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Totals */}
+              <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Subtotal</span>
+                  <span className="text-gray-900 dark:text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
+                </div>
+                {receiptData.discount > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className={THEME.muted}>{receiptData.discountLabel}</span>
+                    <span className="text-emerald-400">- ₱ {receiptData.discount.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>{receiptData.taxLabel}</span>
+                  <span className="text-gray-900 dark:text-white">₱ {receiptData.tax.toFixed(2)}</span>
+                </div>
+                {receiptData.deliveryFee > 0 && (
+                  <div className="flex items-center justify-between text-sm">
+                    <span className={THEME.muted}>Delivery Fee</span>
+                    <span className="text-gray-900 dark:text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
+                  </div>
+                )}
+                <div className="border-t border-gray-200 dark:border-white/10 pt-2 flex items-center justify-between">
+                  <span className="text-gray-900 dark:text-white font-bold">Total</span>
+                  <span className="text-emerald-400 font-bold text-lg">₱ {receiptData.total.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Payment Info */}
+              <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Payment Method</span>
+                  <span className="text-gray-900 dark:text-white font-medium">{receiptData.paymentMethod}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Amount Tendered</span>
+                  <span className="text-gray-900 dark:text-white">₱ {receiptData.amountTendered.toFixed(2)}</span>
+                </div>
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Change</span>
+                  <span className="text-emerald-400 font-medium">₱ {receiptData.change.toFixed(2)}</span>
+                </div>
+              </div>
+
+              {/* Action Buttons */}
+              <div className="border-t border-gray-200 dark:border-white/10 pt-6 space-y-3">
+                <Button
+                  className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold py-6 text-base"
+                  onClick={startNewTransaction}
+                >
+                  New Transaction
+                </Button>
+                <div className="grid grid-cols-2 gap-3">
+                  <Button
+                    variant="secondary"
+                    className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white py-5"
+                    onClick={() => window.print()}
+                  >
+                    <Printer className="h-4 w-4 mr-2" />
+                    Print
+                  </Button>
+                  <Button
+                    variant="secondary"
+                    className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white py-5"
+                    onClick={() => {
+                      if (navigator.share) {
+                        navigator.share({
+                          title: "Transaction Receipt",
+                          text: `Transaction ${receiptData.transactionNumber} - Total: ₱${receiptData.total.toFixed(2)}`,
+                        }).catch(() => { });
+                      }
+                    }}
+                  >
+                    <Share2 className="h-4 w-4 mr-2" />
+                    Share
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Hidden Printable Thermal Receipt */}
+        <div id="printable-receipt" className="hidden">
+          <div className="receipt-header">VENDORA POS</div>
+          <div className="receipt-subheader">Transaction Successful</div>
+          <hr className="receipt-divider" />
+          <div className="receipt-row">
+            <span>Transaction #</span>
+            <span>{receiptData.transactionNumber}</span>
+          </div>
+          <div className="receipt-row">
+            <span>Date</span>
+            <span>{receiptData.date}</span>
+          </div>
+          <div className="receipt-row">
+            <span>Customer</span>
+            <span>{receiptData.customerName}</span>
+          </div>
+          <hr className="receipt-divider" />
+          <div className="receipt-section-title">Items</div>
+          {receiptData.items.map((item) => (
+            <div key={item.id}>
+              <div className="receipt-row">
+                <span>{item.name}</span>
+                <span>x{item.qty} ₱ {(item.price * item.qty).toFixed(2)}</span>
+              </div>
+            </div>
+          ))}
+          <hr className="receipt-divider" />
+          <div className="receipt-row">
+            <span>Subtotal</span>
+            <span>₱ {receiptData.subtotal.toFixed(2)}</span>
+          </div>
+          {receiptData.discount > 0 && (
+            <div className="receipt-row">
+              <span>{receiptData.discountLabel}</span>
+              <span>- ₱ {receiptData.discount.toFixed(2)}</span>
+            </div>
+          )}
+          <div className="receipt-row">
+            <span>{receiptData.taxLabel}</span>
+            <span>₱ {receiptData.tax.toFixed(2)}</span>
+          </div>
+          {receiptData.deliveryFee > 0 && (
+            <div className="receipt-row">
+              <span>Delivery Fee</span>
+              <span>₱ {receiptData.deliveryFee.toFixed(2)}</span>
+            </div>
+          )}
+          <hr className="receipt-divider" />
+          <div className="receipt-row receipt-row-bold">
+            <span>TOTAL</span>
+            <span>₱ {receiptData.total.toFixed(2)}</span>
+          </div>
+          <hr className="receipt-divider" />
+          <div className="receipt-row">
+            <span>Payment Method</span>
+            <span>{receiptData.paymentMethod}</span>
+          </div>
+          <div className="receipt-row">
+            <span>Amount Tendered</span>
+            <span>₱ {receiptData.amountTendered.toFixed(2)}</span>
+          </div>
+          <div className="receipt-row">
+            <span>Change</span>
+            <span>₱ {receiptData.change.toFixed(2)}</span>
+          </div>
+          <hr className="receipt-divider" />
+          <div className="receipt-footer">
+            Thank you for your purchase!<br />
+            Please come again
+          </div>
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div className="h-full">
       {screen === "sale" ? (
@@ -135,7 +344,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className={`rounded-2xl ${THEME.panel} p-2 flex flex-col gap-2 sm:flex-row sm:items-center`}>
                       <User className={`h-4 w-4 ${THEME.muted}`} />
                       <Select value={customer} onValueChange={(v) => setCustomer(v as any)}>
-                        <SelectTrigger className="w-full sm:w-[210px] rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                        <SelectTrigger className="w-full sm:w-[210px] rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" suppressHydrationWarning>
                           <SelectValue placeholder="Customer" />
                         </SelectTrigger>
                         <SelectContent>
@@ -151,13 +360,13 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       <Input
                         value={barcodeInput}
                         onChange={(e) => setBarcodeInput(e.target.value)}
-                        className="w-full sm:w-[220px] rounded-xl bg-white/10 border-white/10 text-white placeholder:text-white/40"
+                        className="w-full sm:w-[220px] rounded-xl bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 dark:bg-white/10 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400 dark:text-white/40"
                         placeholder="Scan barcode or type SKU"
                         onKeyDown={(e) => {
                           if (e.key === "Enter") applyBarcode();
                         }}
                       />
-                      <Button className="w-full sm:w-auto rounded-xl bg-purple-600 hover:bg-purple-700" onClick={applyBarcode}>
+                      <Button className="w-full sm:w-auto rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={applyBarcode}>
                         Add
                       </Button>
                     </div>
@@ -168,8 +377,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
             <Card className={`rounded-2xl ${THEME.card} overflow-hidden`}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-base text-white flex items-center gap-2">
-                  <Package className="h-4 w-4 text-purple-200" /> Products
+                <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
+                  <Package className="h-4 w-4 text-purple-600 dark:text-purple-200" /> Products
                 </CardTitle>
                 <div className="flex flex-col gap-2 sm:flex-row">
                   <div className="relative flex-1">
@@ -177,13 +386,13 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <Input
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
-                      className="pl-9 rounded-xl bg-white/10 border-white/10 text-white placeholder:text-white/40"
+                      className="pl-9 rounded-xl bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 dark:bg-white/10 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400 dark:text-white/40"
                       placeholder="Search"
                     />
                   </div>
 
                   <Select value={category} onValueChange={(v) => setCategory(v as any)}>
-                    <SelectTrigger className="w-full sm:w-[140px] rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                    <SelectTrigger className="w-full sm:w-[140px] rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" suppressHydrationWarning>
                       <SelectValue placeholder="Category" />
                     </SelectTrigger>
                     <SelectContent>
@@ -212,7 +421,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       >
                         <div className="flex items-center gap-3">
                           <div className="min-w-0 flex-1">
-                            <div className="font-medium truncate text-white flex items-center gap-2">
+                            <div className="font-medium truncate text-gray-900 dark:text-white flex items-center gap-2">
                               {p.name}
                               {p.stock <= 0 && (
                                 <span className="text-[9px] bg-red-500/20 text-red-300 px-2 py-0.5 rounded-full border border-red-500/30">
@@ -222,7 +431,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             </div>
                           </div>
 
-                          <div className="shrink-0 text-sm font-semibold text-white">
+                          <div className="shrink-0 text-sm font-semibold text-gray-900 dark:text-white">
                             <Money value={p.price} />
                           </div>
 
@@ -230,7 +439,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             size="sm"
                             disabled={p.stock <= 0}
                             onClick={() => addToCart(p, 1)}
-                            className="rounded-xl bg-purple-600 hover:bg-purple-700 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                            className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                           >
                             {p.stock <= 0 ? 'Unavailable' : 'Add'}
                           </Button>
@@ -256,8 +465,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           <div className="xl:col-span-4 overflow-hidden">
             <Card className={`rounded-2xl ${THEME.card} overflow-hidden flex flex-col`}>
               <CardHeader className="pb-3 shrink-0">
-                <CardTitle className="text-base text-white flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4 text-purple-200" /> Cart
+                <CardTitle className="text-base text-gray-900 dark:text-white flex items-center gap-2">
+                  <ShoppingCart className="h-4 w-4 text-purple-600 dark:text-purple-200" /> Cart
                 </CardTitle>
                 <div className={`text-xs ${THEME.muted}`}>Adjust quantity then go checkout</div>
               </CardHeader>
@@ -266,7 +475,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                 <div className="flex flex-col gap-3">
                   <div className="max-h-[150px] sm:max-h-[180px] md:max-h-[200px] lg:max-h-[220px] xl:max-h-[280px] 2xl:max-h-[350px] overflow-auto pr-1">
                     {cart.length === 0 ? (
-                      <div className="rounded-2xl border border-white/15 border-dashed p-6 text-center text-sm text-white/60">
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/15 border-dashed p-6 text-center text-sm text-gray-500 dark:text-white/60">
                         Cart is empty
                       </div>
                     ) : (
@@ -275,20 +484,20 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           <div key={x.id} className={`rounded-2xl ${THEME.panel} p-2`}>
                             <div className="flex items-start justify-between gap-2">
                               <div className="min-w-0">
-                                <div className="font-medium truncate text-white text-xs">
+                                <div className="font-medium truncate text-gray-900 dark:text-white text-xs">
                                   {x.name} <span className={`text-[7px] ${THEME.muted} font-normal`}>({x.sku})</span>
                                 </div>
                                 <div className={`text-[7px] ${THEME.muted}`}>{x.unit}</div>
                               </div>
-                              <div className="text-sm font-semibold text-white"><Money value={x.price * x.qty} /></div>
+                              <div className="text-sm font-semibold text-gray-900 dark:text-white"><Money value={x.price * x.qty} /></div>
                             </div>
 
                             <div className="mt-1 flex items-center gap-2">
-                              <div className="flex items-center rounded-md bg-white/10 border border-white/10 h-5 overflow-hidden">
+                              <div className="flex items-center rounded-md bg-white/10 border border-gray-200 dark:border-white/10 h-5 overflow-hidden">
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-full w-5 p-0 rounded-none hover:bg-white/10 text-purple-200"
+                                  className="h-full w-5 p-0 rounded-none hover:bg-gray-100 dark:hover:bg-white/10 text-purple-600 dark:text-purple-200"
                                   onClick={() => changeQty(x.id, x.qty - 1)}
                                 >
                                   <Minus className="h-2 w-2" />
@@ -296,13 +505,13 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                                 <Input
                                   value={x.qty}
                                   onChange={(e) => changeQty(x.id, e.target.value)}
-                                  className="h-full w-7 text-center bg-transparent border-0 text-white text-[9px] p-0 focus-visible:ring-0 rounded-none"
+                                  className="h-full w-7 text-center bg-transparent border-0 text-gray-900 dark:text-white text-[9px] p-0 focus-visible:ring-0 rounded-none"
                                   inputMode="numeric"
                                 />
                                 <Button
                                   variant="ghost"
                                   size="sm"
-                                  className="h-full w-5 p-0 rounded-none hover:bg-white/10 text-purple-200"
+                                  className="h-full w-5 p-0 rounded-none hover:bg-gray-100 dark:hover:bg-white/10 text-purple-600 dark:text-purple-200"
                                   onClick={() => changeQty(x.id, x.qty + 1)}
                                 >
                                   <Plus className="h-2 w-2" />
@@ -330,23 +539,23 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                   </div>
 
                   <div className={`rounded-2xl ${THEME.panel} p-2 space-y-1`}>
-                    <div className="text-xs font-medium text-white">Notes</div>
+                    <div className="text-xs font-medium text-gray-900 dark:text-white">Notes</div>
                     <Input
                       value={notes}
                       onChange={(e) => setNotes(e.target.value)}
-                      className="rounded-xl bg-white/10 border-white/10 text-white placeholder:text-white/40 h-8 text-xs"
+                      className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 dark:bg-white/10 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400 dark:text-white/40 h-8 text-xs"
                       placeholder="Optional"
                     />
-                    <div className="h-px bg-white/10" />
+                    <div className="h-px bg-gray-200 dark:bg-white/10" />
                     <StatRow label="Subtotal" value={<Money value={totals.subtotal} />} />
                     <StatRow label="Discount" value={<Money value={discountAmount} />} />
                     <StatRow label="Tax" value={<Money value={totals.tax} />} />
                     <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
-                    <div className="h-px bg-white/10" />
+                    <div className="h-px bg-gray-200 dark:bg-white/10" />
                     <StatRow label="Total" value={<Money value={totals.total} />} strong />
                     {cart.length > 0 ? (
                       <Button
-                        className="w-full rounded-xl bg-purple-600 hover:bg-purple-700"
+                        className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
                         disabled={!canGoCheckout}
                         onClick={() => setScreen("checkout")}
                       >
@@ -367,7 +576,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           <div className="h-full xl:col-span-7 overflow-hidden">
             <Card className={`rounded-2xl ${THEME.card} h-full overflow-hidden`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base text-white">Checkout Details</CardTitle>
+                <CardTitle className="text-base text-gray-900 dark:text-white">Checkout Details</CardTitle>
                 <div className={`text-xs ${THEME.muted}`}>Keep this screen clean and focused</div>
               </CardHeader>
 
@@ -375,7 +584,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                 <div className="h-full overflow-auto pr-1 space-y-4 pb-2">
                   <Card className={`rounded-2xl ${THEME.card}`}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-white">Fulfillment</CardTitle>
+                      <CardTitle className="text-sm text-gray-900 dark:text-white">Fulfillment</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-2">
                       <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -384,8 +593,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           variant={fulfillment === "pickup" ? "default" : "secondary"}
                           className={
                             fulfillment === "pickup"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
+                              ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                              : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"
                           }
                           onClick={() => setFulfillment("pickup")}
                         >
@@ -396,8 +605,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           variant={fulfillment === "delivery" ? "default" : "secondary"}
                           className={
                             fulfillment === "delivery"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
+                              ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                              : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"
                           }
                           onClick={() => setFulfillment("delivery")}
                         >
@@ -409,7 +618,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
                           <div className={`text-xs ${THEME.muted}`}>Distance estimate</div>
                           <Select value={String(deliveryKm)} onValueChange={(v) => setDeliveryKm(Number(v))}>
-                            <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                            <SelectTrigger className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" suppressHydrationWarning>
                               <SelectValue placeholder="Distance" />
                             </SelectTrigger>
                             <SelectContent>
@@ -420,7 +629,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                               <SelectItem value="12">12 km</SelectItem>
                             </SelectContent>
                           </Select>
-                          <div className="text-sm text-white">Delivery fee <Money value={calcDeliveryFee("delivery", deliveryKm)} /></div>
+                          <div className="text-sm text-gray-900 dark:text-white">Delivery fee <Money value={calcDeliveryFee("delivery", deliveryKm)} /></div>
                         </div>
                       ) : null}
                     </CardContent>
@@ -428,33 +637,77 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
                   <Card className={`rounded-2xl ${THEME.card}`}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-white">Discount and Tax</CardTitle>
+                      <CardTitle className="text-sm text-gray-900 dark:text-white">Discount Type</CardTitle>
                     </CardHeader>
                     <CardContent className="space-y-3">
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
+                        {[
+                          { label: "None", mode: "percent" as const, value: 0 },
+                          { label: "SC 20%", mode: "percent" as const, value: 20 },
+                          { label: "PWD 20%", mode: "percent" as const, value: 20 },
+                          { label: "Emp 10%", mode: "percent" as const, value: 10 },
+                          { label: "Promo", mode: "percent" as const, value: 5 },
+                          { label: "Custom", mode: discountMode, value: -1 },
+                        ].map((preset) => {
+                          const isActive =
+                            preset.label === "Custom"
+                              ? discountValue > 0 && ![0, 5, 10, 20].includes(discountValue)
+                              : preset.label === "None"
+                                ? discountValue === 0
+                                : (discountMode === "percent" && discountValue === preset.value &&
+                                  ((preset.label === "SC 20%" && discountValue === 20) ||
+                                    (preset.label === "PWD 20%" && discountValue === 20) ||
+                                    (preset.label === "Emp 10%" && discountValue === 10) ||
+                                    (preset.label === "Promo" && discountValue === 5)));
+                          return (
+                            <Button
+                              key={preset.label}
+                              type="button"
+                              variant={isActive ? "default" : "secondary"}
+                              className={`rounded-xl text-xs px-2 py-2 ${isActive
+                                ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                                : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"
+                                }`}
+                              onClick={() => {
+                                if (preset.label === "None") {
+                                  setDiscountMode("percent");
+                                  setDiscountValue(0);
+                                } else if (preset.label === "Custom") {
+                                  // Keep current mode, let user type
+                                } else {
+                                  setDiscountMode(preset.mode);
+                                  setDiscountValue(preset.value);
+                                }
+                              }}
+                            >
+                              {preset.label}
+                            </Button>
+                          );
+                        })}
+                      </div>
+
+                      <div className="grid grid-cols-2 gap-2">
                         <Button
                           type="button"
                           variant={discountMode === "amount" ? "default" : "secondary"}
-                          className={
-                            discountMode === "amount"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
-                          }
+                          size="sm"
+                          className={`rounded-xl text-xs ${discountMode === "amount"
+                            ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}`}
                           onClick={() => setDiscountMode("amount")}
                         >
-                          <Wallet className="h-4 w-4 mr-2" /> Amount
+                          <Wallet className="h-3 w-3 mr-1" /> Amount
                         </Button>
                         <Button
                           type="button"
                           variant={discountMode === "percent" ? "default" : "secondary"}
-                          className={
-                            discountMode === "percent"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
-                          }
+                          size="sm"
+                          className={`rounded-xl text-xs ${discountMode === "percent"
+                            ? "bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                            : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}`}
                           onClick={() => setDiscountMode("percent")}
                         >
-                          <Percent className="h-4 w-4 mr-2" /> Percent
+                          <Percent className="h-3 w-3 mr-1" /> Percent
                         </Button>
                       </div>
 
@@ -462,68 +715,95 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         <Input
                           value={discountValue}
                           onChange={(e) => setDiscountValue(Number(e.target.value || 0))}
-                          className="rounded-xl bg-white/10 border-white/10 text-white"
+                          className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white"
                           inputMode="numeric"
-                          placeholder={discountMode === "amount" ? "0" : "0 to 100"}
+                          placeholder={discountMode === "amount" ? "₱ 0" : "0 to 100"}
                         />
-                        <Pill>{discountMode === "amount" ? "â‚±" : "%"}</Pill>
-                      </div>
-
-                      <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
-                        <div className="flex items-center justify-between">
-                          <div>
-                            <div className="text-sm font-medium text-white">Tax</div>
-                            <div className={`text-xs ${THEME.muted}`}>Enable VAT or tax</div>
-                          </div>
-                          <div className="flex items-center gap-2">
-                            <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
-                            <Label className="text-white/70">On</Label>
-                          </div>
-                        </div>
-
-                        <div className="flex items-center gap-2">
-                          <Select value={String(taxRate)} onValueChange={(v) => setTaxRate(Number(v))}>
-                            <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
-                              <SelectValue placeholder="Tax rate" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="0">0%</SelectItem>
-                              <SelectItem value="0.03">3%</SelectItem>
-                              <SelectItem value="0.05">5%</SelectItem>
-                              <SelectItem value="0.12">12%</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <Pill>Rate</Pill>
-                        </div>
+                        <Pill>{discountMode === "amount" ? "₱" : "%"}</Pill>
                       </div>
                     </CardContent>
                   </Card>
 
                   <Card className={`rounded-2xl ${THEME.card}`}>
                     <CardHeader className="pb-2">
-                      <CardTitle className="text-sm text-white">Payment</CardTitle>
+                      <CardTitle className="text-sm text-gray-900 dark:text-white">Tax Rate (%)</CardTitle>
                     </CardHeader>
-                    <CardContent className="space-y-3">
+                    <CardContent className="space-y-2">
                       <div className="flex items-center justify-between">
                         <div>
-                          <div className="text-sm font-medium text-white">Split payment</div>
-                          <div className={`text-xs ${THEME.muted}`}>Cash, card, online</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">VAT</div>
+                          <div className={`text-xs ${THEME.muted}`}>Enable or disable tax</div>
                         </div>
                         <div className="flex items-center gap-2">
-                          <Switch checked={splitPay} onCheckedChange={(v) => setSplitPay(Boolean(v))} />
-                          <Label className="text-white/70">Split</Label>
+                          <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
+                          <Label className="text-gray-600 dark:text-white/70">{taxEnabled ? "On" : "Off"}</Label>
                         </div>
                       </div>
 
-                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                      <div className="flex items-center gap-2">
+                        <Select value={String(taxRate)} onValueChange={(v) => setTaxRate(Number(v))}>
+                          <SelectTrigger className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" suppressHydrationWarning>
+                            <SelectValue placeholder="Tax rate" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="0">0% (VAT Exempt)</SelectItem>
+                            <SelectItem value="0.03">3%</SelectItem>
+                            <SelectItem value="0.05">5%</SelectItem>
+                            <SelectItem value="0.12">12% (Standard VAT)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        <Pill>Rate</Pill>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className={`rounded-2xl ${THEME.card}`}>
+                    <CardHeader className="pb-2">
+                      <CardTitle className="text-sm text-gray-900 dark:text-white">Payment Method</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {/* Payment method icon buttons */}
+                      <div className="grid grid-cols-3 gap-3">
+                        {[
+                          { key: "cash" as const, label: "Cash", Icon: Banknote },
+                          { key: "card" as const, label: "Card", Icon: CreditCard },
+                          { key: "online" as const, label: "E-Wallet", Icon: Wallet },
+                        ].map(({ key, label, Icon }) => (
+                          <button
+                            key={key}
+                            type="button"
+                            onClick={() => { setPrimaryMethod(key); setSplitPay(false); }}
+                            className={`flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${!splitPay && primaryMethod === key
+                              ? "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
+                              : `${THEME.panel} text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
+                              }`}
+                          >
+                            <Icon className="h-7 w-7" />
+                            <span className="text-xs font-medium">{label}</span>
+                          </button>
+                        ))}
+                      </div>
+
+                      {/* Split payment toggle */}
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Split payment</div>
+                          <div className={`text-xs ${THEME.muted}`}>Combine methods</div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <Switch checked={splitPay} onCheckedChange={(v) => setSplitPay(Boolean(v))} />
+                          <Label className="text-gray-600 dark:text-white/70">Split</Label>
+                        </div>
+                      </div>
+
+                      {/* Full / Partial */}
+                      <div className="grid grid-cols-2 gap-2">
                         <Button
                           type="button"
                           variant={paymentType === "full" ? "default" : "secondary"}
-                          className={
-                            paymentType === "full"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
-                          }
+                          className={paymentType === "full"
+                            ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                            : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
                           onClick={() => setPaymentType("full")}
                         >
                           Full
@@ -531,11 +811,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         <Button
                           type="button"
                           variant={paymentType === "partial" ? "default" : "secondary"}
-                          className={
-                            paymentType === "partial"
-                              ? "rounded-xl bg-purple-600 hover:bg-purple-700"
-                              : "rounded-xl bg-white/10 hover:bg-white/20 text-white"
-                          }
+                          className={paymentType === "partial"
+                            ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                            : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
                           onClick={() => setPaymentType("partial")}
                         >
                           Partial
@@ -543,20 +821,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       </div>
 
                       {!splitPay ? (
-                        <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
-                          <div className="text-sm font-medium text-white">Method</div>
-                          <Select value={primaryMethod} onValueChange={(v) => setPrimaryMethod(v as any)}>
-                            <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
-                              <SelectValue placeholder="Method" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="cash">Cash</SelectItem>
-                              <SelectItem value="card">Card</SelectItem>
-                              <SelectItem value="online">Online</SelectItem>
-                            </SelectContent>
-                          </Select>
-
+                        <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Amount Tendered</div>
                           <div className="flex items-center gap-2">
+                            <span className="text-gray-500 dark:text-white/60 text-lg">₱</span>
                             <Input
                               value={primaryMethod === "cash" ? cashPay : primaryMethod === "card" ? cardPay : onlinePay}
                               onChange={(e) => {
@@ -565,49 +833,89 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                                 if (primaryMethod === "card") setCardPay(v);
                                 if (primaryMethod === "online") setOnlinePay(v);
                               }}
-                              className="rounded-xl bg-white/10 border-white/10 text-white"
+                              className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 text-lg dark:bg-white/10 dark:border-white/10 dark:text-white"
                               inputMode="numeric"
-                              placeholder="Amount paid"
+                              placeholder="0"
                             />
-                            {primaryMethod === "cash" ? <Banknote className="h-4 w-4 text-white/60" /> : null}
-                            {primaryMethod === "card" ? <CreditCard className="h-4 w-4 text-white/60" /> : null}
-                            {primaryMethod === "online" ? <Wallet className="h-4 w-4 text-white/60" /> : null}
+                          </div>
+
+                          {/* Quick amount buttons */}
+                          <div className="grid grid-cols-4 gap-2">
+                            {[500, 1000, 2000].map((amt) => (
+                              <Button
+                                key={amt}
+                                type="button"
+                                variant="secondary"
+                                size="sm"
+                                className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white text-xs"
+                                onClick={() => {
+                                  if (primaryMethod === "cash") setCashPay(amt);
+                                  if (primaryMethod === "card") setCardPay(amt);
+                                  if (primaryMethod === "online") setOnlinePay(amt);
+                                }}
+                              >
+                                ₱{amt.toLocaleString()}
+                              </Button>
+                            ))}
+                            <Button
+                              type="button"
+                              variant="secondary"
+                              size="sm"
+                              className="rounded-xl bg-purple-100 hover:bg-purple-200 text-purple-700 border border-purple-300 dark:bg-purple-600/30 dark:hover:bg-purple-600/50 dark:text-purple-300 dark:border-purple-500/30 text-xs"
+                              onClick={() => {
+                                if (primaryMethod === "cash") setCashPay(amountDue);
+                                if (primaryMethod === "card") setCardPay(amountDue);
+                                if (primaryMethod === "online") setOnlinePay(amountDue);
+                              }}
+                            >
+                              Exact
+                            </Button>
+                          </div>
+
+                          {/* Change display */}
+                          <div className={`rounded-xl ${THEME.panel} p-3 flex items-center justify-between`}>
+                            <span className={THEME.muted}>Change</span>
+                            <span className="text-emerald-400 font-bold text-lg">₱ {change.toFixed(2)}</span>
                           </div>
                         </div>
                       ) : (
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
-                          <div className="text-sm font-medium text-white">Split amounts</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">Split amounts</div>
                           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
                             <div className="space-y-1">
-                              <div className={`text-xs ${THEME.muted}`}>Cash</div>
+                              <div className={`text-xs ${THEME.muted} flex items-center gap-1`}><Banknote className="h-3 w-3" /> Cash</div>
                               <Input
                                 value={cashPay}
                                 onChange={(e) => setCashPay(Number(e.target.value || 0))}
-                                className="rounded-xl bg-white/10 border-white/10 text-white"
+                                className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white"
                                 inputMode="numeric"
                                 placeholder="0"
                               />
                             </div>
                             <div className="space-y-1">
-                              <div className={`text-xs ${THEME.muted}`}>Card</div>
+                              <div className={`text-xs ${THEME.muted} flex items-center gap-1`}><CreditCard className="h-3 w-3" /> Card</div>
                               <Input
                                 value={cardPay}
                                 onChange={(e) => setCardPay(Number(e.target.value || 0))}
-                                className="rounded-xl bg-white/10 border-white/10 text-white"
+                                className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white"
                                 inputMode="numeric"
                                 placeholder="0"
                               />
                             </div>
                             <div className="space-y-1">
-                              <div className={`text-xs ${THEME.muted}`}>Online</div>
+                              <div className={`text-xs ${THEME.muted} flex items-center gap-1`}><Wallet className="h-3 w-3" /> E-Wallet</div>
                               <Input
                                 value={onlinePay}
                                 onChange={(e) => setOnlinePay(Number(e.target.value || 0))}
-                                className="rounded-xl bg-white/10 border-white/10 text-white"
+                                className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white"
                                 inputMode="numeric"
                                 placeholder="0"
                               />
                             </div>
+                          </div>
+                          <div className={`rounded-xl ${THEME.panel} p-3 flex items-center justify-between`}>
+                            <span className={THEME.muted}>Change</span>
+                            <span className="text-emerald-400 font-bold text-lg">₱ {change.toFixed(2)}</span>
                           </div>
                         </div>
                       )}
@@ -616,7 +924,6 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
                         <StatRow label="Paid" value={<Money value={paid} />} />
                         <StatRow label="Balance" value={<Money value={balance} />} />
-                        <StatRow label="Change" value={<Money value={change} />} />
                       </div>
                     </CardContent>
                   </Card>
@@ -629,7 +936,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           <div className="h-full xl:col-span-5 overflow-hidden">
             <Card className={`rounded-2xl ${THEME.card} h-full overflow-hidden`}>
               <CardHeader className="pb-3">
-                <CardTitle className="text-base text-white">Summary</CardTitle>
+                <CardTitle className="text-base text-gray-900 dark:text-white">Summary</CardTitle>
                 <div className={`text-xs ${THEME.muted}`}>Review items and totals</div>
               </CardHeader>
 
@@ -643,10 +950,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         cart.map((x) => (
                           <div key={x.id} className="flex items-center justify-between text-sm">
                             <div className="min-w-0">
-                              <div className="truncate text-white">{x.name}</div>
+                              <div className="truncate text-gray-900 dark:text-white">{x.name}</div>
                               <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} Ã— <Money value={x.price} /></div>
                             </div>
-                            <div className="font-medium text-white"><Money value={x.qty * x.price} /></div>
+                            <div className="font-medium text-gray-900 dark:text-white"><Money value={x.qty * x.price} /></div>
                           </div>
                         ))
                       )}
@@ -657,13 +964,13 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       <StatRow label="Discount" value={<Money value={totals.discount} />} />
                       <StatRow label="Tax" value={<Money value={totals.tax} />} />
                       <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
-                      <div className="h-px bg-white/10" />
+                      <div className="h-px bg-gray-200 dark:bg-white/10" />
                       <StatRow label="Total" value={<Money value={totals.total} />} strong />
                       <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
                     </div>
 
                     {notes ? (
-                      <div className={`mt-3 rounded-2xl ${THEME.panel} p-3 text-sm text-white`}>
+                      <div className={`mt-3 rounded-2xl ${THEME.panel} p-3 text-sm text-gray-900 dark:text-white`}>
                         <div className={`text-xs ${THEME.muted}`}>Notes</div>
                         <div>{notes}</div>
                       </div>
@@ -671,29 +978,29 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                   </div>
 
                   <div className="shrink-0 pt-3">
-                    <div className="grid grid-cols-2 gap-2">
-                      <Button
-                        variant="secondary"
-                        className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
-                        onClick={() => setReceiptOpen(true)}
-                      >
-                        Preview receipt
-                      </Button>
-                      <Button
-                        className="rounded-xl bg-purple-600 hover:bg-purple-700"
-                        disabled={!canComplete}
-                        onClick={() => {
-                          if (completeOrder) {
-                            completeOrder();
-                          }
-                        }}
-                      >
-                        Complete
-                      </Button>
-                    </div>
+                    <Button
+                      className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 py-5 text-base font-semibold"
+                      disabled={!canComplete}
+                      onClick={() => {
+                        if (completeOrder) {
+                          completeOrder();
+                        }
+                      }}
+                    >
+                      Confirm Payment
+                      <ArrowRight className="h-5 w-5 ml-2" />
+                    </Button>
+
+                    <Button
+                      variant="secondary"
+                      className="w-full rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white mt-2"
+                      onClick={() => setReceiptOpen(true)}
+                    >
+                      Preview Receipt
+                    </Button>
 
                     <div className={`mt-2 text-xs ${THEME.muted}`}>
-                      Complete is enabled when balance is zero.
+                      {canComplete ? "Ready to confirm payment." : "Enter payment amount to cover the balance."}
                     </div>
                   </div>
                 </div>

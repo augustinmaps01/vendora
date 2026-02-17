@@ -5,7 +5,7 @@
  * API Endpoint: /api/products
  */
 
-import api, { apiClient } from "@/lib/api-client"
+import api from "@/lib/api-client"
 import { endpoints } from "@/lib/api-endpoints"
 
 /**
@@ -211,12 +211,8 @@ export const productService = {
 
     if (hasImage) {
       const formData = buildProductFormData(data)
-      // Don't set Content-Type manually - let axios set it with proper boundary
-      const response = await apiClient.post<{ success: boolean; data: ApiProduct }>(
-        endpoints.products.create(),
-        formData
-      )
-      return response.data.data
+      // Use api.upload() which handles FormData and response extraction
+      return api.upload<ApiProduct>(endpoints.products.create(), formData)
     }
 
     // No image, use regular JSON request
@@ -235,12 +231,8 @@ export const productService = {
     if (hasImage) {
       const formData = buildProductFormData(data)
       formData.append("_method", "PUT")
-      // Don't set Content-Type manually - let axios set it with proper boundary
-      const response = await apiClient.post<{ success: boolean; data: ApiProduct }>(
-        endpoints.products.update(id),
-        formData
-      )
-      return response.data.data
+      // Use api.upload() which handles FormData and response extraction
+      return api.upload<ApiProduct>(endpoints.products.update(id), formData)
     }
 
     const { image, ...payload } = data
@@ -258,12 +250,8 @@ export const productService = {
     if (hasImage) {
       const formData = buildProductFormData(data)
       formData.append("_method", "PATCH")
-      // Don't set Content-Type manually - let axios set it with proper boundary
-      const response = await apiClient.post<{ success: boolean; data: ApiProduct }>(
-        endpoints.products.update(id),
-        formData
-      )
-      return response.data.data
+      // Use api.upload() which handles FormData and response extraction
+      return api.upload<ApiProduct>(endpoints.products.update(id), formData)
     }
 
     const { image, ...payload } = data

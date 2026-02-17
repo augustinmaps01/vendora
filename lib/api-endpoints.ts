@@ -417,6 +417,31 @@ export const storeEndpoints = {
 }
 
 /**
+ * Admin Endpoints
+ */
+export const adminEndpoints = {
+  users: {
+    // GET /admin/users
+    list: () => "/admin/users",
+
+    // POST /admin/users
+    create: () => "/admin/users",
+
+    // GET /admin/users/:id
+    get: (id: string | number) => buildUrl("/admin/users/:id", { id }),
+
+    // PUT /admin/users/:id
+    update: (id: string | number) => buildUrl("/admin/users/:id", { id }),
+
+    // DELETE /admin/users/:id
+    delete: (id: string | number) => buildUrl("/admin/users/:id", { id }),
+
+    // PATCH /admin/users/:id/status
+    updateStatus: (id: string | number) => buildUrl("/admin/users/:id/status", { id }),
+  },
+}
+
+/**
  * Export all endpoints
  */
 export const endpoints = {
@@ -433,6 +458,7 @@ export const endpoints = {
   user: userEndpoints,
   settings: settingsEndpoints,
   stores: storeEndpoints,
+  admin: adminEndpoints,
 }
 
 export default endpoints

@@ -29,16 +29,16 @@ export function InventoryHealth({ data, variant = "default" }: InventoryHealthPr
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Stock status</p>
+        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Stock status</p>
       </CardHeader>
       <CardContent className={`space - y - 6 ${ contentClass ?? "" } `.trim()}>
         {inventoryData.map((item) => (
           <div key={item.label} className="space-y-2">
             <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-700 font-medium">{item.label}</span>
-              <span className="font-semibold">{item.value}%</span>
+              <span className="text-gray-700 dark:text-[#e0e0f0] font-medium">{item.label}</span>
+              <span className="font-semibold dark:text-white">{item.value}%</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-gray-200 dark:bg-[#1a1a35] rounded-full h-2">
               <div
                 className="bg-purple-600 h-2 rounded-full transition-all"
                 style={{ width: `${ item.value }% ` }}

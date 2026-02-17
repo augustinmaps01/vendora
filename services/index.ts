@@ -12,6 +12,7 @@ export * from "./payment.service"
 export * from "./customer.service"
 export * from "./store.service"
 export * from "./dashboard.service"
+export * from "./admin-user.service"
 
 // Re-export types for convenience
 export type {
@@ -51,6 +52,14 @@ export type {
   StorePayload,
   StoreListResponse,
 } from "./store.service"
+
+export type {
+  AdminUser,
+  AdminUserFilters,
+  AdminUserCreatePayload,
+  AdminUserUpdatePayload,
+  PaginatedAdminUserResponse,
+} from "./admin-user.service"
 
 // Example usage in components:
 // import { authService, productService, categoryService, orderService, paymentService, customerService, storeService } from "@/services"

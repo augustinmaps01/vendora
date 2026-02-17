@@ -62,7 +62,15 @@ export const tokenManager = {
     const cookieUserType = cookieEntry
       ? cookieEntry.substring('vendora_user_type='.length)
       : null
-    return (cookieUserType || localStorage.getItem(TOKEN_CONFIG.USER_TYPE_KEY)) as 'admin' | 'vendor' | null
+    const localStorageUserType = localStorage.getItem(TOKEN_CONFIG.USER_TYPE_KEY)
+    const result = (cookieUserType || localStorageUserType) as 'admin' | 'vendor' | null
+
+    // Debug logging
+    if (process.env.NODE_ENV === 'development') {
+      console.log('🔍 getUserType:', { cookieUserType, localStorageUserType, result })
+    }
+
+    return result
   },
 
   setUserType: (type: 'admin' | 'vendor'): void => {
@@ -208,25 +216,36 @@ axiosClient.interceptors.response.use(
 
     // Handle network errors (no response from server)
     if (!error.response) {
-      console.error('❌ Network Error Details:', JSON.stringify({
-        message: error.message,
-        url: error.config?.url,
-        baseURL: error.config?.baseURL,
-        method: error.config?.method,
-      }, null, 2))
+      const method = error.config?.method?.toUpperCase()
 
-      // Return a more user-friendly error
-      const networkError = new Error(
-        'Unable to connect to the server. Please ensure the backend API is running at ' +
-        (error.config?.baseURL || 'the configured URL') +
-        '. Error: ' + error.message
+      // For write operations when offline, create a queue-friendly error
+      if (method && ['POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        const offlineError: any = new Error('You are offline. This action will be retried when connection returns.')
+        offlineError.isOffline = true
+        offlineError.config = error.config
+        return Promise.reject(offlineError)
+      }
+
+      // For GET requests when offline, return a recognizable error
+      const networkError: any = new Error(
+        'Unable to connect to the server. Working in offline mode.'
       )
+      networkError.isOffline = true
+      networkError.code = 'ERR_NETWORK'
       return Promise.reject(networkError)
     }
 
     // If error is not 401, reject immediately
     if (error.response?.status !== 401) {
-      // Suppress noisy non-401 error logging to avoid console spam.
+      // Log 500 errors with full response data for debugging
+      if (error.response?.status === 500) {
+        console.error('❌ Server Error (500):', {
+          url: error.config?.url,
+          method: error.config?.method,
+          requestData: error.config?.data,
+          responseData: error.response?.data,
+        })
+      }
       return Promise.reject(error)
     }
 
@@ -260,8 +279,17 @@ axiosClient.interceptors.response.use(
     isRefreshing = true
 
     const userType = tokenManager.getUserType()
+    const accessToken = tokenManager.getAccessToken()
+
+    console.log('🔐 401 Error - Auth state:', {
+      url: originalRequest?.url,
+      userType,
+      hasToken: !!accessToken,
+      tokenPreview: accessToken ? accessToken.substring(0, 20) + '...' : null,
+    })
 
     if (!userType) {
+      console.warn('⚠️ No userType found - redirecting to login')
       tokenManager.clearTokens()
       if (typeof window !== 'undefined') {
         window.location.href = resolveLoginPath(null)
@@ -274,7 +302,7 @@ axiosClient.interceptors.response.use(
       : API_ENDPOINTS.VENDOR.REFRESH
 
     try {
-      console.log('🔄 Refreshing token...')
+      console.log('🔄 Refreshing token...', { userType, refreshEndpoint })
 
       const { data } = await axiosClient.post(refreshEndpoint)
 
@@ -294,13 +322,18 @@ axiosClient.interceptors.response.use(
         processQueue(null, data.data.token)
         return axiosClient(originalRequest)
       }
-    } catch (refreshError) {
-      console.error('❌ Token refresh failed:', refreshError)
+    } catch (refreshError: any) {
+      console.error('❌ Token refresh failed:', {
+        status: refreshError?.response?.status,
+        message: refreshError?.message,
+        data: refreshError?.response?.data,
+      })
 
       processQueue(refreshError, null)
       tokenManager.clearTokens()
 
       if (typeof window !== 'undefined') {
+        console.log('🚪 Redirecting to login:', resolveLoginPath(userType))
         window.location.href = resolveLoginPath(userType)
       }
 

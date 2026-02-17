@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { dashboardService } from '@/services/dashboard.service'
+import { db } from '@/lib/db'
 import type {
     DashboardKPIs,
     SalesTrend,
@@ -13,8 +14,10 @@ import type {
     DateRangeParams,
 } from '@/types/dashboard'
 
+const CACHE_KEY = 'dashboard-data'
+
 /**
- * Custom hook to fetch all dashboard data
+ * Custom hook to fetch all dashboard data with offline support
  */
 export function useDashboardData(dateParams?: DateRangeParams) {
     const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
@@ -27,6 +30,8 @@ export function useDashboardData(dateParams?: DateRangeParams) {
 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
+    const [isStale, setIsStale] = useState(false)
+    const [lastSyncedAt, setLastSyncedAt] = useState<Date | null>(null)
 
     useEffect(() => {
         async function fetchDashboardData() {
@@ -34,7 +39,34 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                 setLoading(true)
                 setError(null)
 
-                // Fetch all dashboard data in parallel
+                // Load from IndexedDB cache first (instant)
+                const cacheKey = dateParams?.start_date
+                    ? `${CACHE_KEY}-${dateParams.start_date}-${dateParams.end_date}`
+                    : CACHE_KEY
+
+                try {
+                    const cached = await db.cachedData.get(cacheKey)
+                    if (cached) {
+                        const data = JSON.parse(cached.data)
+                        if (data.kpis) setKpis(data.kpis)
+                        if (data.salesTrend) setSalesTrend(data.salesTrend)
+                        if (data.ordersByChannel) setOrdersByChannel(data.ordersByChannel)
+                        if (data.paymentMethods) setPaymentMethods(data.paymentMethods)
+                        if (data.topProducts) setTopProducts(data.topProducts)
+                        if (data.inventoryHealth) setInventoryHealth(data.inventoryHealth)
+                        if (data.recentActivity) setRecentActivity(data.recentActivity)
+                        setLastSyncedAt(cached.lastSyncedAt)
+                        setLoading(false)
+
+                        // Check if stale (> 5 minutes)
+                        const ageMs = Date.now() - new Date(cached.lastSyncedAt).getTime()
+                        setIsStale(ageMs > 5 * 60 * 1000)
+                    }
+                } catch {
+                    // IndexedDB may not be available
+                }
+
+                // Fetch all dashboard data in parallel from API
                 const [
                     kpisData,
                     salesData,
@@ -60,21 +92,42 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                 setTopProducts(productsData)
                 setInventoryHealth(inventoryData)
                 setRecentActivity(activityData)
+                setIsStale(false)
+                setLastSyncedAt(new Date())
+
+                // Cache to IndexedDB
+                try {
+                    await db.cachedData.put({
+                        key: cacheKey,
+                        data: JSON.stringify({
+                            kpis: kpisData,
+                            salesTrend: salesData,
+                            ordersByChannel: ordersData,
+                            paymentMethods: paymentsData,
+                            topProducts: productsData,
+                            inventoryHealth: inventoryData,
+                            recentActivity: activityData,
+                        }),
+                        lastSyncedAt: new Date(),
+                    })
+                } catch {
+                    // Cache failure is non-critical
+                }
             } catch (err) {
                 console.error('Error fetching dashboard data:', err)
 
-                // Provide more specific error messages
-                let errorMessage = 'Failed to load dashboard data'
-
-                if (err instanceof Error) {
-                    if (err.message.includes('timeout')) {
-                        errorMessage = 'Request timed out. The server is taking too long to respond. Please try again.'
-                    } else if (err.message.includes('Network Error') || err.message.includes('Unable to connect')) {
-                        errorMessage = 'Cannot connect to server. Please check your internet connection or contact support.'
+                // Only show error if we have no cached data
+                if (!kpis) {
+                    let errorMessage = 'Failed to load dashboard data'
+                    if (err instanceof Error) {
+                        if (err.message.includes('timeout')) {
+                            errorMessage = 'Request timed out. Please try again.'
+                        } else if (err.message.includes('Network Error') || err.message.includes('Unable to connect') || (err as any).isOffline) {
+                            errorMessage = 'Working offline. Showing cached data.'
+                        }
                     }
+                    setError(errorMessage)
                 }
-
-                setError(errorMessage)
             } finally {
                 setLoading(false)
             }
@@ -93,5 +146,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
         recentActivity,
         loading,
         error,
+        isStale,
+        lastSyncedAt,
     }
 }

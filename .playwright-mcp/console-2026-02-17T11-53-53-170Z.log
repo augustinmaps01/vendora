@@ -1,0 +1,355 @@
+[    1998ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    1998ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    1999ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    1999ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    1999ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2000ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2000ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2000ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2001ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2002ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2002ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2316ms] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/pos/dashb..." tree={[...]} params={{}} cacheNode={{...}} segmentPath={[...]} ...>
+        <SegmentViewNode type="layout" pagePath="pos/layout...">
+          <SegmentTrieNode>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <ClientSegmentRoot Component={function POSLayout} slots={{...}} serverProvidedParams={{params:{}, ...}}>
+            <POSLayout params={Promise}>
+              <div className="min-h-scre..." style={{...}}>
+                <aside>
+                <main className={"\n      ..."} style={{...}}>
+                  <OfflineBanner>
+                  <header className={"\n      ..."} style={{...}}>
+                    <div className="flex items...">
+                      <div>
+                      <div className="flex items...">
+                        <NetworkStatusBadge isOnline={true} networkQuality="good" pendingCount={0} isSyncing={false} ...>
+                          <div className="flex items...">
+                            <button
+                              onClick={function useOfflineInit.useCallback[triggerSync]}
+                              disabled={true}
+                              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/10 transition-c..."
++                             title="Online"
+-                             title="Offline"
+                            >
+                              <span
++                               className="w-2 h-2 rounded-full bg-green-400 animate-pulse"
+-                               className={"w-2 h-2 rounded-full bg-red-400 "}
+                              >
+                              <Wifi className="w-3.5 h-3....">
+                                <svg
+                                  ref={null}
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width={24}
+                                  height={24}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
++                                 className="lucide lucide-wifi w-3.5 h-3.5 text-green-400"
+-                                 className="lucide lucide-wifi-off w-3.5 h-3.5 text-red-400"
+                                  aria-hidden="true"
+                                >
+                                  <path>
+                                  <path
++                                   d="M2 8.82a15 15 0 0 1 20 0"
+-                                   d="M8.5 16.429a5 5 0 0 1 7 0"
+                                  >
+                                  <path
++                                   d="M5 12.859a10 10 0 0 1 14 0"
+-                                   d="M5 12.859a10 10 0 0 1 5.17-2.69"
+                                  >
+                                  <path
++                                   d="M8.5 16.429a5 5 0 0 1 7 0"
+-                                   d="M19 12.859a10 10 0 0 0-2.007-1.523"
+                                  >
+-                                 <path d="M2 8.82a15 15 0 0 1 4.177-2.643">
+-                                 <path d="M22 8.82a15 15 0 0 0-11.288-3.764">
+-                                 <path d="m2 2 20 20">
+                              ...
+                        ...
+                  ...
+      ...
+
+    at throwOnHydrationMismatch (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at popHydrationState (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3433:13)
+    at completeWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6934:25)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at completeUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9627:23)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9564:28)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:58)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[    2630ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2631ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2637ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    2637ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14752ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14752ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14753ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14753ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14753ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14753ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14753ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14754ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14754ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14754ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   14754ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   15348ms] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <RedirectErrorBoundary router={{...}}>
+      <InnerLayoutRouter url="/pos/dashb..." tree={[...]} params={{}} cacheNode={{...}} segmentPath={[...]} ...>
+        <SegmentViewNode type="layout" pagePath="pos/layout...">
+          <SegmentTrieNode>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <script>
+          <ClientSegmentRoot Component={function POSLayout} slots={{...}} serverProvidedParams={{params:{}, ...}}>
+            <POSLayout params={Promise}>
+              <div className="min-h-scre..." style={{...}}>
+                <aside>
+                <main className={"\n      ..."} style={{...}}>
+                  <OfflineBanner>
+                  <header className={"\n      ..."} style={{...}}>
+                    <div className="flex items...">
+                      <div>
+                      <div className="flex items...">
+                        <NetworkStatusBadge isOnline={true} networkQuality="good" pendingCount={0} isSyncing={false} ...>
+                          <div className="flex items...">
+                            <button
+                              onClick={function useOfflineInit.useCallback[triggerSync]}
+                              disabled={true}
+                              className="flex items-center gap-1.5 px-2 py-1 rounded-md hover:bg-white/10 transition-c..."
++                             title="Online"
+-                             title="Offline"
+                            >
+                              <span
++                               className="w-2 h-2 rounded-full bg-green-400 animate-pulse"
+-                               className={"w-2 h-2 rounded-full bg-red-400 "}
+                              >
+                              <Wifi className="w-3.5 h-3....">
+                                <svg
+                                  ref={null}
+                                  xmlns="http://www.w3.org/2000/svg"
+                                  width={24}
+                                  height={24}
+                                  viewBox="0 0 24 24"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  strokeWidth={2}
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
++                                 className="lucide lucide-wifi w-3.5 h-3.5 text-green-400"
+-                                 className="lucide lucide-wifi-off w-3.5 h-3.5 text-red-400"
+                                  aria-hidden="true"
+                                >
+                                  <path>
+                                  <path
++                                   d="M2 8.82a15 15 0 0 1 20 0"
+-                                   d="M8.5 16.429a5 5 0 0 1 7 0"
+                                  >
+                                  <path
++                                   d="M5 12.859a10 10 0 0 1 14 0"
+-                                   d="M5 12.859a10 10 0 0 1 5.17-2.69"
+                                  >
+                                  <path
++                                   d="M8.5 16.429a5 5 0 0 1 7 0"
+-                                   d="M19 12.859a10 10 0 0 0-2.007-1.523"
+                                  >
+-                                 <path d="M2 8.82a15 15 0 0 1 4.177-2.643">
+-                                 <path d="M22 8.82a15 15 0 0 0-11.288-3.764">
+-                                 <path d="m2 2 20 20">
+                              ...
+                        ...
+                  ...
+      ...
+
+    at throwOnHydrationMismatch (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at popHydrationState (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3433:13)
+    at completeWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6934:25)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at completeUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9627:23)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9564:28)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:58)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[   15922ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   15923ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   15926ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   15927ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  104942ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  105947ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  106950ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  107956ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  108959ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  113964ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  118987ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  123993ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  129002ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  134013ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  139026ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  144029ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=ByUiEF9R0MUDKsS-GDfHT' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  144838ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144839ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144839ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144839ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144840ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144840ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144840ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144840ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144840ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144841ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144841ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  144942ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  145373ms] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+      <LoadingBoundary name="/" loading={null}>
+        <HTTPAccessFallbackBoundary notFound={<SegmentViewNode>} forbidden={undefined} unauthorized={undefined}>
+          <HTTPAccessFallbackErrorBoundary pathname="/pos/dashb..." notFound={<SegmentViewNode>} forbidden={undefined} ...>
+            <RedirectBoundary>
+              <RedirectErrorBoundary router={{...}}>
+                <InnerLayoutRouter url="/pos/dashb..." tree={[...]} params={{}} cacheNode={{...}} segmentPath={[...]} ...>
+                  <SegmentViewNode type="layout" pagePath="pos/layout...">
+                    <SegmentTrieNode>
+                    <script>
+                    <script>
+                    <script>
+                    <script>
+                    <script>
+                    <script>
+                    <script>
+                    <script>
+                    <ClientSegmentRoot Component={function POSLayout} slots={{...}} ...>
+                      <POSLayout params={Promise}>
+                        <div className="min-h-scre..." style={{...}}>
+                          <aside>
+                          <main className={"\n      ..."} style={{...}}>
+                            <OfflineBanner>
++                           <header
++                             className={"\n            fixed left-0 z-30 flex items-center h-16 px-6 border-b w-full..."}
++                             style={{backgroundColor:"#2e0f5f",borderColor:"#1f0a3d",top:"0"}}
++                           >
+-                           <div
+-                             className={"\n        flex items-center justify-center gap-2 px-4 py-1.5 text-xs font-m..."}
+-                           >
+                            ...
+                ...
+
+    at throwOnHydrationMismatch (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6775:918)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:58)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[  145481ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/api/ping:0
+[  145482ms] [WARNING] ❌ Ping error: Failed to fetch @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  145654ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/__nextjs_original-stack-frames:0
+[  145659ms] [ERROR] Failed to load resource: the server responded with a status of 503 (Service Unavailable) @ http://localhost:3000/favicon.ico?favicon.0b3bf435.ico:0
+[  145726ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  145727ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  145734ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  145734ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[  147535ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  149209ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  150212ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  151219ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  152229ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  157239ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  162245ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  167250ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  172261ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878
+[  177276ms] [ERROR] WebSocket connection to 'ws://localhost:3000/_next/webpack-hmr?id=rK2HkvDmhbM5mumVG48v0' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_client_17643121._.js:10878

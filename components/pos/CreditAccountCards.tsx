@@ -84,7 +84,7 @@ function ProgressBar({ value, max, className = "", showPercent = true }: { value
             />
             {showPercent && (
                 <div className="absolute inset-0 flex items-center justify-center">
-                    <span className="text-[10px] font-semibold text-gray-600 dark:text-gray-400 mix-blend-multiply">
+                    <span className="text-[10px] font-semibold text-gray-600 dark:text-[#b4b4d0] mix-blend-multiply">
                         {percentage.toFixed(0)}%
                     </span>
                 </div>
@@ -166,12 +166,12 @@ export function CreditAccountCards({
 
     if (accounts.length === 0) {
         return (
-            <div className="bg-white dark:bg-gray-800 p-12 text-center rounded-xl border border-gray-100 shadow-sm">
+            <div className="bg-white dark:bg-[#13132a] p-12 text-center rounded-xl border border-gray-100 shadow-sm">
                 <div className="w-16 h-16 mx-auto rounded-full bg-gray-100 flex items-center justify-center mb-4">
-                    <Package className="w-8 h-8 text-gray-400" />
+                    <Package className="w-8 h-8 text-gray-400 dark:text-[#9898b8]" />
                 </div>
-                <p className="text-gray-500 dark:text-gray-400 font-medium">No credit accounts found</p>
-                <p className="text-gray-400 text-sm mt-1">
+                <p className="text-gray-500 dark:text-[#b4b4d0] font-medium">No credit accounts found</p>
+                <p className="text-gray-400 dark:text-[#9898b8] text-sm mt-1">
                     Try a different search term or create a new credit account
                 </p>
             </div>
@@ -189,7 +189,7 @@ export function CreditAccountCards({
                 return (
                     <div
                         key={account.id}
-                        className="bg-white dark:bg-gray-800 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
+                        className="bg-white dark:bg-[#13132a] rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden"
                     >
                         {/* Account Header */}
                         <div className="p-4 sm:p-5">
@@ -201,11 +201,11 @@ export function CreditAccountCards({
                                     </div>
                                     <div className="flex-1 min-w-0">
                                         <div className="flex items-center gap-2 flex-wrap">
-                                            <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{account.customer.name}</h3>
+                                            <h3 className="text-base font-semibold text-gray-900 dark:text-white">{account.customer.name}</h3>
                                             <StatusBadge status={account.status} />
                                         </div>
                                         {account.customer.phone && (
-                                            <p className="text-sm text-gray-500 dark:text-gray-400 flex items-center gap-1 mt-0.5">
+                                            <p className="text-sm text-gray-500 dark:text-[#b4b4d0] flex items-center gap-1 mt-0.5">
                                                 <Phone className="w-3.5 h-3.5" />
                                                 {account.customer.phone}
                                             </p>
@@ -216,15 +216,15 @@ export function CreditAccountCards({
                                 {/* Amount Summary */}
                                 <div className="flex items-center gap-4 sm:gap-6">
                                     <div className="text-center">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">Total</div>
-                                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">₱{account.totalAmount.toLocaleString()}</div>
+                                        <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">Total</div>
+                                        <div className="text-sm font-bold text-gray-900 dark:text-white">₱{account.totalAmount.toLocaleString()}</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">Paid</div>
+                                        <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">Paid</div>
                                         <div className="text-sm font-bold text-emerald-600">₱{account.paidAmount.toLocaleString()}</div>
                                     </div>
                                     <div className="text-center">
-                                        <div className="text-xs text-gray-500 dark:text-gray-400">Balance</div>
+                                        <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">Balance</div>
                                         <div className={`text-sm font-bold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
                                             ₱{account.remainingBalance.toLocaleString()}
                                         </div>
@@ -254,7 +254,7 @@ export function CreditAccountCards({
 
                             {/* Progress Bar */}
                             <div className="mt-4">
-                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-gray-400 mb-1.5">
+                                <div className="flex items-center justify-between text-xs text-gray-500 dark:text-[#b4b4d0] mb-1.5">
                                     <span>Payment Progress</span>
                                     <span className="font-medium">{((account.paidAmount / account.totalAmount) * 100).toFixed(0)}%</span>
                                 </div>
@@ -263,7 +263,7 @@ export function CreditAccountCards({
 
                             {/* Item Summary Pills */}
                             <div className="flex items-center gap-2 mt-4 flex-wrap">
-                                <span className="text-xs text-gray-500 dark:text-gray-400 mr-1">Items:</span>
+                                <span className="text-xs text-gray-500 dark:text-[#b4b4d0] mr-1">Items:</span>
                                 {paidItems > 0 && (
                                     <span className="inline-flex items-center gap-1 px-2 py-1 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
                                         <CheckCircle2 className="w-3 h-3" />
@@ -336,15 +336,15 @@ export function CreditAccountCards({
                                                         )}
                                                     </div>
                                                     <div className="flex-1 min-w-0">
-                                                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{item.name}</div>
-                                                        <div className="text-xs text-gray-500 dark:text-gray-400">
+                                                        <div className="text-sm font-medium text-gray-900 dark:text-white truncate">{item.name}</div>
+                                                        <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">
                                                             {item.quantity} × ₱{item.unitPrice.toLocaleString()} • {formatDate(item.date)}
                                                         </div>
                                                     </div>
                                                 </div>
                                                 <div className="flex items-center gap-3 flex-shrink-0 ml-2">
                                                     <div className="text-right">
-                                                        <div className="text-sm font-semibold text-gray-900 dark:text-gray-100">₱{item.total.toLocaleString()}</div>
+                                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">₱{item.total.toLocaleString()}</div>
                                                         {item.status === 'partial' && item.paidAmount !== undefined && (
                                                             <div className="text-xs text-blue-600">
                                                                 Paid: ₱{item.paidAmount.toLocaleString()}
@@ -359,9 +359,9 @@ export function CreditAccountCards({
 
                                     {/* Items Summary */}
                                     <div className="mt-4 pt-3 border-t border-gray-200 flex items-center justify-between">
-                                        <span className="text-sm text-gray-600 dark:text-gray-400">Total ({account.items.length} items)</span>
+                                        <span className="text-sm text-gray-600 dark:text-[#b4b4d0]">Total ({account.items.length} items)</span>
                                         <div className="text-right">
-                                            <span className="text-sm font-bold text-gray-900 dark:text-gray-100">₱{account.totalAmount.toLocaleString()}</span>
+                                            <span className="text-sm font-bold text-gray-900 dark:text-white">₱{account.totalAmount.toLocaleString()}</span>
                                             {account.remainingBalance > 0 && (
                                                 <span className="text-xs text-orange-600 ml-2">
                                                     (₱{account.remainingBalance.toLocaleString()} remaining)

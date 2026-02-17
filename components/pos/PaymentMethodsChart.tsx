@@ -23,7 +23,7 @@ export function PaymentMethodsChart({ data, className, contentClassName }: Payme
     <Card className={className}>
       <CardHeader className="pb-2 pt-4 px-4">
         <CardTitle className="text-base font-semibold">Payment Methods</CardTitle>
-        <p className="text-xs text-gray-500 dark:text-gray-400">Distribution</p>
+        <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">Distribution</p>
       </CardHeader>
       <CardContent className={`px-4 pb-4 ${contentClassName ?? ""}`.trim()}>
         <div className="flex items-center gap-4">
@@ -56,9 +56,9 @@ export function PaymentMethodsChart({ data, className, contentClassName }: Payme
                     className="w-2.5 h-2.5 rounded-full"
                     style={{ backgroundColor: item.color }}
                   ></div>
-                  <span className="text-gray-600 dark:text-gray-400">{item.name}</span>
+                  <span className="text-gray-600 dark:text-[#b4b4d0]">{item.name}</span>
                 </div>
-                <span className="font-semibold">{item.value.toFixed(1)}%</span>
+                <span className="font-semibold dark:text-white">{item.value.toFixed(1)}%</span>
               </div>
             ))}
           </div>

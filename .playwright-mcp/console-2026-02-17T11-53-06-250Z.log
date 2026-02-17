@@ -1,0 +1,90 @@
+[    3627ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3627ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3628ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3639ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3639ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3639ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3640ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3641ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3641ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3642ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    3644ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4272ms] Error: Hydration failed because the server rendered HTML didn't match the client. As a result this tree will be regenerated on the client. This can happen if a SSR-ed Client Component used:
+
+- A server/client branch `if (typeof window !== 'undefined')`.
+- Variable input such as `Date.now()` or `Math.random()` which changes each time it's called.
+- Date formatting in a user's locale which doesn't match the server.
+- External changing data without sending a snapshot of it along with the HTML.
+- Invalid HTML tag nesting.
+
+It can also happen if the client has a browser extension installed which messes with the HTML before React loaded.
+
+https://react.dev/link/hydration-mismatch
+
+  ...
+    <InnerScrollAndFocusHandler segmentPath={[...]} focusAndScrollRef={{apply:false, ...}}>
+      <ErrorBoundary errorComponent={undefined} errorStyles={undefined} errorScripts={undefined}>
+        <LoadingBoundary name="/" loading={null}>
+          <HTTPAccessFallbackBoundary notFound={<SegmentViewNode>} forbidden={undefined} unauthorized={undefined}>
+            <HTTPAccessFallbackErrorBoundary pathname="/pos/dashb..." notFound={<SegmentViewNode>} forbidden={undefined} ...>
+              <RedirectBoundary>
+                <RedirectErrorBoundary router={{...}}>
+                  <InnerLayoutRouter url="/pos/dashb..." tree={[...]} params={{}} cacheNode={{...}} segmentPath={[...]} ...>
+                    <SegmentViewNode type="layout" pagePath="pos/layout...">
+                      <SegmentTrieNode>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <script>
+                      <ClientSegmentRoot Component={function POSLayout} slots={{...}} ...>
+                        <POSLayout params={Promise}>
+                          <div className="min-h-scre..." style={{...}}>
+                            <aside>
+                            <main
+                              className={"\n          min-h-screen bg-gray-100 dark:bg-[#0f0f23] overflow-x-hidden\n ..."}
+                              style={{
++                               paddingTop: "4rem"
+-                               padding-top: "calc(28px + 4rem)"
+                              }}
+                            >
+                              <OfflineBanner>
++                             <header
++                               className={"\n            fixed left-0 z-30 flex items-center h-16 px-6 border-b w-fu..."}
++                               style={{backgroundColor:"#2e0f5f",borderColor:"#1f0a3d",top:"0"}}
++                             >
+-                             <div
+-                               className={"\n        flex items-center justify-center gap-2 px-4 py-1.5 text-xs font..."}
+-                             >
+                              ...
+                  ...
+      ...
+
+    at throwOnHydrationMismatch (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:3348:56)
+    at beginWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:6775:918)
+    at runWithFiberInDEV (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:965:74)
+    at performUnitOfWork (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9562:97)
+    at workLoopConcurrentByScheduler (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9558:58)
+    at renderRootConcurrent (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9541:71)
+    at performWorkOnRoot (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:9068:150)
+    at performWorkOnRootViaSchedulerTask (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_react-dom_1e674e59._.js:10230:9)
+    at MessagePort.performWorkUntilDeadline (http://localhost:3000/_next/static/chunks/node_modules_next_dist_compiled_a0e4c7b4._.js:2647:64)
+[    5111ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5114ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5158ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5159ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

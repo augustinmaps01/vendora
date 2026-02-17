@@ -20,6 +20,11 @@ type SalesTrendChartProps = {
 }
 
 export function SalesTrendChart({ data, className, contentClassName }: SalesTrendChartProps) {
+  // Detect dark mode for chart colors
+  const isDark = typeof window !== 'undefined' && document.documentElement.classList.contains('dark')
+  const gridColor = isDark ? '#374151' : '#f0f0f0'
+  const axisColor = isDark ? '#9ca3af' : '#888'
+  const totalLineColor = isDark ? '#4b5563' : '#e0e0e0'
   // Transform API data to chart format
   const salesData = data ? data.labels.map((label, index) => {
     const posData = data.series.find(s => s.name === "pos")?.data[index] || 0
@@ -41,15 +46,15 @@ export function SalesTrendChart({ data, className, contentClassName }: SalesTren
     <Card className={`col-span-2 flex flex-col ${className ?? ""}`.trim()}>
       <CardHeader>
         <CardTitle className="text-lg font-semibold">Sales Trend</CardTitle>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Compare POS and Online sales</p>
+        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Compare POS and Online sales</p>
       </CardHeader>
       <CardContent className={`flex-1 ${contentClassName ?? ""}`.trim()}>
         <div className="min-h-[260px] h-[260px] sm:h-[300px] lg:h-full">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={salesData}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#f0f0f0" />
-              <XAxis dataKey="day" stroke="#888" fontSize={12} />
-              <YAxis stroke="#888" fontSize={12} />
+              <CartesianGrid strokeDasharray="3 3" stroke={gridColor} />
+              <XAxis dataKey="day" stroke={axisColor} fontSize={12} />
+              <YAxis stroke={axisColor} fontSize={12} />
               <Tooltip />
               <Legend />
               <Line
@@ -69,7 +74,7 @@ export function SalesTrendChart({ data, className, contentClassName }: SalesTren
               <Line
                 type="monotone"
                 dataKey="total"
-                stroke="#e0e0e0"
+                stroke={totalLineColor}
                 strokeWidth={1}
                 strokeDasharray="5 5"
               />

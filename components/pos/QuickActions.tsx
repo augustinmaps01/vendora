@@ -8,22 +8,22 @@ const actions = [
   {
     icon: ShoppingCart,
     label: "Start a new POS sale",
-    color: "text-purple-600 hover:bg-purple-50",
+    color: "text-purple-600 hover:bg-purple-50 dark:text-purple-400 dark:hover:bg-purple-950/40",
   },
   {
     icon: Plus,
     label: "Add a new product",
-    color: "text-blue-600 hover:bg-blue-50",
+    color: "text-blue-600 hover:bg-blue-50 dark:text-blue-400 dark:hover:bg-blue-950/40",
   },
   {
     icon: Package,
     label: "Adjust stock levels",
-    color: "text-orange-600 hover:bg-orange-50",
+    color: "text-orange-600 hover:bg-orange-50 dark:text-orange-400 dark:hover:bg-orange-950/40",
   },
   {
     icon: Truck,
     label: "Fulfill online orders",
-    color: "text-green-600 hover:bg-green-50",
+    color: "text-green-600 hover:bg-green-50 dark:text-green-400 dark:hover:bg-green-950/40",
   },
 ]
 
@@ -40,7 +40,7 @@ export function QuickActions({ variant = "default" }: QuickActionsProps) {
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Quick Actions</CardTitle>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Common tasks</p>
+        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Common tasks</p>
       </CardHeader>
       <CardContent className={contentClass}>
         <div className="space-y-2">
@@ -53,7 +53,7 @@ export function QuickActions({ variant = "default" }: QuickActionsProps) {
                 className={`w-full justify-start gap-3 h-12 ${action.color}`}
               >
                 <Icon className="w-5 h-5" />
-                <span className="font-medium">{action.label}</span>
+                <span className="font-medium dark:text-[#e0e0f0]">{action.label}</span>
               </Button>
             )
           })}

@@ -12,20 +12,20 @@ type RecentActivityProps = {
 // Helper function to get icon and color based on activity
 function getActivityStyle(action: string, modelType: string) {
   if (modelType.includes("Order")) {
-    if (action === "create") return { icon: ShoppingCart, color: "text-green-600 bg-green-50" }
-    if (action === "update") return { icon: Edit, color: "text-blue-600 bg-blue-50" }
-    return { icon: FileText, color: "text-purple-600 bg-purple-50" }
+    if (action === "create") return { icon: ShoppingCart, color: "text-green-600 bg-green-50 dark:text-green-400 dark:bg-green-900/30" }
+    if (action === "update") return { icon: Edit, color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30" }
+    return { icon: FileText, color: "text-purple-600 bg-purple-50 dark:text-purple-400 dark:bg-purple-900/30" }
   }
   if (modelType.includes("Product")) {
-    if (action === "create") return { icon: Plus, color: "text-orange-600 bg-orange-50" }
-    if (action === "update") return { icon: Box, color: "text-blue-600 bg-blue-50" }
-    return { icon: PackageIcon, color: "text-orange-600 bg-orange-50" }
+    if (action === "create") return { icon: Plus, color: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/30" }
+    if (action === "update") return { icon: Box, color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30" }
+    return { icon: PackageIcon, color: "text-orange-600 bg-orange-50 dark:text-orange-400 dark:bg-orange-900/30" }
   }
   if (modelType.includes("Inventory")) {
-    return { icon: Box, color: "text-blue-600 bg-blue-50" }
+    return { icon: Box, color: "text-blue-600 bg-blue-50 dark:text-blue-400 dark:bg-blue-900/30" }
   }
   // Default
-  return { icon: FileText, color: "text-gray-600 dark:text-gray-400 bg-gray-50 dark:bg-gray-900" }
+  return { icon: FileText, color: "text-gray-600 bg-gray-50 dark:text-[#b4b4d0] dark:bg-[#13132a]" }
 }
 
 // Helper function to format relative time
@@ -65,7 +65,7 @@ export function RecentActivity({ data, variant = "default" }: RecentActivityProp
     <>
       <CardHeader className={headerClass}>
         <CardTitle className="text-lg font-semibold">Recent Activity</CardTitle>
-        <p className="text-sm text-gray-500 dark:text-gray-400">Live updates</p>
+        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Live updates</p>
       </CardHeader>
       <CardContent className={contentClass}>
         <div className="space-y-3">
@@ -77,8 +77,8 @@ export function RecentActivity({ data, variant = "default" }: RecentActivityProp
                   <Icon className="w-4 h-4" />
                 </div>
                 <div className="flex-1">
-                  <p className="text-sm text-gray-700">{activity.title}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{activity.time}</p>
+                  <p className="text-sm text-gray-700 dark:text-[#e0e0f0]">{activity.title}</p>
+                  <p className="text-xs text-gray-500 dark:text-[#b4b4d0] mt-0.5">{activity.time}</p>
                 </div>
               </div>
             )

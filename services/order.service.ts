@@ -5,6 +5,7 @@
  */
 
 import api from "@/lib/api-client"
+import axiosClient from "@/lib/axios-client"
 import { endpoints } from "@/lib/api-endpoints"
 import { Order, OrderFilters, OrderStatus, PaymentStatus, PaginatedResponse } from "@/types"
 
@@ -66,21 +67,23 @@ export const orderService = {
   },
 
   /**
-   * Get order invoice
+   * Get order invoice (PDF/Blob)
    */
   getInvoice: async (id: string | number): Promise<Blob> => {
-    return api.get(endpoints.orders.invoice(id), {
+    const response = await axiosClient.get(endpoints.orders.invoice(id), {
       responseType: "blob",
     })
+    return response.data
   },
 
   /**
-   * Get order receipt
+   * Get order receipt (PDF/Blob)
    */
   getReceipt: async (id: string | number): Promise<Blob> => {
-    return api.get(endpoints.orders.receipt(id), {
+    const response = await axiosClient.get(endpoints.orders.receipt(id), {
       responseType: "blob",
     })
+    return response.data
   },
 
   /**

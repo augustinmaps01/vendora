@@ -23,6 +23,7 @@ import {
   SelectValue,
 } from "@/components/ui/select"
 import { useDashboardData } from "@/hooks/useDashboardData"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
 
 /**
  * Default Dashboard Layout
@@ -31,7 +32,7 @@ import { useDashboardData } from "@/hooks/useDashboardData"
 export default function DesktopDashboard() {
   const [dateRange, setDateRange] = useState("7days")
 
-  // Fetch dashboard data from API
+  // Fetch dashboard data from API (with offline cache support)
   const {
     kpis,
     salesTrend,
@@ -42,6 +43,8 @@ export default function DesktopDashboard() {
     recentActivity,
     loading,
     error,
+    isStale,
+    lastSyncedAt,
   } = useDashboardData()
 
   // Transform KPI data to stats format
@@ -82,19 +85,19 @@ export default function DesktopDashboard() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="text-center">
           <Loader2 className="w-8 h-8 animate-spin mx-auto text-purple-600" />
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Loading dashboard...</p>
+          <p className="text-sm text-gray-500 dark:text-[#b4b4d0] mt-2">Loading dashboard...</p>
         </div>
       </div>
     )
   }
 
-  // Show error state
-  if (error) {
+  // Show error state (only if no cached data available)
+  if (error && !kpis) {
     return (
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="text-center">
           <p className="text-red-600 font-medium">{error}</p>
-          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">Please try again later</p>
+          <p className="text-sm text-gray-500 dark:text-[#b4b4d0] mt-2">Please try again later</p>
         </div>
       </div>
     )
@@ -102,11 +105,13 @@ export default function DesktopDashboard() {
 
   return (
     <div className="space-y-4 pb-6">
+      {/* Stale data indicator for offline/cached data */}
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
       {/* Desktop Header */}
       <div className="hidden sm:flex sm:flex-col gap-3 bg-white dark:bg-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-border lg:flex-row lg:items-center lg:justify-between">
         <div>
-          <p className="text-xs sm:text-sm text-gray-500 dark:text-gray-400 dark:text-muted-foreground">Welcome back</p>
-          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-gray-100 dark:text-foreground mt-1">Bunya Retail Shop</h1>
+          <p className="text-xs sm:text-sm text-gray-500 dark:text-[#b4b4d0]">Welcome back</p>
+          <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">Bunya Retail Shop</h1>
         </div>
         <div className="hidden w-full flex-col gap-3 sm:flex sm:flex-row sm:flex-wrap sm:items-center lg:w-auto">
           <Select defaultValue="7days">
@@ -192,7 +197,7 @@ export default function DesktopDashboard() {
 
       {/* Footer Note */}
       <div className="text-center py-4">
-        <p className="text-xs text-gray-500 dark:text-gray-400 dark:text-muted-foreground">
+        <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">
           Dashboard connected to live API data.
         </p>
       </div>

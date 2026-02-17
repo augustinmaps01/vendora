@@ -207,7 +207,7 @@ export default function VendorRegisterPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="business_name">Business Name</Label>
                     <div className="relative">
-                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Building2 className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
                       <Input
                         {...register("business_name")}
                         id="business_name"
@@ -225,7 +225,7 @@ export default function VendorRegisterPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="email">Email Address</Label>
                     <div className="relative">
-                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Mail className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
                       <Input
                         {...register("email")}
                         id="email"
@@ -243,7 +243,7 @@ export default function VendorRegisterPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="password">Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
                       <Input
                         {...register("password")}
                         id="password"
@@ -264,7 +264,7 @@ export default function VendorRegisterPage() {
                   <div className="space-y-1.5">
                     <Label htmlFor="password_confirmation">Confirm Password</Label>
                     <div className="relative">
-                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
                       <Input
                         {...register("password_confirmation")}
                         id="password_confirmation"

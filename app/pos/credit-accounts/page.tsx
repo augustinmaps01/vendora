@@ -181,7 +181,7 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
     const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0
 
     return (
-        <div className="relative h-3 bg-gray-100 rounded-full overflow-hidden">
+        <div className="relative h-3 bg-gray-100 dark:bg-[#1a1a35] rounded-full overflow-hidden">
             <div
                 className={`absolute inset-y-0 left-0 rounded-full transition-all duration-500 ease-out ${percentage === 100 ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' :
                     percentage > 0 ? 'bg-gradient-to-r from-purple-500 to-purple-600' : 'bg-gray-200'
@@ -277,10 +277,10 @@ export default function CreditAccountsPage() {
             <div className="relative pb-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 tracking-tight">
+                        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
                             Credit Accounts
                         </h1>
-                        <p className="text-sm sm:text-base text-gray-500 dark:text-gray-400 mt-1 leading-relaxed">
+                        <p className="text-sm sm:text-base text-gray-500 dark:text-[#b4b4d0] mt-1 leading-relaxed">
                             Manage customer credit, track balances, and record payments
                         </p>
                     </div>
@@ -294,57 +294,57 @@ export default function CreditAccountsPage() {
 
             {/* Statistics */}
             <div className="grid grid-cols-2 gap-4 lg:grid-cols-4">
-                <div className="group relative bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="group relative bg-white dark:bg-[#13132a] p-4 sm:p-5 rounded-xl border border-gray-100 dark:border-[#2d1b69] shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-purple-50/50 dark:from-purple-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Total Accounts</div>
-                            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalAccounts}</div>
-                            <div className="text-xs text-gray-400 mt-1">All time</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Total Accounts</div>
+                            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.totalAccounts}</div>
+                            <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">All time</div>
                         </div>
-                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 text-purple-600 flex items-center justify-center shadow-sm">
+                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/40 dark:to-purple-900/20 text-purple-600 flex items-center justify-center shadow-sm">
                             <Users className="h-5 w-5" />
                         </div>
                     </div>
                 </div>
 
-                <div className="group relative bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="group relative bg-white dark:bg-[#13132a] p-4 sm:p-5 rounded-xl border border-gray-100 dark:border-[#2d1b69] shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-blue-50/50 dark:from-blue-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Active</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Active</div>
                             <div className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1">{stats.activeAccounts}</div>
-                            <div className="text-xs text-gray-400 mt-1">On track</div>
+                            <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">On track</div>
                         </div>
-                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 text-blue-600 flex items-center justify-center shadow-sm">
+                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-900/20 text-blue-600 flex items-center justify-center shadow-sm">
                             <TrendingUp className="h-5 w-5" />
                         </div>
                     </div>
                 </div>
 
-                <div className="group relative bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="group relative bg-white dark:bg-[#13132a] p-4 sm:p-5 rounded-xl border border-gray-100 dark:border-[#2d1b69] shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-red-50/50 dark:from-red-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Overdue</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Overdue</div>
                             <div className="text-2xl sm:text-3xl font-bold text-red-600 mt-1">{stats.overdueAccounts}</div>
                             <div className="text-xs text-red-400 mt-1">Needs attention</div>
                         </div>
-                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-red-100 to-red-50 text-red-600 flex items-center justify-center shadow-sm">
+                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20 text-red-600 flex items-center justify-center shadow-sm">
                             <AlertCircle className="h-5 w-5" />
                         </div>
                     </div>
                 </div>
 
-                <div className="group relative bg-white dark:bg-gray-800 p-4 sm:p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
-                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                <div className="group relative bg-white dark:bg-[#13132a] p-4 sm:p-5 rounded-xl border border-gray-100 dark:border-[#2d1b69] shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-br from-orange-50/50 dark:from-orange-900/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
-                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-gray-400">Outstanding</div>
+                            <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Outstanding</div>
                             <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-1">₱{stats.totalOutstanding.toLocaleString()}</div>
-                            <div className="text-xs text-gray-400 mt-1">To collect</div>
+                            <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">To collect</div>
                         </div>
-                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 text-orange-600 flex items-center justify-center shadow-sm">
+                        <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/40 dark:to-orange-900/20 text-orange-600 flex items-center justify-center shadow-sm">
                             <Wallet className="h-5 w-5" />
                         </div>
                     </div>
@@ -354,16 +354,16 @@ export default function CreditAccountsPage() {
             {/* Search and Filters */}
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <div className="flex-1 relative group">
-                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 group-focus-within:text-purple-500 transition-colors" />
+                    <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[#9898b8] group-focus-within:text-purple-500 transition-colors" />
                     <Input
                         placeholder="Search by customer name, phone, or email..."
                         value={searchQuery}
                         onChange={(e) => setSearchQuery(e.target.value)}
-                        className="pl-10 h-11 border-gray-200 focus:border-purple-300 focus:ring-purple-200 transition-all"
+                        className="pl-10 h-11 border-gray-200 dark:border-[#2d1b69] focus:border-purple-300 focus:ring-purple-200 transition-all"
                     />
                 </div>
                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger className="w-full sm:w-[180px] h-11 border-gray-200 dark:border-gray-700">
+                    <SelectTrigger className="w-full sm:w-[180px] h-11 border-gray-200 dark:border-[#2d1b69]">
                         <SelectValue placeholder="Filter by status" />
                     </SelectTrigger>
                     <SelectContent>
@@ -397,17 +397,17 @@ export default function CreditAccountsPage() {
             <Dialog open={isAddPaymentOpen} onOpenChange={setIsAddPaymentOpen}>
                 <DialogContent className="max-w-md">
                     <DialogHeader>
-                        <DialogTitle className="text-xl font-bold text-gray-900 dark:text-gray-100">Record Payment</DialogTitle>
-                        <DialogDescription className="text-gray-500 dark:text-gray-400">
+                        <DialogTitle className="text-xl font-bold text-gray-900 dark:text-white">Record Payment</DialogTitle>
+                        <DialogDescription className="text-gray-500 dark:text-[#b4b4d0]">
                             Add a payment for {selectedAccount?.customer.name}
                         </DialogDescription>
                     </DialogHeader>
 
                     <div className="space-y-5 py-4">
                         {/* Balance Summary */}
-                        <div className="p-4 bg-gradient-to-br from-purple-50 to-white rounded-xl border border-purple-100">
+                        <div className="p-4 bg-gradient-to-br from-purple-50 to-white dark:from-purple-900/20 dark:to-[#13132a] rounded-xl border border-purple-100 dark:border-[#2d1b69]">
                             <div className="flex items-center justify-between mb-3">
-                                <span className="text-sm text-gray-600 dark:text-gray-400">Remaining Balance</span>
+                                <span className="text-sm text-gray-600 dark:text-[#b4b4d0]">Remaining Balance</span>
                                 <span className="text-2xl font-bold text-purple-600">
                                     ₱{selectedAccount?.remainingBalance.toLocaleString()}
                                 </span>
@@ -416,7 +416,7 @@ export default function CreditAccountsPage() {
                                 value={selectedAccount?.paidAmount || 0}
                                 max={selectedAccount?.totalAmount || 1}
                             />
-                            <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400 mt-2">
+                            <div className="flex justify-between text-xs text-gray-500 dark:text-[#b4b4d0] mt-2">
                                 <span>Paid: ₱{selectedAccount?.paidAmount.toLocaleString()}</span>
                                 <span>Total: ₱{selectedAccount?.totalAmount.toLocaleString()}</span>
                             </div>
@@ -425,11 +425,11 @@ export default function CreditAccountsPage() {
                         {/* Pending Items Preview */}
                         {selectedAccount && selectedAccount.items.filter(i => i.status !== 'paid').length > 0 && (
                             <div className="space-y-2">
-                                <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Unpaid Items</Label>
+                                <Label className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0]">Unpaid Items</Label>
                                 <div className="space-y-1 max-h-32 overflow-y-auto">
                                     {selectedAccount.items.filter(i => i.status !== 'paid').map(item => (
-                                        <div key={item.id} className="flex items-center justify-between text-xs p-2 bg-gray-50 rounded-lg">
-                                            <span className="text-gray-700 dark:text-gray-300 truncate flex-1">{item.name}</span>
+                                        <div key={item.id} className="flex items-center justify-between text-xs p-2 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
+                                            <span className="text-gray-700 dark:text-[#e0e0f0] truncate flex-1">{item.name}</span>
                                             <span className="text-orange-600 font-medium ml-2">
                                                 ₱{(item.total - (item.paidAmount || 0)).toLocaleString()}
                                             </span>
@@ -441,11 +441,11 @@ export default function CreditAccountsPage() {
 
                         {/* Payment Amount */}
                         <div className="space-y-2">
-                            <Label htmlFor="paymentAmount" className="text-sm font-medium text-gray-700 dark:text-gray-300">
+                            <Label htmlFor="paymentAmount" className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0]">
                                 Payment Amount (₱)
                             </Label>
                             <div className="relative">
-                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                                <DollarSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
                                 <Input
                                     id="paymentAmount"
                                     type="number"
@@ -454,19 +454,19 @@ export default function CreditAccountsPage() {
                                     step="0.01"
                                     value={paymentAmount}
                                     onChange={(e) => setPaymentAmount(e.target.value)}
-                                    className="pl-9 h-11 text-lg font-semibold border-gray-200 focus:border-purple-300 focus:ring-purple-200"
+                                    className="pl-9 h-11 text-lg font-semibold border-gray-200 dark:border-[#2d1b69] focus:border-purple-300 focus:ring-purple-200"
                                 />
                             </div>
-                            <p className="text-xs text-gray-500 dark:text-gray-400">
+                            <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">
                                 Enter the amount to apply to the remaining balance
                             </p>
                         </div>
 
                         {/* Payment Method */}
                         <div className="space-y-2">
-                            <Label className="text-sm font-medium text-gray-700 dark:text-gray-300">Payment Method</Label>
+                            <Label className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0]">Payment Method</Label>
                             <Select value={paymentMethod} onValueChange={setPaymentMethod}>
-                                <SelectTrigger className="h-11 border-gray-200 dark:border-gray-700">
+                                <SelectTrigger className="h-11 border-gray-200 dark:border-[#2d1b69]">
                                     <SelectValue placeholder="Select payment method" />
                                 </SelectTrigger>
                                 <SelectContent>
@@ -494,15 +494,15 @@ export default function CreditAccountsPage() {
 
                         {/* Notes */}
                         <div className="space-y-2">
-                            <Label htmlFor="paymentNotes" className="text-sm font-medium text-gray-700 dark:text-gray-300">
-                                Notes <span className="text-gray-400 font-normal">(Optional)</span>
+                            <Label htmlFor="paymentNotes" className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0]">
+                                Notes <span className="text-gray-400 dark:text-[#9898b8] font-normal">(Optional)</span>
                             </Label>
                             <Input
                                 id="paymentNotes"
                                 placeholder="Add any notes about this payment..."
                                 value={paymentNotes}
                                 onChange={(e) => setPaymentNotes(e.target.value)}
-                                className="h-11 border-gray-200 focus:border-purple-300 focus:ring-purple-200"
+                                className="h-11 border-gray-200 dark:border-[#2d1b69] focus:border-purple-300 focus:ring-purple-200"
                             />
                         </div>
                     </div>
@@ -511,7 +511,7 @@ export default function CreditAccountsPage() {
                         <Button
                             variant="outline"
                             onClick={() => setIsAddPaymentOpen(false)}
-                            className="border-gray-200 hover:bg-gray-50 dark:bg-gray-900"
+                            className="border-gray-200 hover:bg-gray-50 dark:bg-[#1a1a35]"
                         >
                             Cancel
                         </Button>

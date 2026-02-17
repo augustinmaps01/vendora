@@ -12,6 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox"
 import { productService, categoryService } from "@/services"
 import type { ApiProduct, ProductPayload, ApiCategory } from "@/services"
 import { tokenManager } from "@/lib/axios-client"
+import { db } from "@/lib/db"
+import { syncService } from "@/lib/sync-service"
 import {
   Dialog,
   DialogContent,
@@ -407,31 +409,50 @@ function DesktopInventoryLayout() {
   const loadProducts = async () => {
     setIsLoading(true)
     setLoadError(null)
+
+    // Load from IndexedDB cache first (instant)
     try {
-      console.log('📦 [Products Page] Fetching products from /api/products/my...')
-      // Fetch vendor's products with large per_page to get all
+      const cachedProducts = await db.products.toArray()
+      if (cachedProducts.length > 0) {
+        const normalized = cachedProducts
+          .filter(p => p.is_active)
+          .map(p => normalizeProduct({
+            id: p.id, name: p.name, sku: p.sku, barcode: p.barcode || '',
+            price: p.price, stock: p.stock, unit: p.unit,
+            category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
+            image_url: p.image_url, is_active: p.is_active
+          } as any))
+        setInventoryItems(normalized)
+        setIsLoading(false)
+      }
+    } catch {
+      // IndexedDB may not be available
+    }
+
+    // Fetch fresh data from API if online
+    try {
       const response = await productService.getMy({ per_page: 1000 })
-      console.log('📦 [Products Page] Raw API Response:', response)
       const items = extractDataArray(response)
-      console.log('📦 [Products Page] Extracted items:', items)
-      console.log('📦 [Products Page] Items count:', items.length)
       const normalized = items.map((item) => normalizeProduct(item))
-      console.log('📦 [Products Page] Normalized products:', normalized)
       setInventoryItems(normalized)
-    } catch (error) {
-      console.error('❌ [Products Page] Error loading products:', error)
+
+      // Cache to IndexedDB for offline use
+      syncService.cacheProducts(items).catch(() => {})
+    } catch (error: any) {
       const { message, isAuthError } = getErrorMessage(error)
       if (isAuthError) {
         setLoadError(message)
         router.push("/pos/auth/login")
         return
       }
-      if (message === "Network Error") {
-        console.log('📦 [Products Page] Using fallback inventory due to network error')
-        setInventoryItems(fallbackInventory)
-        setLoadError(null)
-      } else {
-        setLoadError(message)
+      // Only show error if we have no cached data
+      if (inventoryItems.length === 0) {
+        if (message === "Network Error" || error?.isOffline) {
+          setInventoryItems(fallbackInventory)
+          setLoadError(null)
+        } else {
+          setLoadError(message)
+        }
       }
     } finally {
       setIsLoading(false)
@@ -444,20 +465,32 @@ function DesktopInventoryLayout() {
    */
   const loadCategories = async () => {
     setIsCategoriesLoading(true)
+
+    // Load from IndexedDB cache first
+    try {
+      const cachedCategories = await db.categories.toArray()
+      if (cachedCategories.length > 0) {
+        setCategories(cachedCategories.map(c => ({ id: c.id, name: c.name, description: c.description })) as ApiCategory[])
+        setIsCategoriesLoading(false)
+      }
+    } catch {
+      // IndexedDB may not be available
+    }
+
     try {
       const response = await categoryService.getAll()
       const items = extractDataArray(response)
       setCategories(items)
-    } catch (error) {
+
+      // Cache to IndexedDB
+      syncService.cacheCategories(items).catch(() => {})
+    } catch (error: any) {
       const { message, isAuthError } = getErrorMessage(error)
       if (isAuthError) {
         router.push("/pos/auth/login")
         return
       }
-      if (message === "Network Error") {
-        setCategories(fallbackCategories)
-      } else {
-        console.error("Failed to load categories:", message)
+      if (categories.length === 0) {
         setCategories(fallbackCategories)
       }
     } finally {
@@ -826,7 +859,7 @@ function DesktopInventoryLayout() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-          <p className="text-gray-600 dark:text-gray-400">Checking authentication...</p>
+          <p className="text-gray-600 dark:text-[#b4b4d0]">Checking authentication...</p>
         </div>
       </div>
     )
@@ -838,7 +871,7 @@ function DesktopInventoryLayout() {
       <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
-          <p className="text-gray-600 dark:text-gray-400">Redirecting to login...</p>
+          <p className="text-gray-600 dark:text-[#b4b4d0]">Redirecting to login...</p>
         </div>
       </div>
     )
@@ -849,8 +882,8 @@ function DesktopInventoryLayout() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Product Management</h1>
-          <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">Track stock levels and manage products</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Product Management</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">Track stock levels and manage products</p>
         </div>
         <Button
           className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
@@ -868,7 +901,7 @@ function DesktopInventoryLayout() {
       )}
 
       {isLoading && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400 flex items-center gap-2">
+        <div className="rounded-lg border border-gray-200 dark:border-[#2d1b69] bg-gray-50 dark:bg-[#13132a] px-4 py-3 text-sm text-gray-600 dark:text-[#b4b4d0] flex items-center gap-2">
           <Loader2 className="h-4 w-4 animate-spin" />
           Loading inventory...
         </div>
@@ -882,37 +915,37 @@ function DesktopInventoryLayout() {
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 sm:grid-cols-2 md:grid-cols-3 gap-3 sm:gap-4 md:gap-6">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Items</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 sm:mt-1">{totalItems}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Total Items</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">{totalItems}</p>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-purple-100 text-purple-600 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-purple-100 dark:bg-purple-900/30 text-purple-600 flex items-center justify-center">
               <PackageOpen className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Low Stock</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Low Stock</p>
               <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{lowStockCount}</p>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-yellow-100 text-yellow-600 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-yellow-100 dark:bg-yellow-900/30 text-yellow-600 flex items-center justify-center">
               <TrendingDown className="h-5 w-5" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm col-span-2 sm:col-span-2 md:col-span-1">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm col-span-2 sm:col-span-2 md:col-span-1">
           <div className="flex items-start justify-between gap-3">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Out of Stock</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Out of Stock</p>
               <p className="text-xl sm:text-2xl font-bold text-red-600 mt-0.5 sm:mt-1">{outOfStockCount}</p>
             </div>
-            <div className="h-9 w-9 rounded-lg bg-red-100 text-red-600 flex items-center justify-center">
+            <div className="h-9 w-9 rounded-lg bg-red-100 dark:bg-red-900/30 text-red-600 flex items-center justify-center">
               <AlertTriangle className="h-5 w-5" />
             </div>
           </div>
@@ -921,7 +954,7 @@ function DesktopInventoryLayout() {
 
       {/* Search */}
       <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+        <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
         <Input
           placeholder="Search by name, SKU, barcode, or category..."
           value={searchQuery}
@@ -931,12 +964,12 @@ function DesktopInventoryLayout() {
       </div>
 
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-        <div className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">
           Showing{" "}
-          <span className="font-medium text-gray-900 dark:text-gray-100">
+          <span className="font-medium text-gray-900 dark:text-white">
             {sortedItems.length === 0 ? 0 : pageStart + 1}-{Math.min(pageEnd, sortedItems.length)}
           </span>{" "}
-          of <span className="font-medium text-gray-900 dark:text-gray-100">{sortedItems.length}</span> items
+          of <span className="font-medium text-gray-900 dark:text-white">{sortedItems.length}</span> items
         </div>
         <div className="flex flex-wrap items-center gap-2">
           <Select value={String(pageSize)} onValueChange={(value) => setPageSize(Number(value))}>
@@ -992,13 +1025,13 @@ function DesktopInventoryLayout() {
       </div>
 
       {/* Inventory Table - Desktop */}
-      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-200 dark:border-[#2d1b69]">
               <tr>
                 {visibleColumns.product && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("name")}
@@ -1008,13 +1041,13 @@ function DesktopInventoryLayout() {
                       {sortKey === "name" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.sku && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("sku")}
@@ -1024,13 +1057,13 @@ function DesktopInventoryLayout() {
                       {sortKey === "sku" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.category && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("category")}
@@ -1040,13 +1073,13 @@ function DesktopInventoryLayout() {
                       {sortKey === "category" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.price && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("price")}
@@ -1056,13 +1089,13 @@ function DesktopInventoryLayout() {
                       {sortKey === "price" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.stock && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("stock")}
@@ -1072,13 +1105,13 @@ function DesktopInventoryLayout() {
                       {sortKey === "stock" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.status && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     <button
                       type="button"
                       onClick={() => handleSort("status")}
@@ -1088,19 +1121,19 @@ function DesktopInventoryLayout() {
                       {sortKey === "status" ? (
                         sortDirection === "asc" ? <ArrowUp className="h-3 w-3" /> : <ArrowDown className="h-3 w-3" />
                       ) : (
-                        <ArrowUpDown className="h-3 w-3 text-gray-400" />
+                        <ArrowUpDown className="h-3 w-3 text-gray-400 dark:text-[#9898b8]" />
                       )}
                     </button>
                   </th>
                 )}
                 {visibleColumns.actions && (
-                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                  <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                     Actions
                   </th>
                 )}
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white dark:bg-[#13132a] divide-y divide-gray-200 dark:divide-[#2d1b69]">
               {paginatedItems.map((item) => {
                 const status =
                   item.stock <= 0
@@ -1109,12 +1142,12 @@ function DesktopInventoryLayout() {
                       ? "low"
                       : "ok"
                 return (
-                  <tr key={item.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                  <tr key={item.id} className="hover:bg-gray-50 dark:hover:bg-[#1a1a35]">
                     {visibleColumns.product && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
                           {item.image && (
-                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0">
                               <NextImage
                                 src={item.image}
                                 alt={item.name}
@@ -1125,42 +1158,42 @@ function DesktopInventoryLayout() {
                               />
                             </div>
                           )}
-                          <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</div>
+                          <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
                         </div>
                       </td>
                     )}
                     {visibleColumns.sku && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{item.sku}</div>
+                        <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{item.sku}</div>
                       </td>
                     )}
                     {visibleColumns.category && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{item.category?.name || "—"}</div>
+                        <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{item.category?.name || "—"}</div>
                       </td>
                     )}
                     {visibleColumns.price && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">
                           {item.currency} {item.price.toLocaleString()}
                         </div>
                       </td>
                     )}
                     {visibleColumns.stock && (
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="text-sm font-bold text-gray-900 dark:text-gray-100">{item.stock} {item.unit}</div>
+                        <div className="text-sm font-bold text-gray-900 dark:text-white">{item.stock} {item.unit}</div>
                       </td>
                     )}
                     {visibleColumns.status && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         {status === "ok" && (
-                          <Badge className="bg-green-100 text-green-800 hover:bg-green-100">In Stock</Badge>
+                          <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100">In Stock</Badge>
                         )}
                         {status === "low" && (
-                          <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Low Stock</Badge>
+                          <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-100">Low Stock</Badge>
                         )}
                         {status === "critical" && (
-                          <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Out of Stock</Badge>
+                          <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-100">Out of Stock</Badge>
                         )}
                       </td>
                     )}
@@ -1173,7 +1206,7 @@ function DesktopInventoryLayout() {
                           <Button
                             variant="outline"
                             size="sm"
-                            className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                            className="text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
                             onClick={() => handleDeleteProduct(item)}
                             disabled={isDeleting}
                           >
@@ -1187,7 +1220,7 @@ function DesktopInventoryLayout() {
               })}
               {!isLoading && sortedItems.length === 0 && (
                 <tr>
-                  <td colSpan={visibleColumnCount} className="px-6 py-8 text-center text-gray-500 dark:text-gray-400">
+                  <td colSpan={visibleColumnCount} className="px-6 py-8 text-center text-gray-500 dark:text-[#b4b4d0]">
                     {searchQuery ? "No products match your search." : "No products found. Add your first product."}
                   </td>
                 </tr>
@@ -1195,10 +1228,10 @@ function DesktopInventoryLayout() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between border-t border-gray-200 px-4 py-3">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            Page <span className="font-medium text-gray-900 dark:text-gray-100">{safePage}</span> of{" "}
-            <span className="font-medium text-gray-900 dark:text-gray-100">{totalPages}</span>
+        <div className="flex items-center justify-between border-t border-gray-200 dark:border-[#2d1b69] px-4 py-3">
+          <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">
+            Page <span className="font-medium text-gray-900 dark:text-white">{safePage}</span> of{" "}
+            <span className="font-medium text-gray-900 dark:text-white">{totalPages}</span>
           </div>
           <div className="flex items-center gap-1">
             <Button
@@ -1257,11 +1290,11 @@ function DesktopInventoryLayout() {
                 ? "low"
                 : "ok"
           return (
-            <div key={item.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+            <div key={item.id} className="bg-white dark:bg-[#13132a] p-4 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3 flex-1">
                   {item.image && (
-                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-gray-700 flex-shrink-0">
+                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0">
                       <NextImage
                         src={item.image}
                         alt={item.name}
@@ -1273,39 +1306,39 @@ function DesktopInventoryLayout() {
                     </div>
                   )}
                   <div>
-                    <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">{item.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">SKU: {item.sku}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{item.category?.name || "Uncategorized"}</p>
+                    <h3 className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</h3>
+                    <p className="text-xs text-gray-500 dark:text-[#b4b4d0] mt-0.5">SKU: {item.sku}</p>
+                    <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">{item.category?.name || "Uncategorized"}</p>
                   </div>
                 </div>
                 <div>
                   {status === "ok" && (
-                    <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs">In Stock</Badge>
+                    <Badge className="bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-400 hover:bg-green-100 text-xs">In Stock</Badge>
                   )}
                   {status === "low" && (
-                    <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 text-xs">Low Stock</Badge>
+                    <Badge className="bg-yellow-100 dark:bg-yellow-900/30 text-yellow-800 dark:text-yellow-400 hover:bg-yellow-100 text-xs">Low Stock</Badge>
                   )}
                   {status === "critical" && (
-                    <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">Out of Stock</Badge>
+                    <Badge className="bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-400 hover:bg-red-100 text-xs">Out of Stock</Badge>
                   )}
                 </div>
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Price</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.currency} {item.price.toLocaleString()}</p>
+                <div className="bg-gray-50 dark:bg-[#13132a] p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-[#b4b4d0] mb-1">Price</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{item.currency} {item.price.toLocaleString()}</p>
                 </div>
 
-                <div className="bg-gray-50 dark:bg-gray-700 p-3 rounded-lg">
-                  <p className="text-xs text-gray-500 dark:text-gray-400 mb-1">Stock</p>
-                  <p className="text-lg font-bold text-gray-900 dark:text-gray-100">{item.stock}</p>
-                  <p className="text-xs text-gray-500 dark:text-gray-400">{item.unit}</p>
+                <div className="bg-gray-50 dark:bg-[#13132a] p-3 rounded-lg">
+                  <p className="text-xs text-gray-500 dark:text-[#b4b4d0] mb-1">Stock</p>
+                  <p className="text-lg font-bold text-gray-900 dark:text-white">{item.stock}</p>
+                  <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">{item.unit}</p>
                 </div>
               </div>
 
               {(status === "low" || status === "critical") && (
-                <div className={`mt-3 p-2 rounded-lg flex items-center gap-2 ${status === "critical" ? "bg-red-50" : "bg-yellow-50 dark:bg-yellow-900/20"
+                <div className={`mt-3 p-2 rounded-lg flex items-center gap-2 ${status === "critical" ? "bg-red-50 dark:bg-red-900/20" : "bg-yellow-50 dark:bg-yellow-900/20"
                   }`}>
                   <AlertTriangle className={`h-4 w-4 flex-shrink-0 ${status === "critical" ? "text-red-600" : "text-yellow-600"
                     }`} />
@@ -1326,7 +1359,7 @@ function DesktopInventoryLayout() {
                 <Button
                   variant="outline"
                   size="sm"
-                  className="flex-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+                  className="flex-1 text-red-600 dark:text-red-400 hover:text-red-700 dark:hover:text-red-300 hover:bg-red-50 dark:hover:bg-red-950/30"
                   onClick={() => handleDeleteProduct(item)}
                   disabled={isDeleting}
                 >
@@ -1337,7 +1370,7 @@ function DesktopInventoryLayout() {
           )
         })}
         {!isLoading && sortedItems.length === 0 && (
-          <div className="bg-white dark:bg-gray-800 p-8 rounded-lg border border-gray-200 text-center text-gray-500 dark:text-gray-400">
+          <div className="bg-white dark:bg-[#13132a] p-8 rounded-lg border border-gray-200 text-center text-gray-500 dark:text-[#b4b4d0]">
             {searchQuery ? "No products match your search." : "No products found. Add your first product."}
           </div>
         )}
@@ -1352,9 +1385,9 @@ function DesktopInventoryLayout() {
         >
           Prev
         </Button>
-        <div className="text-sm text-gray-600 dark:text-gray-400">
-          Page <span className="font-medium text-gray-900 dark:text-gray-100">{safePage}</span> of{" "}
-          <span className="font-medium text-gray-900 dark:text-gray-100">{totalPages}</span>
+        <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">
+          Page <span className="font-medium text-gray-900 dark:text-white">{safePage}</span> of{" "}
+          <span className="font-medium text-gray-900 dark:text-white">{totalPages}</span>
         </div>
         <Button
           variant="outline"

@@ -40,17 +40,17 @@ export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
           <Clock className="w-5 h-5 text-blue-500" />
           Pending Orders
         </CardTitle>
-        <p className="text-sm text-gray-500 dark:text-gray-400">
+        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">
           {isLoading ? "Loading orders..." : `${orders.length} orders in queue`}
         </p>
       </CardHeader>
       <CardContent className={contentClass}>
         {isLoading ? (
           <div className="flex justify-center py-8">
-            <RefreshCw className="w-6 h-6 animate-spin text-gray-400" />
+            <RefreshCw className="w-6 h-6 animate-spin text-gray-400 dark:text-[#9898b8]" />
           </div>
         ) : orders.length === 0 ? (
-          <div className="text-center py-8 text-gray-500 dark:text-gray-400 text-sm">
+          <div className="text-center py-8 text-gray-500 dark:text-[#b4b4d0] text-sm">
             No pending orders. All caught up!
           </div>
         ) : (
@@ -58,22 +58,22 @@ export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
             {orders.map((order) => (
               <div
                 key={order.id}
-                className="flex items-center justify-between p-3 border border-blue-100 bg-blue-50/30 rounded-lg"
+                className="flex items-center justify-between p-3 border border-blue-100 dark:border-blue-800/40 bg-blue-50/30 dark:bg-blue-950/20 rounded-lg"
               >
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-                    <ShoppingBag className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 rounded-full bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center">
+                    <ShoppingBag className="w-5 h-5 text-blue-600 dark:text-blue-400" />
                   </div>
                   <div>
-                    <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm">{order.order_number}</p>
-                    <p className="text-xs text-gray-600 dark:text-gray-400">{order.customer}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">
+                    <p className="font-semibold text-gray-900 dark:text-white text-sm">{order.order_number}</p>
+                    <p className="text-xs text-gray-600 dark:text-[#e0e0f0]">{order.customer}</p>
+                    <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">
                       {order.items_count} items • {order.ordered_at}
                     </p>
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-gray-900 dark:text-gray-100 text-sm mb-1">
+                  <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
                     ₱ {order.total.toLocaleString()}
                   </p>
                   <Button size="sm" variant="default" className="text-xs bg-blue-600 hover:bg-blue-700">

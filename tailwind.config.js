@@ -8,6 +8,11 @@ module.exports = {
   ],
   theme: {
     extend: {
+      fontFamily: {
+        sans: ['var(--font-inter)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-poppins)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
+        mono: ['var(--font-mono)', 'var(--font-geist-mono)', 'Courier New', 'monospace'],
+      },
       colors: {
         border: 'oklch(var(--border) / <alpha-value>)',
         input: 'oklch(var(--input) / <alpha-value>)',

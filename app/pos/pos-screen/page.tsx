@@ -45,16 +45,18 @@ import {
 } from "@/services";
 import { tokenManager } from "@/lib/axios-client";
 import Swal from "sweetalert2";
+import { db, LocalProduct } from "@/lib/db";
+import { syncService } from "@/lib/sync-service";
 
 // Lazy load heavy components
 const DesktopPOSLayout = lazy(() => import("@/components/screens/pos-screen/DesktopPOSLayout"));
 
 const THEME = {
   bg: "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]",
-  card: "bg-white/5 border border-white/10 backdrop-blur",
-  panel: "bg-white/5 border border-white/10",
-  muted: "text-white/60",
-  text: "text-white",
+  card: "bg-white/5 border border-gray-200 dark:border-white/10 backdrop-blur",
+  panel: "bg-white/5 border border-gray-200 dark:border-white/10",
+  muted: "text-gray-500 dark:text-white/60",
+  text: "text-gray-900 dark:text-white",
 };
 
 type TotalsInput = {
@@ -128,10 +130,10 @@ const LoadingSkeleton = () => (
     <div className="text-center">
       <div className="relative">
         <div className="h-16 w-16 rounded-full border-4 border-purple-500/30 border-t-purple-500 animate-spin mx-auto" />
-        <Receipt className="h-6 w-6 text-purple-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
+        <Receipt className="h-6 w-6 text-purple-500 dark:text-purple-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
       </div>
-      <p className="text-white text-lg mt-4 font-medium">Loading POS...</p>
-      <p className="text-white/50 text-sm mt-1">Preparing your workspace</p>
+      <p className="text-gray-900 dark:text-white text-lg mt-4 font-medium">Loading POS...</p>
+      <p className="text-gray-500 dark:text-white/50 text-sm mt-1">Preparing your workspace</p>
     </div>
   </div>
 );
@@ -201,63 +203,141 @@ export default function VendoraPOS() {
     setSaleId(`SALE-${base}`);
   }, []);
 
-  // Check auth and load data
+  // Check auth and load data (offline init moved to POS layout)
   useEffect(() => {
     const token = tokenManager.getAccessToken();
     if (!token) {
       router.push("/pos/auth/login");
       return;
     }
+
     loadInitialData();
   }, []);
 
-  // Optimized parallel data loading
+  // Local-first data loading: Load from IndexedDB first, then sync with API
   const loadInitialData = useCallback(async () => {
     setIsLoading(true);
     setError(null);
 
+    let localProductsCount = 0;
+
     try {
-      // Load all data in PARALLEL for faster loading
-      const [categoriesResult, storesResult, productsResult, customersResult] = await Promise.allSettled([
-        categoryService.getAll(),
-        storeService.getAll(),
-        productService.getMy({ per_page: 500 }), // Reduced from 1000
-        customerService.getAll({ per_page: 20 }), // Reduced from 50
+      // STEP 1: Load from IndexedDB FIRST (instant, works offline)
+      console.log('📦 Loading cached data from IndexedDB...');
+      const [localProducts, localCategories, localCustomers, localStores] = await Promise.all([
+        db.products.toArray().then(items => items.filter(p => p.is_active === true)),
+        db.categories.toArray(),
+        db.customers.toArray().then(items => items.filter(c => c.status === 'active')),
+        db.stores.toArray().then(items => items.filter(s => s.is_active === true))
       ]);
 
-      // Process categories
-      if (categoriesResult.status === "fulfilled") {
-        const categoriesList = extractDataArray(categoriesResult.value);
-        setCategories(categoriesList);
+      localProductsCount = localProducts.length;
+
+      // Set local data immediately (fast UI)
+      if (localProducts.length > 0) {
+        const apiProducts = localProducts.map(p => ({
+          id: p.id,
+          name: p.name,
+          sku: p.sku,
+          barcode: p.barcode || '',
+          price: p.price,
+          stock: p.stock,
+          unit: p.unit,
+          category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
+          image_url: p.image_url,
+          is_active: p.is_active
+        })) as ApiProduct[];
+        setApiProducts(apiProducts);
+        console.log(`✅ Loaded ${localProducts.length} products from cache`);
       }
 
-      // Process stores
-      let activeStores: ApiStore[] = [];
-      if (storesResult.status === "fulfilled") {
-        const storesList = extractDataArray(storesResult.value);
-        activeStores = storesList.filter((s: ApiStore) => s.is_active);
-        setStores(activeStores);
+      if (localCategories.length > 0) {
+        const apiCategories = localCategories.map(c => ({
+          id: c.id,
+          name: c.name,
+          description: c.description
+        })) as ApiCategory[];
+        setCategories(apiCategories);
+        console.log(`✅ Loaded ${localCategories.length} categories from cache`);
       }
 
-      // Process products
-      if (productsResult.status === "fulfilled") {
-        const products = extractDataArray(productsResult.value);
-        setApiProducts(products);
+      if (localCustomers.length > 0) {
+        const apiCustomers = localCustomers.map(c => ({
+          id: c.id,
+          name: c.name,
+          email: c.email,
+          phone: c.phone,
+          status: c.status
+        })) as ApiCustomer[];
+        setCustomers(apiCustomers);
+        console.log(`✅ Loaded ${localCustomers.length} customers from cache`);
       }
 
-      // Process customers
-      if (customersResult.status === "fulfilled") {
-        const customersList = extractDataArray(customersResult.value);
-        setCustomers(customersList);
+      if (localStores.length > 0) {
+        const apiStores = localStores.map(s => ({
+          id: s.id,
+          name: s.name,
+          is_active: s.is_active
+        })) as ApiStore[];
+        setStores(apiStores);
+        console.log(`✅ Loaded ${localStores.length} stores from cache`);
+      }
+
+      // Show UI immediately with cached data
+      setIsLoading(false);
+
+      // STEP 2: Sync with API in background (if online)
+      if (syncService.getOnlineStatus()) {
+        console.log('🔄 Syncing with API in background...');
+
+        const [categoriesResult, storesResult, productsResult, customersResult] = await Promise.allSettled([
+          categoryService.getAll(),
+          storeService.getAll(),
+          productService.getMy({ per_page: 1000 }),
+          customerService.getAll({ per_page: 100 })
+        ]);
+
+        // Process and cache API data
+        if (categoriesResult.status === "fulfilled") {
+          const categoriesList = extractDataArray(categoriesResult.value);
+          setCategories(categoriesList);
+          await syncService.cacheCategories(categoriesList);
+        }
+
+        if (storesResult.status === "fulfilled") {
+          const storesList = extractDataArray(storesResult.value);
+          const activeStores = storesList.filter((s: ApiStore) => s.is_active);
+          setStores(activeStores);
+          await syncService.cacheStores(storesList);
+        }
+
+        if (productsResult.status === "fulfilled") {
+          const products = extractDataArray(productsResult.value);
+          setApiProducts(products);
+          await syncService.cacheProducts(products);
+        }
+
+        if (customersResult.status === "fulfilled") {
+          const customersList = extractDataArray(customersResult.value);
+          setCustomers(customersList);
+          await syncService.cacheCustomers(customersList);
+        }
+
+        console.log('✅ Background sync complete');
+      } else {
+        console.log('📴 Offline - using cached data only');
       }
 
     } catch (err: any) {
-      setError(err?.message || "Failed to load data");
+      // Don't show error if we have cached data
+      if (localProductsCount === 0) {
+        setError(err?.message || "Failed to load data. Please check your connection.");
+        setIsLoading(false);
+      }
+
       if (err?.status === 401 || err?.status === 403) {
         router.push("/pos/auth/login");
       }
-    } finally {
-      setIsLoading(false);
     }
   }, [router]);
 
@@ -322,13 +402,37 @@ export default function VendoraPOS() {
 
     setIsProcessing(true);
     try {
+      // Search in IndexedDB first (instant, works offline)
+      let localProduct = await db.products
+        .where('barcode')
+        .equals(code)
+        .or('sku')
+        .equals(code)
+        .first();
+
       let product: ApiProduct | null = null;
-      try {
-        product = await productService.getByBarcode(code);
-      } catch {
+
+      if (localProduct) {
+        // Found in local cache
+        product = {
+          id: localProduct.id,
+          name: localProduct.name,
+          sku: localProduct.sku,
+          barcode: localProduct.barcode || '',
+          price: localProduct.price,
+          stock: localProduct.stock,
+          unit: localProduct.unit,
+          is_active: localProduct.is_active
+        } as ApiProduct;
+      } else if (syncService.getOnlineStatus()) {
+        // Not in cache and online - try API
         try {
-          product = await productService.getBySku(code);
-        } catch { /* Not found */ }
+          product = await productService.getByBarcode(code);
+        } catch {
+          try {
+            product = await productService.getBySku(code);
+          } catch { /* Not found */ }
+        }
       }
 
       if (product) {
@@ -407,97 +511,78 @@ export default function VendoraPOS() {
   const canGoCheckout = useMemo(() => cart.length > 0 && totals.total > 0, [cart.length, totals.total]);
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
-  // Complete order
+  // Complete order (Local-first: Save to IndexedDB, then sync)
   const completeOrder = useCallback(async () => {
     if (!canComplete) return;
     setIsProcessing(true);
 
     try {
-      // Create customer if walk-in
+      // Determine customer ID
       let customerId = selectedCustomerId;
-      if (customer === "walkin" && !customerId) {
-        const newCustomer = await customerService.create({ name: "Walk-in Customer", status: "active" });
-        customerId = newCustomer.id;
+      let customerName = "Walk-in Customer";
+
+      if (customer === "walkin") {
+        // Use first customer as default walk-in, or create if online
+        if (customers.length > 0) {
+          customerId = customers[0].id;
+          customerName = customers[0].name;
+        } else if (syncService.getOnlineStatus()) {
+          const newCustomer = await customerService.create({ name: "Walk-in Customer", status: "active" });
+          customerId = newCustomer.id;
+          customerName = newCustomer.name;
+        } else {
+          // Offline: use placeholder ID (will be resolved during sync)
+          customerId = 1;
+          customerName = "Walk-in Customer";
+        }
       } else if (customer === "saved1" && customers[0]) {
         customerId = customers[0].id;
+        customerName = customers[0].name;
       } else if (customer === "saved2" && customers[1]) {
         customerId = customers[1].id;
+        customerName = customers[1].name;
       }
 
       if (!customerId) throw new Error("Customer selection required");
 
-      // Create order - API uses snake_case format
-      const orderPayload = {
-        customer_id: Number(customerId),
+      // Save transaction locally FIRST (offline-first approach)
+      const paymentMethods = splitPay
+        ? [
+          cashPay > 0 && { method: 'cash' as const, amount: cashPay },
+          cardPay > 0 && { method: 'card' as const, amount: cardPay },
+          onlinePay > 0 && { method: 'online' as const, amount: onlinePay }
+        ].filter(Boolean) as Array<{ method: 'cash' | 'card' | 'online'; amount: number }>
+        : undefined;
+
+      const transactionUuid = await syncService.saveTransactionLocally({
+        customer_id: customerId,
+        customer_name: customerName,
         ordered_at: new Date().toISOString().split('T')[0],
-        status: "pending",
-        store_id: selectedStore || undefined,  // Add store_id if selected
-        total: Math.round(totals.total),  // Add total amount
+        status: 'completed',
         items: cart.map(item => ({
           product_id: Number(item.id),
+          product_name: item.name,
           quantity: item.qty,
-          price: Math.round(item.price)  // Add price per item
+          price: item.price
         })),
-      };
-      console.log("Creating order with payload:", JSON.stringify(orderPayload, null, 2));
+        subtotal: totals.subtotal,
+        discount: totals.discount,
+        tax: totals.tax,
+        delivery_fee: totals.deliveryFee,
+        total: totals.total,
+        payment_method: primaryMethod,
+        payment_methods: paymentMethods,
+        amount_tendered: paid,
+        change: change,
+        store_id: selectedStore || undefined,
+        notes: notes || undefined
+      });
 
-      let order;
-      try {
-        order = await orderService.create(orderPayload as unknown as import("@/types").Order);
-        console.log("Order created successfully:", order);
-      } catch (orderErr: any) {
-        // Enhanced error logging for debugging
-        console.error("=== ORDER CREATION ERROR - FULL DETAILS ===");
-        console.error("Status:", orderErr?.response?.status);
-        console.error("Status Text:", orderErr?.response?.statusText);
-        console.error("Response Data:", JSON.stringify(orderErr?.response?.data, null, 2));
-        console.error("Response Headers:", orderErr?.response?.headers);
-        console.error("Request URL:", orderErr?.config?.url);
-        console.error("Request Method:", orderErr?.config?.method);
-        console.error("Request Payload:", JSON.stringify(orderPayload, null, 2));
-        console.error("Error Message:", orderErr?.message);
-        console.error("Cart Data:", JSON.stringify(cart, null, 2));
-        console.error("Customer ID:", customerId, typeof customerId);
-        console.error("==========================================");
-        throw orderErr;
-      }
+      console.log(`✅ Transaction saved locally: ${transactionUuid}`);
 
-      // Create payment(s) - paid_at needs datetime format "YYYY-MM-DD HH:mm"
-      const paymentTime = new Date();
-      const paidAt = `${paymentTime.toISOString().split('T')[0]} ${paymentTime.toTimeString().slice(0, 5)}`;
-      console.log("Creating payment with paid_at:", paidAt);
-
-      try {
-        if (splitPay) {
-          const payments = [];
-          if (cashPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(cashPay), method: "cash", status: "completed", paid_at: paidAt }));
-          if (cardPay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(cardPay), method: "card", status: "completed", paid_at: paidAt }));
-          if (onlinePay > 0) payments.push(paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(onlinePay), method: "online", status: "completed", paid_at: paidAt }));
-          await Promise.all(payments);
-        } else {
-          await paymentService.create({ order_id: order.id as unknown as number, amount: Math.round(paid), method: primaryMethod, status: "completed", paid_at: paidAt });
-        }
-        console.log("Payment(s) created successfully");
-      } catch (paymentErr: any) {
-        console.error("Payment creation failed:", {
-          status: paymentErr?.response?.status,
-          data: paymentErr?.response?.data,
-          message: paymentErr?.message,
-        });
-        throw paymentErr;
-      }
-
-      // Update inventory (non-blocking)
-      productService.bulkStockDecrement({
-        items: cart.map(item => ({ productId: Number(item.id), quantity: item.qty, variantSku: null })),
-        orderId: `ORD-${order.id}`,
-      }).catch(() => { /* Silent fail */ });
-
-      // Generate transaction number: TXN-YYYYMMDD-XXXX
+      // Use UUID as transaction number
+      const txnNumber = transactionUuid.substring(0, 8).toUpperCase();
       const now = new Date();
-      const dateStr = now.toISOString().slice(0, 10).replace(/-/g, "");
-      const rand = Math.random().toString(36).substring(2, 6).toUpperCase();
-      const txnNumber = `TXN-${dateStr}-${rand}`;
 
       // Build discount label
       let discountLabel = "Discount";
@@ -520,7 +605,7 @@ export default function VendoraPOS() {
         paymentMethodLabel = primaryMethod.charAt(0).toUpperCase() + primaryMethod.slice(1);
       }
 
-      const customerName = customer === "walkin"
+      customerName = customer === "walkin"
         ? "Walk-in Customer"
         : customers.find(c => c.id === customerId)?.name || "Customer";
 
@@ -655,7 +740,7 @@ export default function VendoraPOS() {
       <div className={`min-h-screen ${THEME.bg} flex items-center justify-center`}>
         <div className="text-center max-w-md">
           <p className="text-red-400 text-lg mb-4">{error}</p>
-          <Button onClick={loadInitialData} className="rounded-xl bg-purple-600 hover:bg-purple-700">
+          <Button onClick={loadInitialData} className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600">
             Retry
           </Button>
         </div>
@@ -665,21 +750,21 @@ export default function VendoraPOS() {
 
   return (
     <div className={`min-h-screen ${THEME.bg} overflow-auto lg:overflow-hidden`}>
-      <header className="border-b border-white/10 bg-[#1f1633]/70 backdrop-blur py-3 lg:h-[84px] lg:py-0">
+      <header className="border-b border-gray-200 dark:border-white/10 bg-white/90 dark:bg-[#1f1633]/70 backdrop-blur py-3 lg:h-[84px] lg:py-0">
         <div className="px-4 sm:px-6 flex flex-col gap-3 lg:h-full lg:flex-row lg:items-center lg:justify-between">
           <div className="flex items-center gap-3 min-w-0 w-full lg:w-auto">
-            <div className="h-10 w-10 rounded-2xl bg-purple-500/15 flex items-center justify-center shrink-0">
-              <Receipt className="h-5 w-5 text-purple-200" />
+            <div className="h-10 w-10 rounded-2xl bg-purple-100 dark:bg-purple-500/15 flex items-center justify-center shrink-0">
+              <Receipt className="h-5 w-5 text-purple-600 dark:text-purple-200" />
             </div>
             <div className="leading-tight min-w-0">
-              <div className="font-semibold text-white truncate">Vendora POS</div>
+              <div className="font-semibold text-gray-900 dark:text-white truncate">Vendora POS</div>
               <div className={`text-xs ${THEME.muted} truncate`}>{screen === "sale" ? "Sale" : screen === "checkout" ? "Checkout" : "Receipt"} - Txn {saleId ?? "—"}</div>
             </div>
             <div className="hidden lg:flex gap-2 ml-2">
               <Pill>Cashier</Pill>
               {stores.length > 0 && (
                 <Select value={selectedStore ? String(selectedStore) : "all"} onValueChange={(v) => setSelectedStore(v === "all" ? null : Number(v))}>
-                  <SelectTrigger className="h-7 w-auto rounded-full bg-white/10 border-white/10 text-white text-xs px-3" suppressHydrationWarning>
+                  <SelectTrigger className="h-7 w-auto rounded-full bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white text-xs px-3" suppressHydrationWarning>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
@@ -694,10 +779,13 @@ export default function VendoraPOS() {
             </div>
           </div>
 
+          {/* Network status indicators now in POS layout header */}
+          <div className="flex items-center justify-center gap-3 lg:flex-1" />
+
           <div className="flex w-full flex-wrap items-center gap-2 lg:w-auto lg:justify-end">
             <Button
               variant="secondary"
-              className="rounded-xl bg-white/10 hover:bg-white/20 text-white"
+              className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white"
               onClick={async () => {
                 setOrderHistoryOpen(true);
                 try {
@@ -711,28 +799,28 @@ export default function VendoraPOS() {
             </Button>
 
             {screen !== "sale" && (
-              <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setScreen(screen === "receipt" ? "sale" : "sale")}>
+              <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => setScreen(screen === "receipt" ? "sale" : "sale")}>
                 <ArrowLeft className="h-4 w-4 mr-2" />
                 Back
               </Button>
             )}
 
-            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setReceiptOpen(true)}>
+            <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => setReceiptOpen(true)}>
               <FileText className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Receipt</span>
             </Button>
 
-            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setHoldOpen(true)} disabled={cart.length === 0}>
+            <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => setHoldOpen(true)} disabled={cart.length === 0}>
               <PauseCircle className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Hold</span>
             </Button>
 
-            <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => setSettingsOpen(true)}>
+            <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => setSettingsOpen(true)}>
               <Settings className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Settings</span>
             </Button>
 
-            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={clearCart}>
+            <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={clearCart}>
               <Trash2 className="h-4 w-4 lg:mr-2" />
               <span className="hidden lg:inline">Clear</span>
             </Button>
@@ -762,8 +850,8 @@ export default function VendoraPOS() {
       {isProcessing && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
           <div className="bg-[#201836] rounded-2xl p-6 text-center">
-            <Loader2 className="h-12 w-12 text-purple-400 animate-spin mx-auto mb-4" />
-            <p className="text-white text-lg">Processing...</p>
+            <Loader2 className="h-12 w-12 text-purple-500 dark:text-purple-400 animate-spin mx-auto mb-4" />
+            <p className="text-gray-900 dark:text-white text-lg">Processing...</p>
           </div>
         </div>
       )}
@@ -782,19 +870,19 @@ import { Switch } from "@/components/ui/switch";
 function InlineHoldDialog({ open, onOpenChange, cart }: { open: boolean; onOpenChange: (v: boolean) => void; cart: CartItem[] }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white">
+      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white">
         <DialogHeader>
           <DialogTitle>Hold this sale</DialogTitle>
-          <DialogDescription className="text-white/60">Save the cart temporarily and resume later.</DialogDescription>
+          <DialogDescription className="text-gray-500 dark:text-white/60">Save the cart temporarily and resume later.</DialogDescription>
         </DialogHeader>
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
+        <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
           <div className="text-sm">Hold reference</div>
-          <Input className="rounded-xl bg-white/10 border-white/10 text-white" placeholder="Example Counter 1" />
-          <div className="text-xs text-white/60">Feature coming soon.</div>
+          <Input className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" placeholder="Example Counter 1" />
+          <div className="text-xs text-gray-500 dark:text-white/60">Feature coming soon.</div>
         </div>
         <DialogFooter>
-          <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => onOpenChange(false)}>Cancel</Button>
-          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => { onOpenChange(false); alert("Hold sale feature coming soon."); }} disabled={cart.length === 0}>Hold Sale</Button>
+          <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Cancel</Button>
+          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={() => { onOpenChange(false); alert("Hold sale feature coming soon."); }} disabled={cart.length === 0}>Hold Sale</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -804,32 +892,32 @@ function InlineHoldDialog({ open, onOpenChange, cart }: { open: boolean; onOpenC
 function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, receiptData }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-2xl">
+      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>Receipt Preview</DialogTitle>
-          <DialogDescription className="text-white/60">{receiptData ? "Order completed successfully" : "Preview receipt before checkout"}</DialogDescription>
+          <DialogDescription className="text-gray-500 dark:text-white/60">{receiptData ? "Order completed successfully" : "Preview receipt before checkout"}</DialogDescription>
         </DialogHeader>
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-4 space-y-3">
+        <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-4 space-y-3">
           <div className="flex items-start justify-between">
             <div>
               <div className="font-semibold">Vendora Retail</div>
-              <div className="text-xs text-white/60">{receiptData ? `Order ${receiptData.orderNumber}` : `Transaction ${saleId ?? "—"}`}</div>
+              <div className="text-xs text-gray-500 dark:text-white/60">{receiptData ? `Order ${receiptData.orderNumber}` : `Transaction ${saleId ?? "—"}`}</div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-white/60">Cashier</div>
+              <div className="text-xs text-gray-500 dark:text-white/60">Cashier</div>
               <div className="text-sm">Staff</div>
             </div>
           </div>
           <div className="h-px bg-white/10" />
           <div className="space-y-2">
             {cart.length === 0 ? (
-              <div className="text-sm text-white/60">No items</div>
+              <div className="text-sm text-gray-500 dark:text-white/60">No items</div>
             ) : (
               cart.map((x: CartItem) => (
                 <div key={x.id} className="flex items-center justify-between text-sm">
                   <div className="min-w-0">
                     <div className="truncate">{x.name}</div>
-                    <div className="text-xs text-white/60">{x.qty} {x.unit} × ₱ {x.price.toLocaleString()}</div>
+                    <div className="text-xs text-gray-500 dark:text-white/60">{x.qty} {x.unit} × ₱ {x.price.toLocaleString()}</div>
                   </div>
                   <div className="font-medium">₱ {(x.qty * x.price).toLocaleString()}</div>
                 </div>
@@ -838,25 +926,25 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
           </div>
           <div className="h-px bg-white/10" />
           <div className="space-y-1 text-sm">
-            <div className="flex items-center justify-between"><span className="text-white/60">Subtotal</span><span>₱ {totals.subtotal.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-white/60">Discount</span><span>₱ {totals.discount.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-white/60">Tax</span><span>₱ {totals.tax.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-white/60">Delivery</span><span>₱ {totals.deliveryFee.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Subtotal</span><span>₱ {totals.subtotal.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Discount</span><span>₱ {totals.discount.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Tax</span><span>₱ {totals.tax.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Delivery</span><span>₱ {totals.deliveryFee.toLocaleString()}</span></div>
             <div className="h-px bg-white/10" />
             <div className="flex items-center justify-between font-semibold"><span>Total</span><span>₱ {totals.total.toLocaleString()}</span></div>
             {receiptData && (
               <>
-                <div className="flex items-center justify-between"><span className="text-white/60">Paid</span><span>₱ {receiptData.paid.toLocaleString()}</span></div>
-                <div className="flex items-center justify-between"><span className="text-white/60">Change</span><span>₱ {receiptData.change.toLocaleString()}</span></div>
-                <div className="text-xs text-white/60 mt-2">Payment: {receiptData.paymentMethod}</div>
+                <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Paid</span><span>₱ {receiptData.paid.toLocaleString()}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Change</span><span>₱ {receiptData.change.toLocaleString()}</span></div>
+                <div className="text-xs text-gray-500 dark:text-white/60 mt-2">Payment: {receiptData.paymentMethod}</div>
               </>
             )}
           </div>
-          {notes && <div className="text-xs text-white/60">Notes: {notes}</div>}
+          {notes && <div className="text-xs text-gray-500 dark:text-white/60">Notes: {notes}</div>}
         </div>
         <DialogFooter>
-          <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => window.print()}>Print</Button>
+          <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={() => window.print()}>Print</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -866,21 +954,21 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
 function InlineSettingsDialog({ open, onOpenChange, taxEnabled, setTaxEnabled, taxRate, setTaxRate }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-xl">
+      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-xl">
         <DialogHeader>
           <DialogTitle>POS Settings</DialogTitle>
-          <DialogDescription className="text-white/60">Configure POS preferences</DialogDescription>
+          <DialogDescription className="text-gray-500 dark:text-white/60">Configure POS preferences</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-2xl bg-white/5 border border-white/10 p-3 space-y-2">
+          <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
             <div className="text-sm font-medium">Tax defaults</div>
             <div className="flex items-center justify-between">
-              <span className="text-white/60">Tax enabled by default</span>
+              <span className="text-gray-500 dark:text-white/60">Tax enabled by default</span>
               <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
             </div>
             <div className="flex items-center gap-2">
               <Select value={String(taxRate)} onValueChange={(v) => setTaxRate(Number(v))}>
-                <SelectTrigger className="rounded-xl bg-white/10 border-white/10 text-white" suppressHydrationWarning>
+                <SelectTrigger className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" suppressHydrationWarning>
                   <SelectValue placeholder="Tax rate" />
                 </SelectTrigger>
                 <SelectContent>
@@ -895,8 +983,8 @@ function InlineSettingsDialog({ open, onOpenChange, taxEnabled, setTaxEnabled, t
           </div>
         </div>
         <DialogFooter>
-          <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700" onClick={() => onOpenChange(false)}>Save</Button>
+          <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={() => onOpenChange(false)}>Save</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -906,27 +994,27 @@ function InlineSettingsDialog({ open, onOpenChange, taxEnabled, setTaxEnabled, t
 function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-white max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Recent Orders</DialogTitle>
-          <DialogDescription className="text-white/60">View and manage recent transactions</DialogDescription>
+          <DialogDescription className="text-gray-500 dark:text-white/60">View and manage recent transactions</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-auto">
           {recentOrders.length === 0 ? (
-            <div className="text-center py-8"><p className="text-white/60">No orders found</p></div>
+            <div className="text-center py-8"><p className="text-gray-500 dark:text-white/60">No orders found</p></div>
           ) : (
             <div className="space-y-2">
               {recentOrders.map((order: any) => (
-                <div key={order.id} className="rounded-xl bg-white/5 border border-white/10 p-3">
+                <div key={order.id} className="rounded-xl bg-white/5 border border-gray-200 dark:border-white/10 p-3">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-medium">{order.order_number || `ORD-${order.id}`}</div>
-                      <div className="text-sm text-white/60">{order.customer || "Walk-in"}</div>
-                      <div className="text-xs text-white/60">{order.ordered_at}</div>
+                      <div className="text-sm text-gray-500 dark:text-white/60">{order.customer || "Walk-in"}</div>
+                      <div className="text-xs text-gray-500 dark:text-white/60">{order.ordered_at}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">₱ {(order.total || 0).toLocaleString()}</div>
-                      <div className="text-xs text-white/60">{order.status}</div>
+                      <div className="text-xs text-gray-500 dark:text-white/60">{order.status}</div>
                     </div>
                   </div>
                 </div>
@@ -935,7 +1023,7 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
           )}
         </div>
         <DialogFooter>
-          <Button variant="secondary" className="rounded-xl bg-white/10 hover:bg-white/20 text-white" onClick={() => onOpenChange(false)}>Close</Button>
+          <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Close</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -945,7 +1033,7 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
 // Transaction Success Modal - Uses the original receipt design
 function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction }: any) {
   const THEME = {
-    muted: "text-white/60",
+    muted: "text-gray-500 dark:text-white/60",
   };
 
   if (!receiptData) return null;
@@ -957,13 +1045,13 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
         <DialogTitle className="sr-only">Transaction Successful</DialogTitle>
 
         {/* Original Receipt Design */}
-        <div className="rounded-3xl bg-gradient-to-b from-[#2d1f5e] to-[#3a2570] border border-white/10 overflow-hidden shadow-2xl">
+        <div className="rounded-3xl bg-gradient-to-b from-[#2d1f5e] to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
           {/* Header - Checkmark + Title */}
           <div className="pt-10 pb-6 text-center">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
               <CheckCircle2 className="h-12 w-12 text-emerald-400" />
             </div>
-            <h2 className="text-2xl font-bold text-white">Transaction Successful!</h2>
+            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Transaction Successful!</h2>
             <p className={`text-sm ${THEME.muted} mt-1 tracking-wider uppercase`}>Vendora POS</p>
           </div>
 
@@ -972,28 +1060,28 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             <div className="border-t border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Transaction #</span>
-                <span className="text-white font-medium">{receiptData.transactionNumber}</span>
+                <span className="text-gray-900 dark:text-white font-medium">{receiptData.transactionNumber}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Date</span>
-                <span className="text-white">{receiptData.date}</span>
+                <span className="text-gray-900 dark:text-white">{receiptData.date}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Customer</span>
-                <span className="text-white">{receiptData.customerName}</span>
+                <span className="text-gray-900 dark:text-white">{receiptData.customerName}</span>
               </div>
             </div>
 
             {/* Items */}
             <div className="border-t border-white/10 py-4">
-              <h3 className="text-sm font-semibold text-white mb-3">Items</h3>
+              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Items</h3>
               <div className="space-y-2">
                 {receiptData.items.map((item: any) => (
                   <div key={item.id} className="flex items-center justify-between text-sm">
                     <span className={THEME.muted}>
-                      {item.name} <span className="text-white/40">x{item.qty}</span>
+                      {item.name} <span className="text-gray-400 dark:text-white/40">x{item.qty}</span>
                     </span>
-                    <span className="text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
+                    <span className="text-gray-900 dark:text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
                   </div>
                 ))}
               </div>
@@ -1003,7 +1091,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             <div className="border-t border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Subtotal</span>
-                <span className="text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
+                <span className="text-gray-900 dark:text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
               </div>
               {receiptData.discount > 0 && (
                 <div className="flex items-center justify-between text-sm">
@@ -1013,16 +1101,16 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
               )}
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>{receiptData.taxLabel}</span>
-                <span className="text-white">₱ {receiptData.tax.toFixed(2)}</span>
+                <span className="text-gray-900 dark:text-white">₱ {receiptData.tax.toFixed(2)}</span>
               </div>
               {receiptData.deliveryFee > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className={THEME.muted}>Delivery Fee</span>
-                  <span className="text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
+                  <span className="text-gray-900 dark:text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
                 </div>
               )}
               <div className="border-t border-white/10 pt-2 flex items-center justify-between">
-                <span className="text-white font-bold">Total</span>
+                <span className="text-gray-900 dark:text-white font-bold">Total</span>
                 <span className="text-emerald-400 font-bold text-lg">₱ {receiptData.total.toFixed(2)}</span>
               </div>
             </div>
@@ -1031,11 +1119,11 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             <div className="border-t border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Payment Method</span>
-                <span className="text-white font-medium">{receiptData.paymentMethod}</span>
+                <span className="text-gray-900 dark:text-white font-medium">{receiptData.paymentMethod}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Amount Tendered</span>
-                <span className="text-white">₱ {receiptData.amountTendered.toFixed(2)}</span>
+                <span className="text-gray-900 dark:text-white">₱ {receiptData.amountTendered.toFixed(2)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Change</span>
@@ -1046,7 +1134,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             {/* Action Buttons */}
             <div className="border-t border-white/10 pt-6 space-y-3">
               <Button
-                className="w-full rounded-2xl bg-purple-500 hover:bg-purple-600 text-white font-semibold py-6 text-base"
+                className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold py-6 text-base"
                 onClick={onNewTransaction}
               >
                 New Transaction
@@ -1054,7 +1142,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
               <div className="grid grid-cols-2 gap-3">
                 <Button
                   variant="secondary"
-                  className="rounded-2xl bg-white/10 hover:bg-white/20 text-white py-5"
+                  className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white py-5"
                   onClick={() => window.print()}
                 >
                   <Printer className="h-4 w-4 mr-2" />
@@ -1062,13 +1150,13 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                 </Button>
                 <Button
                   variant="secondary"
-                  className="rounded-2xl bg-white/10 hover:bg-white/20 text-white py-5"
+                  className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white py-5"
                   onClick={() => {
                     if (navigator.share) {
                       navigator.share({
                         title: "Transaction Receipt",
                         text: `Transaction ${receiptData.transactionNumber} - Total: ₱${receiptData.total.toFixed(2)}`,
-                      }).catch(() => {});
+                      }).catch(() => { });
                     }
                   }}
                 >

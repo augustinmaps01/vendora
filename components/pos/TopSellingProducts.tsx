@@ -31,9 +31,9 @@ export function TopSellingProducts({ data, variant = "default" }: TopSellingProd
       <CardHeader className={`flex flex-row items-center justify-between ${headerClass ?? ""}`}>
         <div>
           <CardTitle className="text-lg font-semibold">Top Selling Products</CardTitle>
-          <p className="text-sm text-gray-500 dark:text-gray-400">Units and revenue</p>
+          <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Units and revenue</p>
         </div>
-        <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50">
+        <Button variant="ghost" size="sm" className="text-purple-600 hover:text-purple-700 hover:bg-purple-50 dark:text-purple-400 dark:hover:text-purple-300 dark:hover:bg-purple-950/50">
           <Eye className="w-4 h-4 mr-1" />
           View
         </Button>
@@ -69,16 +69,16 @@ export function TopSellingProducts({ data, variant = "default" }: TopSellingProd
             return (
               <div key={index} className="space-y-1">
                 <div className="flex items-center justify-between text-sm">
-                  <span className="text-gray-700 font-medium">{product.name}</span>
+                  <span className="text-gray-700 dark:text-[#e0e0f0] font-medium">{product.name}</span>
                   <div className="flex gap-3 text-xs">
-                    <span className="text-gray-500 dark:text-gray-400">{product.units} units</span>
-                    <span className="font-semibold text-purple-600 min-w-[80px] text-right">
+                    <span className="text-gray-500 dark:text-[#b4b4d0]">{product.units} units</span>
+                    <span className="font-semibold text-purple-600 dark:text-purple-400 min-w-[80px] text-right">
                       {"₱ "}{product.revenue.toLocaleString()}
                     </span>
                   </div>
                 </div>
                 {/* Revenue Bar */}
-                <div className="w-full bg-gray-100 rounded-full h-[2px] overflow-hidden">
+                <div className="w-full bg-gray-100 dark:bg-[#1a1a35] rounded-full h-[2px] overflow-hidden">
                   <div
                     className="bg-gradient-to-r from-purple-600 to-purple-400 h-[2px] rounded-full transition-all duration-500"
                     style={{ width: `${revenuePercentage}%` }}

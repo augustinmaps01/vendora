@@ -145,15 +145,33 @@ export const authService = {
         credentials
       )
 
-      const loginData = (response.data.data ?? {}) as Record<string, unknown>
-      const loginToken = getTokenFromRecord(loginData)
-      if (response.data.success && loginToken) {
-        tokenManager.setAccessToken(loginToken)
-        tokenManager.setUserType('admin')
-        storeUserProfile(response.data.data?.user)
+      // API returns token at top level: { success, token, user, ... }
+      // Not nested in data: { success, data: { token, user } }
+      const responseData = response.data as unknown as Record<string, unknown>
+      const loginToken = getTokenFromRecord(responseData)
 
-        if (response.data.data.expires_in) {
-          tokenManager.setTokenExpiry(response.data.data.expires_in)
+      // Also check nested data structure for backwards compatibility
+      const nestedData = (responseData.data ?? {}) as Record<string, unknown>
+      const nestedToken = getTokenFromRecord(nestedData)
+      const finalToken = loginToken || nestedToken
+
+      console.log('🔐 Admin login response:', {
+        success: response.data.success,
+        hasTopLevelToken: !!loginToken,
+        hasNestedToken: !!nestedToken,
+        tokenPreview: finalToken ? finalToken.substring(0, 20) + '...' : null
+      })
+
+      if (response.data.success && finalToken) {
+        tokenManager.setAccessToken(finalToken)
+        tokenManager.setUserType('admin')
+        // User can be at top level or nested
+        const user = (responseData.user ?? nestedData.user) as User | undefined
+        storeUserProfile(user)
+
+        const expiresIn = responseData.expires_in ?? nestedData.expires_in
+        if (expiresIn) {
+          tokenManager.setTokenExpiry(expiresIn as number)
         }
       }
 
@@ -305,15 +323,26 @@ export const authService = {
         credentials
       )
 
-      const loginData = (response.data.data ?? {}) as Record<string, unknown>
-      const loginToken = getTokenFromRecord(loginData)
-      if (response.data.success && loginToken) {
-        tokenManager.setAccessToken(loginToken)
-        tokenManager.setUserType('vendor')
-        storeUserProfile(response.data.data?.user)
+      // API returns token at top level: { success, token, user, ... }
+      // Not nested in data: { success, data: { token, user } }
+      const responseData = response.data as unknown as Record<string, unknown>
+      const loginToken = getTokenFromRecord(responseData)
 
-        if (response.data.data.expires_in) {
-          tokenManager.setTokenExpiry(response.data.data.expires_in)
+      // Also check nested data structure for backwards compatibility
+      const nestedData = (responseData.data ?? {}) as Record<string, unknown>
+      const nestedToken = getTokenFromRecord(nestedData)
+      const finalToken = loginToken || nestedToken
+
+      if (response.data.success && finalToken) {
+        tokenManager.setAccessToken(finalToken)
+        tokenManager.setUserType('vendor')
+        // User can be at top level or nested
+        const user = (responseData.user ?? nestedData.user) as User | undefined
+        storeUserProfile(user)
+
+        const expiresIn = responseData.expires_in ?? nestedData.expires_in
+        if (expiresIn) {
+          tokenManager.setTokenExpiry(expiresIn as number)
         }
       }
 

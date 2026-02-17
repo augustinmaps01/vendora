@@ -22,7 +22,24 @@ export type CartItem = {
   qty: number;
 };
 
-export type Screen = "sale" | "checkout";
+export type Screen = "sale" | "checkout" | "receipt";
+
+export interface ReceiptData {
+  transactionNumber: string;
+  date: string;
+  customerName: string;
+  items: CartItem[];
+  subtotal: number;
+  discount: number;
+  discountLabel: string;
+  tax: number;
+  taxLabel: string;
+  deliveryFee: number;
+  total: number;
+  paymentMethod: string;
+  amountTendered: number;
+  change: number;
+}
 
 export interface POSScreenProps {
   screen: Screen;
@@ -85,4 +102,6 @@ export interface POSScreenProps {
   calcDeliveryFee: (fulfillment: Fulfillment, deliveryKm: number) => number;
   completeOrder?: () => Promise<void>;
   categories?: any[];
+  receiptData?: ReceiptData | null;
+  startNewTransaction?: () => void;
 }

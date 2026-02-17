@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api-client"
 import { orderService } from "@/services"
 import { posOrderEndpoints } from "./api-endpoints"
+import { db } from "@/lib/db"
 import {
   Select,
   SelectContent,
@@ -142,6 +143,22 @@ function DesktopOrdersLayout() {
   const loadOrders = async () => {
     setIsLoading(true)
     setLoadError(null)
+
+    // Load from IndexedDB cache first (for first page, no filters)
+    if (currentPage === 1 && statusFilter === "all" && !startDate && !endDate) {
+      try {
+        const cached = await db.cachedData.get('orders-page-1')
+        if (cached) {
+          const parsed = JSON.parse(cached.data)
+          setOrders(parsed.orders || [])
+          if (parsed.total) setTotalRecords(parsed.total)
+          setIsLoading(false)
+        }
+      } catch {
+        // IndexedDB may not be available
+      }
+    }
+
     try {
       const params: any = {
         page: currentPage,
@@ -165,14 +182,27 @@ function DesktopOrdersLayout() {
           : Array.isArray(response as any)
             ? (response as any)
             : []
-      setOrders(items.map((item: any) => normalizeOrder(item)))
+      const normalizedOrders = items.map((item: any) => normalizeOrder(item))
+      setOrders(normalizedOrders)
 
       // Extract pagination meta
       if ((response as any)?.meta?.total) {
         setTotalRecords((response as any).meta.total)
       }
-    } catch (error) {
-      setLoadError(getErrorMessage(error))
+
+      // Cache first page for offline use
+      if (currentPage === 1 && statusFilter === "all" && !startDate && !endDate) {
+        db.cachedData.put({
+          key: 'orders-page-1',
+          data: JSON.stringify({ orders: normalizedOrders, total: (response as any)?.meta?.total }),
+          lastSyncedAt: new Date(),
+        }).catch(() => {})
+      }
+    } catch (error: any) {
+      // Only show error if we have no cached data
+      if (orders.length === 0) {
+        setLoadError(getErrorMessage(error))
+      }
     } finally {
       setIsLoading(false)
     }
@@ -292,12 +322,12 @@ function DesktopOrdersLayout() {
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100">
+          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-blue-100 dark:bg-blue-900/30">
             <ClipboardList className="h-5 w-5 text-blue-600" />
           </div>
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-gray-100">Orders</h1>
-            <p className="text-sm sm:text-base text-gray-600 dark:text-gray-400 mt-0.5 sm:mt-1">View and manage customer orders</p>
+            <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Orders</h1>
+            <p className="text-sm sm:text-base text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">View and manage customer orders</p>
           </div>
         </div>
       </div>
@@ -309,37 +339,37 @@ function DesktopOrdersLayout() {
       )}
 
       {isLoading && (
-        <div className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 text-sm text-gray-600 dark:text-gray-400">
+        <div className="rounded-lg border border-gray-200 dark:border-[#2d1b69] bg-gray-50 dark:bg-[#13132a] px-4 py-3 text-sm text-gray-600 dark:text-[#b4b4d0]">
           Loading orders...
         </div>
       )}
 
       {/* Stats Cards */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Total Orders</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-gray-100 mt-0.5 sm:mt-1">{totalOrders}</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Total Orders</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">{totalOrders}</p>
             </div>
-            <div className="bg-blue-100 p-2 sm:p-3 rounded-lg">
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3 rounded-lg">
               <ClipboardList className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Pending</p>
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Pending</p>
           <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{pendingOrders}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Processing</p>
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Processing</p>
           <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">{processingOrders}</p>
         </div>
 
-        <div className="bg-white dark:bg-gray-800 p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-gray-400">Completed</p>
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Completed</p>
           <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{completedOrders}</p>
         </div>
       </div>
@@ -347,7 +377,7 @@ function DesktopOrdersLayout() {
       {/* Search and Filters */}
       <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
         <div className="flex-1 relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400" />
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-gray-400 dark:text-[#9898b8]" />
           <Input
             placeholder="Search orders..."
             value={searchQuery}
@@ -371,64 +401,64 @@ function DesktopOrdersLayout() {
       </div>
 
       {/* Orders Table - Desktop */}
-      <div className="hidden md:block bg-white dark:bg-gray-800 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm overflow-hidden">
+      <div className="hidden md:block bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
-            <thead className="bg-gray-50 dark:bg-gray-900 border-b border-gray-200 dark:border-gray-700">
+            <thead className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-200 dark:border-[#2d1b69]">
               <tr>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Order ID
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Customer
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Date
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Items
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Total
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Status
                 </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wider">
                   Actions
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
+            <tbody className="bg-white dark:bg-[#13132a] divide-y divide-gray-200 dark:divide-[#2d1b69]">
               {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 dark:bg-gray-900">
+                <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-[#1a1a35]">
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.id}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">{order.id}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-gray-100">{order.customer}</div>
+                    <div className="text-sm text-gray-900 dark:text-white">{order.customer}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{order.date}</div>
+                    <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.date}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-gray-400">{order.items} items</div>
+                    <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.items} items</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-gray-100">₱{order.total.toFixed(2)}</div>
+                    <div className="text-sm font-medium text-gray-900 dark:text-white">₱{order.total.toFixed(2)}</div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
                     {order.status === "completed" && (
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100">Completed</Badge>
+                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
                     )}
                     {order.status === "pending" && (
-                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100">Pending</Badge>
+                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
                     )}
                     {order.status === "processing" && (
-                      <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100">Processing</Badge>
+                      <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400">Processing</Badge>
                     )}
                     {order.status === "cancelled" && (
-                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100">Cancelled</Badge>
+                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Cancelled</Badge>
                     )}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap text-sm">
@@ -451,42 +481,42 @@ function DesktopOrdersLayout() {
       {/* Orders Cards - Mobile */}
       <div className="md:hidden space-y-3">
         {filteredOrders.map((order) => (
-          <div key={order.id} className="bg-white dark:bg-gray-800 p-4 rounded-lg border border-gray-200 dark:border-gray-700 shadow-sm">
+          <div key={order.id} className="bg-white dark:bg-[#13132a] p-4 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
             <div className="flex items-start justify-between mb-3">
               <div>
-                <div className="text-sm font-medium text-gray-900 dark:text-gray-100">{order.id}</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400 mt-0.5">{order.customer}</div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white">{order.id}</div>
+                <div className="text-sm text-gray-600 dark:text-[#b4b4d0] mt-0.5">{order.customer}</div>
               </div>
               <div>
                 {order.status === "completed" && (
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 text-xs">Completed</Badge>
+                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400 text-xs">Completed</Badge>
                 )}
                 {order.status === "pending" && (
-                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 text-xs">Pending</Badge>
+                  <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400 text-xs">Pending</Badge>
                 )}
                 {order.status === "processing" && (
-                  <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 text-xs">Processing</Badge>
+                  <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400 text-xs">Processing</Badge>
                 )}
                 {order.status === "cancelled" && (
-                  <Badge className="bg-red-100 text-red-800 hover:bg-red-100 text-xs">Cancelled</Badge>
+                  <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400 text-xs">Cancelled</Badge>
                 )}
               </div>
             </div>
             <div className="grid grid-cols-2 gap-2 text-sm mb-3">
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Date:</span>
-                <span className="text-gray-900 dark:text-gray-100 ml-1">{order.date}</span>
+                <span className="text-gray-500 dark:text-[#b4b4d0]">Date:</span>
+                <span className="text-gray-900 dark:text-white ml-1">{order.date}</span>
               </div>
               <div>
-                <span className="text-gray-500 dark:text-gray-400">Items:</span>
-                <span className="text-gray-900 dark:text-gray-100 ml-1">{order.items}</span>
+                <span className="text-gray-500 dark:text-[#b4b4d0]">Items:</span>
+                <span className="text-gray-900 dark:text-white ml-1">{order.items}</span>
               </div>
               <div className="col-span-2">
-                <span className="text-gray-500 dark:text-gray-400">Total:</span>
-                <span className="text-gray-900 dark:text-gray-100 font-medium ml-1">₱{order.total.toFixed(2)}</span>
+                <span className="text-gray-500 dark:text-[#b4b4d0]">Total:</span>
+                <span className="text-gray-900 dark:text-white font-medium ml-1">₱{order.total.toFixed(2)}</span>
               </div>
             </div>
-            <div className="flex gap-2 pt-3 border-t border-gray-100">
+            <div className="flex gap-2 pt-3 border-t border-gray-100 dark:border-[#2d1b69]">
               <Button size="sm" variant="outline" className="flex-1" onClick={() => loadOrderDetails(Number(order.id.replace(/\D/g, '') || 0))}>
                 <Eye className="h-4 w-4 mr-1" />
                 View
@@ -506,9 +536,9 @@ function DesktopOrdersLayout() {
           <DialogTitle className="sr-only">Invoice</DialogTitle>
 
           {isLoadingDetails ? (
-            <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-2xl">
+            <div className="text-center py-8 bg-white dark:bg-[#13132a] rounded-2xl">
               <Loader2 className="h-8 w-8 animate-spin mx-auto text-purple-600" />
-              <p className="text-gray-600 dark:text-gray-400 mt-3">Loading invoice...</p>
+              <p className="text-gray-600 dark:text-[#b4b4d0] mt-3">Loading invoice...</p>
             </div>
           ) : orderDetails ? (
             <>
@@ -784,7 +814,7 @@ function DesktopOrdersLayout() {
               </div>
             </>
           ) : (
-            <div className="text-center py-8 bg-white dark:bg-gray-800 rounded-2xl">
+            <div className="text-center py-8 bg-white dark:bg-[#13132a] rounded-2xl">
               <p className="text-red-600">Failed to load order details</p>
             </div>
           )}
