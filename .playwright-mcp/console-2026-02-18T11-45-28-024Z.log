@@ -1,0 +1,11 @@
+[   86309ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86383ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86386ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86389ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86390ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86391ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86391ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86392ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86392ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86401ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   86408ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

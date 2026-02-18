@@ -6,7 +6,6 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import { Switch } from "@/components/ui/switch"
 import {
-  Store,
   Globe,
   ShoppingCart,
   Package,
@@ -14,7 +13,6 @@ import {
   Eye,
   Settings,
   ExternalLink,
-  Image as ImageIcon,
   Palette
 } from "lucide-react"
 

@@ -39,13 +39,13 @@ const THEME = {
   bg: "bg-gray-50 dark:bg-gradient-to-br dark:from-[#1f1633] dark:via-[#241a3a] dark:to-[#2b1f4a]",
   card: "bg-white border border-gray-200 shadow-sm dark:bg-white/5 dark:border-white/10 dark:backdrop-blur dark:shadow-none",
   panel: "bg-white border border-gray-200 dark:bg-white/5 dark:border-white/10",
-  muted: "text-gray-500 dark:text-gray-500 dark:text-white/60",
+  muted: "text-gray-600 dark:text-white/60",
   text: "text-gray-900 dark:text-white",
 };
 
 function Pill({ children }: { children: React.ReactNode }) {
   return (
-    <span className={`inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs ${THEME.muted}`}>
+    <span className={`inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-xs ${THEME.muted}`}>
       {children}
     </span>
   );
@@ -131,7 +131,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     return (
       <div className="h-full flex items-start justify-center overflow-auto py-4">
         <div className="w-full max-w-lg">
-          <div className="rounded-3xl bg-gradient-to-b from-purple-50 to-purple-100 dark:from-[#2d1f5e] dark:to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
+          <div className="rounded-3xl bg-white dark:bg-gradient-to-b dark:from-[#2d1f5e] dark:to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
             {/* Header - Checkmark + Title */}
             <div className="pt-10 pb-6 text-center">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
@@ -165,7 +165,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                   {receiptData.items.map((item) => (
                     <div key={item.id} className="flex items-center justify-between text-sm">
                       <span className={THEME.muted}>
-                        {item.name} <span className="text-gray-400 dark:text-white/40">x{item.qty}</span>
+                        {item.name} <span className="text-gray-500 dark:text-white/40">x{item.qty}</span>
                       </span>
                       <span className="text-gray-900 dark:text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
                     </div>
@@ -475,7 +475,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                 <div className="flex flex-col gap-3">
                   <div className="max-h-[150px] sm:max-h-[180px] md:max-h-[200px] lg:max-h-[220px] xl:max-h-[280px] 2xl:max-h-[350px] overflow-auto pr-1">
                     {cart.length === 0 ? (
-                      <div className="rounded-2xl border border-gray-200 dark:border-white/15 border-dashed p-6 text-center text-sm text-gray-500 dark:text-white/60">
+                      <div className="rounded-2xl border border-gray-200 dark:border-white/15 border-dashed p-6 text-center text-sm text-gray-600 dark:text-white/60">
                         Cart is empty
                       </div>
                     ) : (
@@ -775,7 +775,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             onClick={() => { setPrimaryMethod(key); setSplitPay(false); }}
                             className={`flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${!splitPay && primaryMethod === key
                               ? "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
-                              : `${THEME.panel} text-gray-500 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
+                              : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
                               }`}
                           >
                             <Icon className="h-7 w-7" />
@@ -824,7 +824,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">Amount Tendered</div>
                           <div className="flex items-center gap-2">
-                            <span className="text-gray-500 dark:text-white/60 text-lg">₱</span>
+                            <span className="text-gray-600 dark:text-white/60 text-lg">₱</span>
                             <Input
                               value={primaryMethod === "cash" ? cashPay : primaryMethod === "card" ? cardPay : onlinePay}
                               onChange={(e) => {

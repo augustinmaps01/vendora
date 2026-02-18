@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { DollarSign, Package, Plus, ShoppingBag, Wallet, ShoppingCart, Loader2 } from "lucide-react"
@@ -30,8 +29,6 @@ import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
  * Uses responsive grid utilities for all screen sizes
  */
 export default function DesktopDashboard() {
-  const [dateRange, setDateRange] = useState("7days")
-
   // Fetch dashboard data from API (with offline cache support)
   const {
     kpis,

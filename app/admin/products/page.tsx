@@ -41,7 +41,6 @@ import {
     XCircle,
     TrendingUp
 } from "lucide-react"
-import Image from "next/image"
 
 // Mock data - Replace with actual API call
 const products = [
@@ -359,7 +358,7 @@ export default function ProductsPage() {
                                         <TableCell className="font-medium">{formatPrice(product.price)}</TableCell>
                                         <TableCell>
                                             <span className={`font-medium ${product.stock === 0 ? "text-red-600" :
-                                                    product.stock <= 5 ? "text-yellow-600" : "text-green-600"
+                                                product.stock <= 5 ? "text-yellow-600" : "text-green-600"
                                                 }`}>
                                                 {product.stock} units
                                             </span>

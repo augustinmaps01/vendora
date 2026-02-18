@@ -188,7 +188,6 @@ export function VendorSidebar({ className }: VendorSidebarProps) {
 
 // Mobile Sidebar
 export function MobileVendorSidebar() {
-  const pathname = usePathname()
   const [isOpen, setIsOpen] = useState(false)
 
   return (

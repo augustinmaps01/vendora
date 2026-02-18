@@ -1,4 +1,4 @@
-import { onCLS, onFCP, onFID, onINP, onLCP, onTTFB } from 'web-vitals'
+import { onCLS, onFCP, onINP, onLCP, onTTFB } from 'web-vitals'
 
 function sendToAnalytics(metric: any) {
   // Log to console in development
@@ -42,7 +42,6 @@ export function reportWebVitals() {
   try {
     onCLS(sendToAnalytics)
     onFCP(sendToAnalytics)
-    onFID(sendToAnalytics)
     onINP(sendToAnalytics)
     onLCP(sendToAnalytics)
     onTTFB(sendToAnalytics)

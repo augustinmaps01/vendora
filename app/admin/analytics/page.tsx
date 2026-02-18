@@ -271,7 +271,7 @@ export default function AnalyticsPage() {
                                     <div className="mt-2 h-2 w-full bg-gray-100 rounded-full overflow-hidden">
                                         <div
                                             className="h-full bg-purple-500 rounded-full"
-                                            style={{ width: `${(vendor.revenue / topVendors[0].revenue) * 100}%` }}
+                                            style={{ width: `${(vendor.revenue / (topVendors[0]?.revenue || 1)) * 100}%` }}
                                         />
                                     </div>
                                 </div>

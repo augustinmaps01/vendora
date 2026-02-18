@@ -91,22 +91,29 @@ function VendorLoginContent() {
   }, [])
 
   // Auto-dismiss error message after 3 seconds
+  // Auto-dismiss error message after 3 seconds
   useEffect(() => {
+    let timer: NodeJS.Timeout
     if (error) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setError(null)
       }, 3000)
-      return () => clearTimeout(timer)
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
     }
   }, [error])
 
   // Auto-dismiss account locked message after 3 seconds
   useEffect(() => {
+    let timer: NodeJS.Timeout
     if (accountLocked) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setAccountLocked(false)
       }, 3000)
-      return () => clearTimeout(timer)
+    }
+    return () => {
+      if (timer) clearTimeout(timer)
     }
   }, [accountLocked])
 

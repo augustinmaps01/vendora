@@ -133,9 +133,11 @@ const buildProductFormData = (data: ProductPayload | Partial<ProductPayload>): F
         formData.append("image", value)
       } else if (typeof value === "string" && value.startsWith("data:")) {
         // Convert base64 to blob and append
-        const [meta, base64] = value.split(",")
+        const parts = value.split(",")
+        const meta = parts[0] ?? ""
+        const base64 = parts[1] ?? ""
         const mimeMatch = meta.match(/:(.*?);/)
-        const mime = mimeMatch ? mimeMatch[1] : "image/jpeg"
+        const mime = mimeMatch?.[1] ?? "image/jpeg"
         const byteString = atob(base64)
         const ab = new ArrayBuffer(byteString.length)
         const ia = new Uint8Array(ab)

@@ -13,7 +13,6 @@ import {
   TrendingUp,
   TrendingDown,
   ArrowUpRight,
-  Activity,
 } from "lucide-react"
 
 export default function AdminDashboardPage() {

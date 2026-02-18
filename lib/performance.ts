@@ -8,7 +8,7 @@ import dynamic from 'next/dynamic'
  */
 export function lazyLoad<T extends React.ComponentType<any>>(
   importFn: () => Promise<{ default: T }>,
-  loading?: React.ComponentType
+  loading?: () => React.ReactNode
 ) {
   return dynamic(importFn, {
     loading: loading,

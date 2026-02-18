@@ -1,11 +1,11 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
-import { Wifi, WifiOff, RefreshCw, CheckCircle2, AlertCircle, Loader2, Cloud, CloudOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { RefreshCw, CheckCircle2, AlertCircle, Loader2, Cloud, CloudOff } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { syncService } from '@/lib/sync-service';
-import { getPendingTransactionsCount, getSyncQueueCount } from '@/lib/db';
+import { getPendingTransactionsCount } from '@/lib/db';
 import {
   Tooltip,
   TooltipContent,

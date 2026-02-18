@@ -1,7 +1,6 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { Progress } from "@/components/ui/progress"
 import type { InventoryHealth as InventoryHealthData } from "@/types/dashboard"
 
 type InventoryHealthProps = {
@@ -18,7 +17,7 @@ export function InventoryHealth({ data, variant = "default" }: InventoryHealthPr
   const inventoryData = data ? data.breakdown.map(item => {
     const percentage = (item.count / data.total_items) * 100
     const label = item.status === "in_stock" ? "In Stock" :
-                  item.status === "low_stock" ? "Low Stock" : "Out of Stock"
+      item.status === "low_stock" ? "Low Stock" : "Out of Stock"
     return {
       label,
       value: Math.round(percentage),
@@ -31,7 +30,7 @@ export function InventoryHealth({ data, variant = "default" }: InventoryHealthPr
         <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
         <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Stock status</p>
       </CardHeader>
-      <CardContent className={`space - y - 6 ${ contentClass ?? "" } `.trim()}>
+      <CardContent className={`space - y - 6 ${contentClass ?? ""} `.trim()}>
         {inventoryData.map((item) => (
           <div key={item.label} className="space-y-2">
             <div className="flex items-center justify-between text-sm">
@@ -41,7 +40,7 @@ export function InventoryHealth({ data, variant = "default" }: InventoryHealthPr
             <div className="w-full bg-gray-200 dark:bg-[#1a1a35] rounded-full h-2">
               <div
                 className="bg-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `${ item.value }% ` }}
+                style={{ width: `${item.value}% ` }}
               ></div>
             </div>
           </div>

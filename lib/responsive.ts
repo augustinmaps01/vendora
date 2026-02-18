@@ -243,7 +243,9 @@ export function getResponsiveValue<T>(
 
   // Find the nearest defined value at or below the current breakpoint
   for (let i = currentIndex; i >= 0; i--) {
-    const value = values[breakpointOrder[i]]
+    const bp = breakpointOrder[i]
+    if (!bp) continue
+    const value = values[bp]
     if (value !== undefined) return value
   }
 

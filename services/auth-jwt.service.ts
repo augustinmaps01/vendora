@@ -15,7 +15,6 @@ import {
   AuthResponse,
   User,
   TwoFactorVerification,
-  PasswordResetRequest,
   PasswordReset,
 } from '@/types/auth'
 
@@ -61,7 +60,7 @@ const normalizePosAuthResponse = (raw: unknown): ApiResponse<PosAuthResponse> =>
         success: Boolean(record.success),
         message: typeof record.message === 'string' ? record.message : 'OK',
         data: {
-          ...(data as PosAuthResponse),
+          ...(data as unknown as PosAuthResponse),
           token,
           refreshToken,
         },
@@ -121,7 +120,7 @@ export const authService = {
       )
 
       // Store token if registration is successful and returns a token
-      const registerData = (response.data.data ?? {}) as Record<string, unknown>
+      const registerData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const registerToken = getTokenFromRecord(registerData)
       if (response.data.success && registerToken) {
         tokenManager.setAccessToken(registerToken)
@@ -187,7 +186,7 @@ export const authService = {
         data
       )
 
-      const verifyData = (response.data.data ?? {}) as Record<string, unknown>
+      const verifyData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const verifyToken = getTokenFromRecord(verifyData)
       if (response.data.success && verifyToken) {
         tokenManager.setAccessToken(verifyToken)
@@ -221,7 +220,7 @@ export const authService = {
       const response = await axiosClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.ADMIN.REFRESH
       )
-      const refreshData = (response.data.data ?? {}) as Record<string, unknown>
+      const refreshData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const refreshToken = getTokenFromRecord(refreshData)
       if (response.data.success && refreshToken) {
         tokenManager.setAccessToken(refreshToken)
@@ -300,7 +299,7 @@ export const authService = {
      */
     async register(data: VendorRegisterData): Promise<ApiResponse<{ user: User; payment_url?: string; message: string }>> {
       const response = await axiosClient.post<ApiResponse>(API_ENDPOINTS.VENDOR.REGISTER, data)
-      const registerData = (response.data.data ?? {}) as Record<string, unknown>
+      const registerData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const registerToken = getTokenFromRecord(registerData)
       if (response.data.success && registerToken) {
         tokenManager.setAccessToken(registerToken)
@@ -368,7 +367,7 @@ export const authService = {
       const response = await axiosClient.post<ApiResponse<AuthResponse>>(
         API_ENDPOINTS.VENDOR.REFRESH
       )
-      const refreshData = (response.data.data ?? {}) as Record<string, unknown>
+      const refreshData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const refreshToken = getTokenFromRecord(refreshData)
       if (response.data.success && refreshToken) {
         tokenManager.setAccessToken(refreshToken)
@@ -399,7 +398,7 @@ export const authService = {
         API_ENDPOINTS.VENDOR.VERIFY_2FA,
         data
       )
-      const verifyData = (response.data.data ?? {}) as Record<string, unknown>
+      const verifyData = (response.data.data ?? {}) as unknown as Record<string, unknown>
       const verifyToken = getTokenFromRecord(verifyData)
       if (response.data.success && verifyToken) {
         tokenManager.setAccessToken(verifyToken)

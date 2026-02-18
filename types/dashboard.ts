@@ -44,7 +44,7 @@ export interface OrdersByChannel {
     }
 }
 
-export interface PaymentMethod {
+export interface PaymentMethodStat {
     method: string
     amount: number
     payments_count: number
@@ -55,7 +55,7 @@ export interface PaymentMethods {
     start_date: string
     end_date: string
     total_amount: number
-    methods: PaymentMethod[]
+    methods: PaymentMethodStat[]
 }
 
 export interface TopProduct {

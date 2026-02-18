@@ -17,7 +17,6 @@ import {
     ShieldCheck,
     Sparkles
 } from "lucide-react"
-import Link from "next/link"
 
 // Mock deals data
 const FLASH_DEALS = [

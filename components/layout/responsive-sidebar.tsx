@@ -11,8 +11,7 @@ interface ResponsiveSidebarProps {
   trigger?: ReactNode
   /** Sidebar position */
   side?: "left" | "right"
-  /** Show sidebar on desktop by default */
-  defaultOpen?: boolean
+
   /** Additional className */
   className?: string
   /** Width of the sidebar on desktop */
@@ -37,7 +36,6 @@ export function ResponsiveSidebar({
   children,
   trigger,
   side = "left",
-  defaultOpen = true,
   className,
   width = "md",
 }: ResponsiveSidebarProps) {

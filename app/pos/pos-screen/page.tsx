@@ -35,7 +35,6 @@ import {
   productService,
   customerService,
   orderService,
-  paymentService,
   categoryService,
   storeService,
   type ApiProduct,
@@ -45,17 +44,17 @@ import {
 } from "@/services";
 import { tokenManager } from "@/lib/axios-client";
 import Swal from "sweetalert2";
-import { db, LocalProduct } from "@/lib/db";
+import { db } from "@/lib/db";
 import { syncService } from "@/lib/sync-service";
 
 // Lazy load heavy components
 const DesktopPOSLayout = lazy(() => import("@/components/screens/pos-screen/DesktopPOSLayout"));
 
 const THEME = {
-  bg: "bg-gradient-to-br from-[#1f1633] via-[#241a3a] to-[#2b1f4a]",
-  card: "bg-white/5 border border-gray-200 dark:border-white/10 backdrop-blur",
-  panel: "bg-white/5 border border-gray-200 dark:border-white/10",
-  muted: "text-gray-500 dark:text-white/60",
+  bg: "bg-gray-50 dark:bg-gradient-to-br dark:from-[#1f1633] dark:via-[#241a3a] dark:to-[#2b1f4a]",
+  card: "bg-white dark:bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 backdrop-blur",
+  panel: "bg-white dark:bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10",
+  muted: "text-gray-600 dark:text-white/60",
   text: "text-gray-900 dark:text-white",
 };
 
@@ -101,7 +100,7 @@ export function clampQty(qty: number, stock: number) {
 }
 
 const Pill = React.memo(({ children }: { children: React.ReactNode }) => (
-  <span className={`inline-flex items-center rounded-full bg-white/10 px-2 py-0.5 text-xs ${THEME.muted}`}>
+  <span className={`inline-flex items-center rounded-full bg-gray-100 dark:bg-white/10 px-2 py-0.5 text-xs ${THEME.muted}`}>
     {children}
   </span>
 ));
@@ -133,7 +132,7 @@ const LoadingSkeleton = () => (
         <Receipt className="h-6 w-6 text-purple-500 dark:text-purple-400 absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2" />
       </div>
       <p className="text-gray-900 dark:text-white text-lg mt-4 font-medium">Loading POS...</p>
-      <p className="text-gray-500 dark:text-white/50 text-sm mt-1">Preparing your workspace</p>
+      <p className="text-gray-600 dark:text-white/50 text-sm mt-1">Preparing your workspace</p>
     </div>
   </div>
 );
@@ -246,7 +245,7 @@ export default function VendoraPOS() {
           category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
           image_url: p.image_url,
           is_active: p.is_active
-        })) as ApiProduct[];
+        })) as unknown as ApiProduct[];
         setApiProducts(apiProducts);
         console.log(`✅ Loaded ${localProducts.length} products from cache`);
       }
@@ -523,7 +522,7 @@ export default function VendoraPOS() {
 
       if (customer === "walkin") {
         // Use first customer as default walk-in, or create if online
-        if (customers.length > 0) {
+        if (customers.length > 0 && customers[0]) {
           customerId = customers[0].id;
           customerName = customers[0].name;
         } else if (syncService.getOnlineStatus()) {
@@ -557,7 +556,7 @@ export default function VendoraPOS() {
       const transactionUuid = await syncService.saveTransactionLocally({
         customer_id: customerId,
         customer_name: customerName,
-        ordered_at: new Date().toISOString().split('T')[0],
+        ordered_at: new Date().toISOString().split('T')[0] || "",
         status: 'completed',
         items: cart.map(item => ({
           product_id: Number(item.id),
@@ -849,7 +848,7 @@ export default function VendoraPOS() {
       {/* Processing Overlay */}
       {isProcessing && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50">
-          <div className="bg-[#201836] rounded-2xl p-6 text-center">
+          <div className="bg-white dark:bg-[#201836] rounded-2xl p-6 text-center">
             <Loader2 className="h-12 w-12 text-purple-500 dark:text-purple-400 animate-spin mx-auto mb-4" />
             <p className="text-gray-900 dark:text-white text-lg">Processing...</p>
           </div>
@@ -870,15 +869,15 @@ import { Switch } from "@/components/ui/switch";
 function InlineHoldDialog({ open, onOpenChange, cart }: { open: boolean; onOpenChange: (v: boolean) => void; cart: CartItem[] }) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white">
+      <DialogContent className="rounded-2xl bg-white dark:bg-[#201836] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white">
         <DialogHeader>
           <DialogTitle>Hold this sale</DialogTitle>
-          <DialogDescription className="text-gray-500 dark:text-white/60">Save the cart temporarily and resume later.</DialogDescription>
+          <DialogDescription className="text-gray-600 dark:text-white/60">Save the cart temporarily and resume later.</DialogDescription>
         </DialogHeader>
-        <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
+        <div className="rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
           <div className="text-sm">Hold reference</div>
           <Input className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white" placeholder="Example Counter 1" />
-          <div className="text-xs text-gray-500 dark:text-white/60">Feature coming soon.</div>
+          <div className="text-xs text-gray-600 dark:text-white/60">Feature coming soon.</div>
         </div>
         <DialogFooter>
           <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Cancel</Button>
@@ -892,32 +891,32 @@ function InlineHoldDialog({ open, onOpenChange, cart }: { open: boolean; onOpenC
 function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, receiptData }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-2xl">
+      <DialogContent className="rounded-2xl bg-white dark:bg-[#201836] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white max-w-2xl">
         <DialogHeader>
           <DialogTitle>Receipt Preview</DialogTitle>
-          <DialogDescription className="text-gray-500 dark:text-white/60">{receiptData ? "Order completed successfully" : "Preview receipt before checkout"}</DialogDescription>
+          <DialogDescription className="text-gray-600 dark:text-white/60">{receiptData ? "Order completed successfully" : "Preview receipt before checkout"}</DialogDescription>
         </DialogHeader>
-        <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-4 space-y-3">
+        <div className="rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-4 space-y-3">
           <div className="flex items-start justify-between">
             <div>
               <div className="font-semibold">Vendora Retail</div>
-              <div className="text-xs text-gray-500 dark:text-white/60">{receiptData ? `Order ${receiptData.orderNumber}` : `Transaction ${saleId ?? "—"}`}</div>
+              <div className="text-xs text-gray-600 dark:text-white/60">{receiptData ? `Order ${receiptData.orderNumber}` : `Transaction ${saleId ?? "—"}`}</div>
             </div>
             <div className="text-right">
-              <div className="text-xs text-gray-500 dark:text-white/60">Cashier</div>
+              <div className="text-xs text-gray-600 dark:text-white/60">Cashier</div>
               <div className="text-sm">Staff</div>
             </div>
           </div>
           <div className="h-px bg-white/10" />
           <div className="space-y-2">
             {cart.length === 0 ? (
-              <div className="text-sm text-gray-500 dark:text-white/60">No items</div>
+              <div className="text-sm text-gray-600 dark:text-white/60">No items</div>
             ) : (
               cart.map((x: CartItem) => (
                 <div key={x.id} className="flex items-center justify-between text-sm">
                   <div className="min-w-0">
                     <div className="truncate">{x.name}</div>
-                    <div className="text-xs text-gray-500 dark:text-white/60">{x.qty} {x.unit} × ₱ {x.price.toLocaleString()}</div>
+                    <div className="text-xs text-gray-600 dark:text-white/60">{x.qty} {x.unit} × ₱ {x.price.toLocaleString()}</div>
                   </div>
                   <div className="font-medium">₱ {(x.qty * x.price).toLocaleString()}</div>
                 </div>
@@ -926,21 +925,21 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
           </div>
           <div className="h-px bg-white/10" />
           <div className="space-y-1 text-sm">
-            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Subtotal</span><span>₱ {totals.subtotal.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Discount</span><span>₱ {totals.discount.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Tax</span><span>₱ {totals.tax.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Delivery</span><span>₱ {totals.deliveryFee.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Subtotal</span><span>₱ {totals.subtotal.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Discount</span><span>₱ {totals.discount.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Tax</span><span>₱ {totals.tax.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Delivery</span><span>₱ {totals.deliveryFee.toLocaleString()}</span></div>
             <div className="h-px bg-white/10" />
             <div className="flex items-center justify-between font-semibold"><span>Total</span><span>₱ {totals.total.toLocaleString()}</span></div>
             {receiptData && (
               <>
-                <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Paid</span><span>₱ {receiptData.paid.toLocaleString()}</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500 dark:text-white/60">Change</span><span>₱ {receiptData.change.toLocaleString()}</span></div>
-                <div className="text-xs text-gray-500 dark:text-white/60 mt-2">Payment: {receiptData.paymentMethod}</div>
+                <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Paid</span><span>₱ {receiptData.paid.toLocaleString()}</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Change</span><span>₱ {receiptData.change.toLocaleString()}</span></div>
+                <div className="text-xs text-gray-600 dark:text-white/60 mt-2">Payment: {receiptData.paymentMethod}</div>
               </>
             )}
           </div>
-          {notes && <div className="text-xs text-gray-500 dark:text-white/60">Notes: {notes}</div>}
+          {notes && <div className="text-xs text-gray-600 dark:text-white/60">Notes: {notes}</div>}
         </div>
         <DialogFooter>
           <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Close</Button>
@@ -954,16 +953,16 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
 function InlineSettingsDialog({ open, onOpenChange, taxEnabled, setTaxEnabled, taxRate, setTaxRate }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-xl">
+      <DialogContent className="rounded-2xl bg-white dark:bg-[#201836] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white max-w-xl">
         <DialogHeader>
           <DialogTitle>POS Settings</DialogTitle>
-          <DialogDescription className="text-gray-500 dark:text-white/60">Configure POS preferences</DialogDescription>
+          <DialogDescription className="text-gray-600 dark:text-white/60">Configure POS preferences</DialogDescription>
         </DialogHeader>
         <div className="space-y-3">
-          <div className="rounded-2xl bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
+          <div className="rounded-2xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-3 space-y-2">
             <div className="text-sm font-medium">Tax defaults</div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-500 dark:text-white/60">Tax enabled by default</span>
+              <span className="text-gray-600 dark:text-white/60">Tax enabled by default</span>
               <Switch checked={taxEnabled} onCheckedChange={(v) => setTaxEnabled(Boolean(v))} />
             </div>
             <div className="flex items-center gap-2">
@@ -994,27 +993,27 @@ function InlineSettingsDialog({ open, onOpenChange, taxEnabled, setTaxEnabled, t
 function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="rounded-2xl bg-[#201836] border-white/10 text-gray-900 dark:text-white max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
+      <DialogContent className="rounded-2xl bg-white dark:bg-[#201836] border-gray-200 dark:border-white/10 text-gray-900 dark:text-white max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>Recent Orders</DialogTitle>
-          <DialogDescription className="text-gray-500 dark:text-white/60">View and manage recent transactions</DialogDescription>
+          <DialogDescription className="text-gray-600 dark:text-white/60">View and manage recent transactions</DialogDescription>
         </DialogHeader>
         <div className="flex-1 overflow-auto">
           {recentOrders.length === 0 ? (
-            <div className="text-center py-8"><p className="text-gray-500 dark:text-white/60">No orders found</p></div>
+            <div className="text-center py-8"><p className="text-gray-600 dark:text-white/60">No orders found</p></div>
           ) : (
             <div className="space-y-2">
               {recentOrders.map((order: any) => (
-                <div key={order.id} className="rounded-xl bg-white/5 border border-gray-200 dark:border-white/10 p-3">
+                <div key={order.id} className="rounded-xl bg-gray-50 dark:bg-white/5 border border-gray-200 dark:border-white/10 p-3">
                   <div className="flex justify-between items-start">
                     <div>
                       <div className="font-medium">{order.order_number || `ORD-${order.id}`}</div>
-                      <div className="text-sm text-gray-500 dark:text-white/60">{order.customer || "Walk-in"}</div>
-                      <div className="text-xs text-gray-500 dark:text-white/60">{order.ordered_at}</div>
+                      <div className="text-sm text-gray-600 dark:text-white/60">{order.customer || "Walk-in"}</div>
+                      <div className="text-xs text-gray-600 dark:text-white/60">{order.ordered_at}</div>
                     </div>
                     <div className="text-right">
                       <div className="font-semibold">₱ {(order.total || 0).toLocaleString()}</div>
-                      <div className="text-xs text-gray-500 dark:text-white/60">{order.status}</div>
+                      <div className="text-xs text-gray-600 dark:text-white/60">{order.status}</div>
                     </div>
                   </div>
                 </div>
@@ -1033,7 +1032,7 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
 // Transaction Success Modal - Uses the original receipt design
 function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction }: any) {
   const THEME = {
-    muted: "text-gray-500 dark:text-white/60",
+    muted: "text-gray-600 dark:text-white/60",
   };
 
   if (!receiptData) return null;
@@ -1045,7 +1044,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
         <DialogTitle className="sr-only">Transaction Successful</DialogTitle>
 
         {/* Original Receipt Design */}
-        <div className="rounded-3xl bg-gradient-to-b from-[#2d1f5e] to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
+        <div className="rounded-3xl bg-white dark:bg-gradient-to-b dark:from-[#2d1f5e] dark:to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
           {/* Header - Checkmark + Title */}
           <div className="pt-10 pb-6 text-center">
             <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
@@ -1057,7 +1056,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
 
           <div className="px-6 pb-8 space-y-0">
             {/* Transaction Details */}
-            <div className="border-t border-white/10 py-4 space-y-2">
+            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Transaction #</span>
                 <span className="text-gray-900 dark:text-white font-medium">{receiptData.transactionNumber}</span>
@@ -1073,13 +1072,13 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             </div>
 
             {/* Items */}
-            <div className="border-t border-white/10 py-4">
+            <div className="border-t border-gray-200 dark:border-white/10 py-4">
               <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Items</h3>
               <div className="space-y-2">
                 {receiptData.items.map((item: any) => (
                   <div key={item.id} className="flex items-center justify-between text-sm">
                     <span className={THEME.muted}>
-                      {item.name} <span className="text-gray-400 dark:text-white/40">x{item.qty}</span>
+                      {item.name} <span className="text-gray-500 dark:text-white/40">x{item.qty}</span>
                     </span>
                     <span className="text-gray-900 dark:text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
                   </div>
@@ -1088,7 +1087,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             </div>
 
             {/* Totals */}
-            <div className="border-t border-white/10 py-4 space-y-2">
+            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Subtotal</span>
                 <span className="text-gray-900 dark:text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
@@ -1109,14 +1108,14 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                   <span className="text-gray-900 dark:text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
                 </div>
               )}
-              <div className="border-t border-white/10 pt-2 flex items-center justify-between">
+              <div className="border-t border-gray-200 dark:border-white/10 pt-2 flex items-center justify-between">
                 <span className="text-gray-900 dark:text-white font-bold">Total</span>
                 <span className="text-emerald-400 font-bold text-lg">₱ {receiptData.total.toFixed(2)}</span>
               </div>
             </div>
 
             {/* Payment Info */}
-            <div className="border-t border-white/10 py-4 space-y-2">
+            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
               <div className="flex items-center justify-between text-sm">
                 <span className={THEME.muted}>Payment Method</span>
                 <span className="text-gray-900 dark:text-white font-medium">{receiptData.paymentMethod}</span>
@@ -1132,7 +1131,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
             </div>
 
             {/* Action Buttons */}
-            <div className="border-t border-white/10 pt-6 space-y-3">
+            <div className="border-t border-gray-200 dark:border-white/10 pt-6 space-y-3">
               <Button
                 className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold py-6 text-base"
                 onClick={onNewTransaction}

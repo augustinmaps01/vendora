@@ -19,17 +19,20 @@ function VerifyEmailContent() {
   useEffect(() => {
     // If token is present in URL, auto-verify
     if (token) {
-      handleVerify(token)
+      handleVerify()
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token])
 
-  const handleVerify = async (verificationToken: string) => {
+  const handleVerify = async () => {
+    if (!token) return
+
     setVerifying(true)
     setError("")
 
     try {
       // TODO: Replace with actual verification logic using authService.admin.verifyEmail()
-      // const response = await authService.admin.verifyEmail(verificationToken)
+      // const response = await authService.admin.verifyEmail(token)
       // if (response.success) {
       //   setVerified(true)
       //   setTimeout(() => router.push("/admin/auth/login"), 2000)
@@ -88,8 +91,8 @@ function VerifyEmailContent() {
             {verified
               ? "Your email has been successfully verified"
               : verifying
-              ? "Please wait while we verify your email"
-              : "Check your email for a verification link"}
+                ? "Please wait while we verify your email"
+                : "Check your email for a verification link"}
           </CardDescription>
         </CardHeader>
         <CardContent>

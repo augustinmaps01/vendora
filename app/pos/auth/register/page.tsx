@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import Link from "next/link"
-import Image from "next/image"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import * as z from "zod"
@@ -300,103 +299,103 @@ export default function VendorRegisterPage() {
           </div>
         </div>
       ) : (
-          // Steps 1 and 3: Wrapped layout
-          <div className="min-h-screen p-4 py-3">
-            <div className="w-full max-w-6xl mx-auto pb-20">
-              {/* Progress Steps */}
-              <div className="mb-8">
-                <div className="flex items-start justify-center gap-4">
-                  {[
-                    { num: 1, label: "Choose Plan" },
-                    { num: 2, label: "Account Details" },
-                    { num: 3, label: "Payment" }
-                  ].map((s, idx) => (
-                    <div key={s.num} className="flex items-center">
-                      {/* Step Column */}
-                      <div className="flex flex-col items-center">
-                        <div
-                          className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${step >= s.num
-                            ? "text-white"
-                            : "bg-gray-200 text-gray-600"
-                            }`}
-                          style={step >= s.num ? { backgroundColor: '#110228' } : {}}
-                        >
-                          {s.num}
-                        </div>
-                        <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
-                          {s.label}
-                        </span>
-                      </div>
-
-                      {/* Connector Line */}
-                      {idx < 2 && (
-                        <div
-                          className={`w-16 h-1 mx-2 mb-6 ${step > s.num ? "" : "bg-gray-200"
-                            }`}
-                          style={step > s.num ? { backgroundColor: '#110228' } : {}}
-                        />
-                      )}
-                    </div>
-                  ))}
-                </div>
-              </div>
-
-              {error && (
-                <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
-                  <AlertCircle className="h-4 w-4" />
-                  <AlertDescription>{error}</AlertDescription>
-                </Alert>
-              )}
-
-              {/* Step 1: Plan Selection */}
-              {step === 1 && (
-                <>
-                  <div className="mb-24">
-                    <SubscriptionPlanSelector
-                      selectedPlan={selectedPlan}
-                      onSelectPlan={handlePlanSelection}
-                    />
-                  </div>
-
-                  {/* Sticky Navigation Buttons */}
-                  <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t shadow-lg">
-                    <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
-                      <Link href="/pos/auth/login">
-                        <Button variant="ghost">
-                          <ArrowLeft className="mr-2 h-4 w-4" />
-                          Back to Login
-                        </Button>
-                      </Link>
-                      <Button
-                        onClick={handleNextStep}
-                        className="hover:opacity-90 text-white"
-                        style={{ backgroundColor: '#110228' }}
-                        disabled={!selectedPlan}
+        // Steps 1 and 3: Wrapped layout
+        <div className="min-h-screen p-4 py-3">
+          <div className="w-full max-w-6xl mx-auto pb-20">
+            {/* Progress Steps */}
+            <div className="mb-8">
+              <div className="flex items-start justify-center gap-4">
+                {[
+                  { num: 1, label: "Choose Plan" },
+                  { num: 2, label: "Account Details" },
+                  { num: 3, label: "Payment" }
+                ].map((s, idx) => (
+                  <div key={s.num} className="flex items-center">
+                    {/* Step Column */}
+                    <div className="flex flex-col items-center">
+                      <div
+                        className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${step >= s.num
+                          ? "text-white"
+                          : "bg-gray-200 text-gray-600"
+                          }`}
+                        style={step >= s.num ? { backgroundColor: '#110228' } : {}}
                       >
-                        Continue
-                      </Button>
+                        {s.num}
+                      </div>
+                      <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                        {s.label}
+                      </span>
                     </div>
-                  </div>
-                </>
-              )}
 
-              {/* Step 3: Payment - This would redirect to Stripe/PayPal */}
-              {step === 3 && (
-                <Card className="max-w-2xl mx-auto">
-                  <CardHeader className="space-y-1">
-                    <CardTitle className="text-2xl font-bold text-center">Processing...</CardTitle>
-                    <CardDescription className="text-center">
-                      Redirecting to secure payment processor
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="flex justify-center py-8">
-                    <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
-                  </CardContent>
-                </Card>
-              )}
+                    {/* Connector Line */}
+                    {idx < 2 && (
+                      <div
+                        className={`w-16 h-1 mx-2 mb-6 ${step > s.num ? "" : "bg-gray-200"
+                          }`}
+                        style={step > s.num ? { backgroundColor: '#110228' } : {}}
+                      />
+                    )}
+                  </div>
+                ))}
+              </div>
             </div>
+
+            {error && (
+              <Alert variant="destructive" className="mb-6 max-w-2xl mx-auto">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription>{error}</AlertDescription>
+              </Alert>
+            )}
+
+            {/* Step 1: Plan Selection */}
+            {step === 1 && (
+              <>
+                <div className="mb-24">
+                  <SubscriptionPlanSelector
+                    selectedPlan={selectedPlan}
+                    onSelectPlan={handlePlanSelection}
+                  />
+                </div>
+
+                {/* Sticky Navigation Buttons */}
+                <div className="fixed bottom-0 left-0 right-0 z-20 bg-white border-t shadow-lg">
+                  <div className="max-w-6xl mx-auto px-4 py-4 flex justify-between items-center">
+                    <Link href="/pos/auth/login">
+                      <Button variant="ghost">
+                        <ArrowLeft className="mr-2 h-4 w-4" />
+                        Back to Login
+                      </Button>
+                    </Link>
+                    <Button
+                      onClick={handleNextStep}
+                      className="hover:opacity-90 text-white"
+                      style={{ backgroundColor: '#110228' }}
+                      disabled={!selectedPlan}
+                    >
+                      Continue
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+
+            {/* Step 3: Payment - This would redirect to Stripe/PayPal */}
+            {step === 3 && (
+              <Card className="max-w-2xl mx-auto">
+                <CardHeader className="space-y-1">
+                  <CardTitle className="text-2xl font-bold text-center">Processing...</CardTitle>
+                  <CardDescription className="text-center">
+                    Redirecting to secure payment processor
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center py-8">
+                  <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
+                </CardContent>
+              </Card>
+            )}
           </div>
+        </div>
       )}
-        </>
-      )
+    </>
+  )
 }

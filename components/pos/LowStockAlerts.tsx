@@ -59,7 +59,7 @@ export function LowStockAlerts({ variant = "default" }: LowStockAlertsProps) {
           </div>
         ) : (
           <div className="space-y-3">
-            {items.map((item, index) => (
+            {items.map((item) => (
               <div
                 key={item.id}
                 className="flex items-center justify-between p-3 border border-orange-100 dark:border-orange-800/40 bg-orange-50/30 dark:bg-orange-950/20 rounded-lg"

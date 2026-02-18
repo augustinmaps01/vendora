@@ -1,7 +1,7 @@
 "use client"
 
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
-import { FileText, Package as PackageIcon, ShoppingCart, Box, Plus, Edit, Trash2 } from "lucide-react"
+import { FileText, Package as PackageIcon, ShoppingCart, Box, Plus, Edit } from "lucide-react"
 import type { RecentActivity as RecentActivityData } from "@/types/dashboard"
 
 type RecentActivityProps = {

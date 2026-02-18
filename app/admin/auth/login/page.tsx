@@ -87,6 +87,7 @@ export default function AdminLoginPage() {
       }, 3000)
       return () => clearTimeout(timer)
     }
+    return undefined
   }, [error])
 
   // Show logout success message if user just logged out
@@ -270,7 +271,7 @@ export default function AdminLoginPage() {
             <div className="mt-12 bg-white/5 backdrop-blur-sm rounded-2xl p-6 border border-white/10 max-w-md">
               <div className="flex items-center gap-4">
                 {(() => {
-                  const Feature = platformFeatures[currentFeature]
+                  const Feature = platformFeatures[currentFeature] ?? platformFeatures[0]!
                   const Icon = Feature.icon
                   return (
                     <>

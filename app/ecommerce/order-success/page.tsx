@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { Button } from "@/components/ui/button"
-import { CheckCircle2, Package, Mail, Download, ArrowRight, Sparkles, Home } from "lucide-react"
+import { CheckCircle2, Package, Mail, ArrowRight, Sparkles, Home } from "lucide-react"
 import Link from "next/link"
 import Confetti from "react-confetti"
 

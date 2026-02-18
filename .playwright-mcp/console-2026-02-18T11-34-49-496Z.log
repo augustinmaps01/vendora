@@ -1,0 +1,73 @@
+[    4265ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4266ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4266ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4266ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4266ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4266ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4267ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4267ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4267ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4267ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    4268ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5038ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5044ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5060ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    5060ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[    6769ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/kpis:0
+[    6774ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/orders-by-channel:0
+[    6805ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/payment-methods:0
+[    6811ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/top-products?limit=5:0
+[    6816ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/auth/me:0
+[    6824ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/sales-trend:0
+[    6854ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/recent-activity?limit=4:0
+[    6855ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/inventory-health:0
+[    7038ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/low-stock-alerts:0
+[    7063ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/pending-orders:0
+[    7562ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/low-stock-alerts:0
+[    7564ms] [ERROR] Failed to load resource: the server responded with a status of 401 () @ https://vendora-api.abedubas.dev/api/dashboard/pending-orders:0
+[    7812ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://vendora-api.abedubas.dev/api/auth/refresh:0
+[    7817ms] [ERROR] ❌ Token refresh failed: {status: 404, message: Request failed with status code 404, data: Object} @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    7839ms] [ERROR] Failed to fetch low stock alerts: AxiosError @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    7840ms] [ERROR] Failed to fetch pending orders: AxiosError @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    7840ms] [ERROR] Failed to fetch low stock alerts: AxiosError @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    7840ms] [ERROR] Failed to fetch pending orders: AxiosError @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[    7841ms] [ERROR] Error fetching dashboard data: AxiosError @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:3127
+[   11649ms] [WARNING] Missing environment variable: NEXT_PUBLIC_JWT_SECRET @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11651ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GCASH_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11652ms] [WARNING] Missing environment variable: NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11652ms] [WARNING] Missing environment variable: NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11652ms] [WARNING] Missing environment variable: NEXT_PUBLIC_CDN_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11652ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GOOGLE_MAPS_API_KEY @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11653ms] [WARNING] Missing environment variable: NEXT_PUBLIC_GA_TRACKING_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11653ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FB_PIXEL_ID @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11653ms] [WARNING] Missing environment variable: NEXT_PUBLIC_FACEBOOK_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11653ms] [WARNING] Missing environment variable: NEXT_PUBLIC_INSTAGRAM_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   11653ms] [WARNING] Missing environment variable: NEXT_PUBLIC_TWITTER_URL @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   21734ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   21735ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   21761ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297
+[   21761ms] [WARNING] The width(-1) and height(-1) of chart should be greater than 0,
+       please check the style of container, or the props width(100%) and height(100%),
+       or add a minWidth(0) or minHeight(undefined) or use aspect(undefined) to control the
+       height and width. @ http://localhost:3000/_next/static/chunks/node_modules_next_dist_f3530cac._.js:2297

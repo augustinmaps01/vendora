@@ -2,7 +2,7 @@ import { create } from "zustand"
 import { persist } from "zustand/middleware"
 import { CartState, CartItem } from "@/types"
 import { Product, ProductVariant } from "@/types"
-import PHP, { calculateSubtotal, addVAT } from "@/lib/currency"
+import PHP, { calculateSubtotal } from "@/lib/currency"
 
 /**
  * Shopping Cart Store

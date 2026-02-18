@@ -1,9 +1,8 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { ArrowRight, ShoppingBag, Store, Lock, Shield, Users, Package, CheckCircle } from "lucide-react"
+import { ArrowRight, Store, Lock, Shield, Users } from "lucide-react"
 import Link from "next/link"
-import Image from "next/image"
 
 export default function LandingPage() {
     return (

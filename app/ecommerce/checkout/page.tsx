@@ -8,8 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Separator } from "@/components/ui/separator"
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group"
-import { Checkbox } from "@/components/ui/checkbox"
-import { ArrowLeft, CreditCard, Truck, ShieldCheck, Lock, MapPin, User, Mail, Phone, Home } from "lucide-react"
+import { ArrowLeft, CreditCard, Truck, ShieldCheck, Lock, MapPin, Mail, Home } from "lucide-react"
 import Link from "next/link"
 import Image from "next/image"
 
@@ -26,7 +25,6 @@ export default function CheckoutPage() {
     const { items, clearCart } = useCartStore()
     const [isProcessing, setIsProcessing] = useState(false)
     const [paymentMethod, setPaymentMethod] = useState("card")
-    const [sameAsShipping, setSameAsShipping] = useState(true)
 
     // Form state
     const [formData, setFormData] = useState({

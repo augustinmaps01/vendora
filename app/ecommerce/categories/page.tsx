@@ -14,7 +14,6 @@ import {
     Package
 } from "lucide-react"
 import Link from "next/link"
-import { useState } from "react"
 
 const CATEGORIES = [
     {
@@ -127,7 +126,6 @@ const FEATURED_BY_CATEGORY: Record<string, any[]> = {
 }
 
 export default function CategoriesPage() {
-    const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
 
     return (
         <div className="min-h-screen bg-gray-50">
@@ -196,7 +194,7 @@ export default function CategoriesPage() {
                         </Link>
                     </div>
                     <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {FEATURED_BY_CATEGORY.electronics.map((product) => (
+                        {FEATURED_BY_CATEGORY.electronics?.map((product) => (
                             <ProductCard key={product.id} product={product} />
                         ))}
                     </div>

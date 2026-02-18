@@ -1,6 +1,6 @@
 "use client"
 
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,7 +14,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Wifi, WifiOff, Signal, SignalLow, SignalMedium, SignalHigh, RefreshCw, Info } from 'lucide-react';
+import { WifiOff, Signal, SignalLow, SignalMedium, SignalHigh, RefreshCw, Info } from 'lucide-react';
 import { networkMonitor, type NetworkStats, type NetworkQuality } from '@/lib/network-quality-monitor';
 
 export function NetworkQualityIndicator() {
@@ -181,8 +181,8 @@ function SignalStrengthBar({ quality }: { quality: NetworkQuality }) {
   const bars = 5;
   const activeBars = quality === 'excellent' ? 5
     : quality === 'good' ? 4
-    : quality === 'poor' ? 2
-    : 0;
+      : quality === 'poor' ? 2
+        : 0;
 
   return (
     <div className="flex items-center gap-1">
@@ -191,15 +191,14 @@ function SignalStrengthBar({ quality }: { quality: NetworkQuality }) {
         {Array.from({ length: bars }).map((_, i) => (
           <div
             key={i}
-            className={`w-1.5 rounded-t transition-all ${
-              i < activeBars
-                ? quality === 'excellent'
-                  ? 'bg-green-500'
-                  : quality === 'good'
+            className={`w-1.5 rounded-t transition-all ${i < activeBars
+              ? quality === 'excellent'
+                ? 'bg-green-500'
+                : quality === 'good'
                   ? 'bg-blue-500'
                   : 'bg-orange-500'
-                : 'bg-white/10'
-            }`}
+              : 'bg-white/10'
+              }`}
             style={{ height: `${((i + 1) / bars) * 100}%` }}
           />
         ))}

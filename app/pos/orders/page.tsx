@@ -5,7 +5,6 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api-client"
-import { orderService } from "@/services"
 import { posOrderEndpoints } from "./api-endpoints"
 import { db } from "@/lib/db"
 import {
@@ -18,8 +17,6 @@ import {
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
 import {
@@ -28,8 +25,6 @@ import {
   Eye,
   Printer,
   Filter,
-  X,
-  Download,
   Loader2,
 } from "lucide-react"
 
@@ -108,10 +103,10 @@ const normalizeOrderDetails = (raw: any): any => {
     discount: Number(raw?.discount ?? 0) / 100,
     items: Array.isArray(raw?.items)
       ? raw.items.map((item: any) => ({
-          ...item,
-          price: Number(item?.price ?? 0) / 100,
-          total: Number(item?.total ?? 0) / 100,
-        }))
+        ...item,
+        price: Number(item?.price ?? 0) / 100,
+        total: Number(item?.total ?? 0) / 100,
+      }))
       : [],
   }
 }
@@ -123,22 +118,18 @@ function DesktopOrdersLayout() {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
-  const [selectedOrderId, setSelectedOrderId] = useState<number | null>(null)
+
   const [orderDetails, setOrderDetails] = useState<any>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
   // Pagination
-  const [currentPage, setCurrentPage] = useState(1)
+  const [currentPage] = useState(1)
   const [perPage] = useState(15)
-  const [totalRecords, setTotalRecords] = useState(0)
 
   // Date filter
-  const [startDate, setStartDate] = useState<string>("")
-  const [endDate, setEndDate] = useState<string>("")
-
-  // Order summary from API
-  const [orderSummary, setOrderSummary] = useState<any>(null)
+  const [startDate] = useState<string>("")
+  const [endDate] = useState<string>("")
 
   const loadOrders = async () => {
     setIsLoading(true)
@@ -151,7 +142,7 @@ function DesktopOrdersLayout() {
         if (cached) {
           const parsed = JSON.parse(cached.data)
           setOrders(parsed.orders || [])
-          if (parsed.total) setTotalRecords(parsed.total)
+          setOrders(parsed.orders || [])
           setIsLoading(false)
         }
       } catch {
@@ -185,10 +176,7 @@ function DesktopOrdersLayout() {
       const normalizedOrders = items.map((item: any) => normalizeOrder(item))
       setOrders(normalizedOrders)
 
-      // Extract pagination meta
-      if ((response as any)?.meta?.total) {
-        setTotalRecords((response as any).meta.total)
-      }
+
 
       // Cache first page for offline use
       if (currentPage === 1 && statusFilter === "all" && !startDate && !endDate) {
@@ -196,7 +184,7 @@ function DesktopOrdersLayout() {
           key: 'orders-page-1',
           data: JSON.stringify({ orders: normalizedOrders, total: (response as any)?.meta?.total }),
           lastSyncedAt: new Date(),
-        }).catch(() => {})
+        }).catch(() => { })
       }
     } catch (error: any) {
       // Only show error if we have no cached data
@@ -208,19 +196,10 @@ function DesktopOrdersLayout() {
     }
   }
 
-  const loadOrderSummary = async () => {
-    try {
-      const response = await api.get('/api/orders/summary')
-      setOrderSummary(response)
-    } catch (error) {
-      // Silently fail if endpoint doesn't exist yet
-      // Stats will be calculated client-side instead
-    }
-  }
+
 
   const loadOrderDetails = async (orderId: number) => {
     setIsLoadingDetails(true)
-    setSelectedOrderId(orderId)
     setIsDetailsModalOpen(true)
     try {
       const response = await api.get(posOrderEndpoints.get(orderId))
@@ -247,57 +226,16 @@ function DesktopOrdersLayout() {
     }
   }
 
-  const updateOrderStatus = async (orderId: number, newStatus: string) => {
-    try {
-      await api.patch(posOrderEndpoints.patch(orderId), { status: newStatus })
-      await loadOrderDetails(orderId)
-      await loadOrders()
-      await loadOrderSummary()
-      alert(`Order status updated to ${newStatus}`)
-    } catch (error) {
-      console.error("Failed to update status:", error)
-      alert("Failed to update order status. Please try again.")
-    }
-  }
 
-  const cancelOrder = async (orderId: number) => {
-    if (!confirm("Are you sure you want to cancel this order?")) return
-    try {
-      await api.post(`/api/orders/${orderId}/cancel`)
-      await loadOrderDetails(orderId)
-      await loadOrders()
-      await loadOrderSummary()
-      alert("Order cancelled successfully")
-    } catch (error) {
-      console.error("Failed to cancel order:", error)
-      alert("Failed to cancel order. Please try again.")
-    }
-  }
-
-  const refundOrder = async (orderId: number) => {
-    if (!confirm("Are you sure you want to refund this order?")) return
-    try {
-      await api.post(`/api/orders/${orderId}/refund`)
-      await loadOrderDetails(orderId)
-      await loadOrders()
-      await loadOrderSummary()
-      alert("Order refunded successfully")
-    } catch (error) {
-      console.error("Failed to refund order:", error)
-      alert("Failed to refund order. Please try again.")
-    }
-  }
 
   useEffect(() => {
     loadOrders()
-    loadOrderSummary()
   }, [statusFilter, currentPage, startDate, endDate])
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
     const interval = setInterval(() => {
       loadOrders()
-      loadOrderSummary()
     }, 30000)
     return () => clearInterval(interval)
   }, [currentPage, statusFilter, startDate, endDate])

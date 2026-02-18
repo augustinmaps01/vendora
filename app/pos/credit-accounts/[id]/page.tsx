@@ -28,18 +28,13 @@ import {
     User,
     Calendar,
     MapPin,
-    CreditCard,
     History,
     ShoppingBag,
-    Receipt,
     AlertCircle,
     Banknote,
-    DollarSign,
-    FileText,
     Plus,
     CheckCircle2,
     Clock,
-    Package,
 } from "lucide-react"
 
 // Types

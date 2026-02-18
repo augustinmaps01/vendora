@@ -92,18 +92,6 @@ const showSuccessToast = (title: string, message?: string) => {
   })
 }
 
-// Error toast with custom styling
-const showErrorToast = (title: string, message?: string) => {
-  Toast.fire({
-    icon: "error",
-    title: title,
-    text: message,
-    iconColor: '#ef4444',
-    background: 'linear-gradient(135deg, #fef2f2 0%, #fecaca 100%)',
-    color: '#991b1b',
-  })
-}
-
 /**
  * Product form state matching API fields
  */
@@ -146,6 +134,8 @@ const initialFormState: ProductForm = {
 }
 
 const unitOptions = ["pc", "pack", "box", "kg", "L", "g", "ml"]
+
+
 
 const columnConfig = [
   { key: "product", label: "Product" },
@@ -437,7 +427,7 @@ function DesktopInventoryLayout() {
       setInventoryItems(normalized)
 
       // Cache to IndexedDB for offline use
-      syncService.cacheProducts(items).catch(() => {})
+      syncService.cacheProducts(items).catch(() => { })
     } catch (error: any) {
       const { message, isAuthError } = getErrorMessage(error)
       if (isAuthError) {
@@ -483,9 +473,9 @@ function DesktopInventoryLayout() {
       setCategories(items)
 
       // Cache to IndexedDB
-      syncService.cacheCategories(items).catch(() => {})
+      syncService.cacheCategories(items).catch(() => { })
     } catch (error: any) {
-      const { message, isAuthError } = getErrorMessage(error)
+      const { isAuthError } = getErrorMessage(error)
       if (isAuthError) {
         router.push("/pos/auth/login")
         return

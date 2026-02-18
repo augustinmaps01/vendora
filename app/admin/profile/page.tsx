@@ -16,7 +16,6 @@ import {
     Eye,
     EyeOff,
     Save,
-    Upload,
     Camera,
     Shield,
     Clock,
@@ -29,7 +28,6 @@ import { toast } from "sonner"
 export default function AdminProfilePage() {
     const [isSaving, setIsSaving] = useState(false)
     const [showPassword, setShowPassword] = useState(false)
-    const [isUploadingPhoto, setIsUploadingPhoto] = useState(false)
 
     // Admin profile data
     const [profile, setProfile] = useState({
@@ -88,11 +86,9 @@ export default function AdminProfilePage() {
         const file = e.target.files?.[0]
         if (!file) return
 
-        setIsUploadingPhoto(true)
         // Simulate upload
         await new Promise(resolve => setTimeout(resolve, 1500))
         toast.success("Profile photo updated successfully")
-        setIsUploadingPhoto(false)
     }
 
     const getActivityIcon = (type: string) => {

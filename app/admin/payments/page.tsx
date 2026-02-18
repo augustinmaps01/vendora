@@ -3,7 +3,6 @@
 import { useState } from "react"
 import { DashboardLayout } from "@/components/admin/layout/DashboardLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
-import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -101,7 +100,6 @@ const paymentStats = {
 export default function PaymentsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
-    const [typeFilter, setTypeFilter] = useState("all")
 
     const filteredPayments = payments.filter((payment) => {
         const matchesSearch =
@@ -109,9 +107,8 @@ export default function PaymentsPage() {
             payment.vendor.toLowerCase().includes(searchQuery.toLowerCase())
 
         const matchesStatus = statusFilter === "all" || payment.status === statusFilter
-        const matchesType = typeFilter === "all" || payment.type === typeFilter
 
-        return matchesSearch && matchesStatus && matchesType
+        return matchesSearch && matchesStatus
     })
 
     const getStatusBadge = (status: string) => {

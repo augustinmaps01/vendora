@@ -172,7 +172,7 @@ const CATEGORIES = [
 export default function ProductsPage() {
     const [searchQuery, setSearchQuery] = useState("")
     const [selectedCategories, setSelectedCategories] = useState<string[]>([])
-    const [priceRange, setPriceRange] = useState([0, 500])
+    const [priceRange, setPriceRange] = useState<[number, number]>([0, 500])
     const [sortBy, setSortBy] = useState("featured")
     const [showMobileFilters, setShowMobileFilters] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
@@ -254,7 +254,7 @@ export default function ProductsPage() {
                         max={500}
                         step={10}
                         value={priceRange}
-                        onValueChange={setPriceRange}
+                        onValueChange={(value) => setPriceRange(value as [number, number])}
                         className="w-full"
                     />
                     <div className="flex items-center justify-between text-sm font-semibold" style={{ color: '#26D5FF' }}>

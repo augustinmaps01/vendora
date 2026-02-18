@@ -10,7 +10,7 @@ import { Button } from "@/components/ui/button"
  * Allows switching between light and dark mode
  */
 export function ThemeToggle() {
-    const { theme, setTheme, resolvedTheme } = useTheme()
+    const { setTheme, resolvedTheme } = useTheme()
     const [mounted, setMounted] = React.useState(false)
 
     // Prevent hydration mismatch

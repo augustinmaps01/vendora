@@ -4,13 +4,11 @@ import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Button } from "@/components/ui/button"
-import { Bell, Package, ShoppingCart, AlertTriangle, TrendingUp, X } from "lucide-react"
+import { Bell, Package, ShoppingCart, AlertTriangle, TrendingUp } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 
 const notifications = [

@@ -1,7 +1,6 @@
 "use client"
 
 import { Button } from "@/components/ui/button"
-import { Badge } from "@/components/ui/badge"
 import {
   Calculator,
   DollarSign,
@@ -166,9 +165,8 @@ export default function AccountingPage() {
           ].map((transaction, idx) => (
             <div key={idx} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-[#13132a] rounded-lg">
               <div className="flex items-center gap-4">
-                <div className={`flex-shrink-0 p-2 rounded-lg ${
-                  transaction.type === "income" ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30"
-                }`}>
+                <div className={`flex-shrink-0 p-2 rounded-lg ${transaction.type === "income" ? "bg-green-100 dark:bg-green-900/30" : "bg-red-100 dark:bg-red-900/30"
+                  }`}>
                   {transaction.type === "income" ? (
                     <TrendingUp className="h-5 w-5 text-green-600" />
                   ) : (
@@ -182,9 +180,8 @@ export default function AccountingPage() {
                   </div>
                 </div>
               </div>
-              <div className={`text-sm font-bold ${
-                transaction.type === "income" ? "text-green-600" : "text-red-600"
-              }`}>
+              <div className={`text-sm font-bold ${transaction.type === "income" ? "text-green-600" : "text-red-600"
+                }`}>
                 {transaction.amount > 0 ? "+" : ""}₱{Math.abs(transaction.amount).toLocaleString()}
               </div>
             </div>

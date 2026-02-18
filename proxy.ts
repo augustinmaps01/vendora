@@ -10,17 +10,6 @@ const authRoutes = ['/pos/auth', '/admin/auth']
 // Public routes that don't require authentication (add any public pages here)
 const publicRoutes = ['/pos/auth', '/admin/auth', '/']
 
-// POS routes that require specific user levels
-const posAdminRoutes = [
-    '/pos/dashboard',
-    '/pos/pos-screen',
-    '/pos/products',
-    '/pos/credit-accounts',
-    '/pos/sales',
-    '/pos/reports',
-    '/pos/settings',
-]
-
 // User level access control
 // admin: full access to all routes
 // vendora: limited access based on configuration

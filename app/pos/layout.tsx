@@ -21,14 +21,12 @@ import {
   BarChart3,
   Settings,
   Menu,
-  X,
   LogOut,
   User,
   ChevronDown,
   Store,
   CreditCard,
   HelpCircle,
-  PackageOpen,
   ClipboardList,
   Megaphone,
   Calculator,
@@ -91,7 +89,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
   const [userData, setUserData] = useState<{ name?: string; email?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
-  const [isLoading, setIsLoading] = useState(true)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Initialize offline support for all POS pages
@@ -99,7 +96,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     setMounted(true)
-    setIsLoading(false)
   }, [])
 
   // Resizable sidebar state
@@ -347,10 +343,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               {/* Primary Menus Section */}
               <div>
                 <h3 className="px-3 mb-2 text-xs font-semibold tracking-wider uppercase text-white/70">
-                  {sidebarSections[0].title}
+                  {sidebarSections[0]?.title}
                 </h3>
                 <ul className="space-y-1">
-                  {sidebarSections[0].items.map((item) => {
+                  {sidebarSections[0]?.items.map((item) => {
                     const Icon = item.icon
                     const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
 
