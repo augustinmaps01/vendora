@@ -540,10 +540,10 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           ml-0 lg:ml-[var(--sidebar-width)]
         `}
         style={{
-          paddingTop: mounted && (!offline.isOnline || offline.networkQuality === 'poor') ? 'calc(4rem + 28px)' : '4rem',
+          paddingTop: '4rem',
         }}
       >
-        {/* Offline Banner */}
+        {/* Offline Banner - appears below the header */}
         <OfflineBanner
           isOnline={offline.isOnline}
           networkQuality={offline.networkQuality}
@@ -560,7 +560,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           style={{
             backgroundColor: '#2e0f5f',
             borderColor: '#1f0a3d',
-            top: mounted && (!offline.isOnline || offline.networkQuality === 'poor') ? '28px' : '0',
+            top: 0,
           }}
         >
           <div className="flex items-center justify-between flex-1">

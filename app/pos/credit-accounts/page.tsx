@@ -284,7 +284,7 @@ export default function CreditAccountsPage() {
                             Manage customer credit, track balances, and record payments
                         </p>
                     </div>
-                    <Button className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 hover:-translate-y-0.5 w-full sm:w-auto">
+                    <Button className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 dark:shadow-none transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 dark:hover:shadow-none hover:-translate-y-0.5 w-full sm:w-auto">
                         <Plus className="w-4 h-4 mr-2" />
                         New Credit Account
                     </Button>
