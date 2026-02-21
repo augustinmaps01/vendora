@@ -180,7 +180,7 @@ export default function VendoraPOS() {
   const [deliveryKm, setDeliveryKm] = useState<number>(3);
   const [paymentType, setPaymentType] = useState<"full" | "partial">("full");
   const [splitPay, setSplitPay] = useState(false);
-  const [primaryMethod, setPrimaryMethod] = useState<"cash" | "card" | "online">("cash");
+  const [primaryMethod, setPrimaryMethod] = useState<"cash" | "card" | "online" | "credit">("cash");
   const [cashPay, setCashPay] = useState<number>(0);
   const [cardPay, setCardPay] = useState<number>(0);
   const [onlinePay, setOnlinePay] = useState<number>(0);
@@ -496,6 +496,8 @@ export default function VendoraPOS() {
   }, [paymentType, totals.total]);
 
   const paid = useMemo(() => {
+    // Credit: full amount is charged to customer's credit account
+    if (primaryMethod === "credit") return amountDue;
     const c = Math.max(0, Number(cashPay) || 0);
     const k = Math.max(0, Number(cardPay) || 0);
     const o = Math.max(0, Number(onlinePay) || 0);
@@ -503,7 +505,7 @@ export default function VendoraPOS() {
     if (primaryMethod === "cash") return c;
     if (primaryMethod === "card") return k;
     return o;
-  }, [splitPay, primaryMethod, cashPay, cardPay, onlinePay]);
+  }, [splitPay, primaryMethod, cashPay, cardPay, onlinePay, amountDue]);
 
   const balance = useMemo(() => Math.max(0, amountDue - paid), [amountDue, paid]);
   const change = useMemo(() => Math.max(0, paid - amountDue), [amountDue, paid]);
@@ -569,7 +571,7 @@ export default function VendoraPOS() {
         tax: totals.tax,
         delivery_fee: totals.deliveryFee,
         total: totals.total,
-        payment_method: primaryMethod,
+        payment_method: primaryMethod === "credit" ? "cash" : primaryMethod,
         payment_methods: paymentMethods,
         amount_tendered: paid,
         change: change,

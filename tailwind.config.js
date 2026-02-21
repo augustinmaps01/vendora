@@ -9,9 +9,9 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        sans: ['var(--font-inter)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        display: ['var(--font-poppins)', 'var(--font-geist-sans)', 'system-ui', 'sans-serif'],
-        mono: ['var(--font-mono)', 'var(--font-geist-mono)', 'Courier New', 'monospace'],
+        sans: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        display: ['var(--font-inter)', 'system-ui', 'sans-serif'],
+        mono: ['ui-monospace', 'SFMono-Regular', 'Courier New', 'monospace'],
       },
       colors: {
         border: 'oklch(var(--border) / <alpha-value>)',

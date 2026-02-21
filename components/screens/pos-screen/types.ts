@@ -85,8 +85,8 @@ export interface POSScreenProps {
   setPaymentType: (value: "full" | "partial") => void;
   splitPay: boolean;
   setSplitPay: (value: boolean) => void;
-  primaryMethod: "cash" | "card" | "online";
-  setPrimaryMethod: (value: "cash" | "card" | "online") => void;
+  primaryMethod: "cash" | "card" | "online" | "credit";
+  setPrimaryMethod: (value: "cash" | "card" | "online" | "credit") => void;
   cashPay: number;
   setCashPay: (value: number) => void;
   cardPay: number;

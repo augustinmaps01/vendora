@@ -1,6 +1,7 @@
 ﻿"use client"
 
 import React from "react";
+import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,7 @@ import {
   CheckCircle2,
   Printer,
   Share2,
+  FileText,
 } from "lucide-react";
 import { type POSScreenProps } from "./types";
 
@@ -69,6 +71,7 @@ function StatRow({ label, value, strong }: { label: string; value: React.ReactNo
  * Uses responsive grid utilities for all screen sizes
  */
 export default function DesktopPOSLayout(props: POSScreenProps) {
+  const router = useRouter();
   const {
     screen = "sale",
     cart = [],
@@ -763,23 +766,34 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       {/* Payment method icon buttons */}
-                      <div className="grid grid-cols-3 gap-3">
+                      <div className="grid grid-cols-4 gap-3">
                         {[
-                          { key: "cash" as const, label: "Cash", Icon: Banknote },
-                          { key: "card" as const, label: "Card", Icon: CreditCard },
-                          { key: "online" as const, label: "E-Wallet", Icon: Wallet },
-                        ].map(({ key, label, Icon }) => (
+                          { key: "cash" as const, label: "Cash", Icon: Banknote, disabled: false },
+                          { key: "credit" as const, label: "Credit", Icon: FileText, disabled: false },
+                          { key: "card" as const, label: "Card", Icon: CreditCard, disabled: true },
+                          { key: "online" as const, label: "E-Wallet", Icon: Wallet, disabled: true },
+                        ].map(({ key, label, Icon, disabled }) => (
                           <button
                             key={key}
                             type="button"
-                            onClick={() => { setPrimaryMethod(key); setSplitPay(false); }}
-                            className={`flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${!splitPay && primaryMethod === key
-                              ? "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
-                              : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
+                            disabled={disabled}
+                            onClick={() => { if (!disabled) { setPrimaryMethod(key); setSplitPay(false); } }}
+                            className={`relative flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${disabled
+                                ? "opacity-40 cursor-not-allowed " + THEME.panel + " text-gray-400 dark:text-white/30"
+                                : !splitPay && primaryMethod === key
+                                  ? key === "credit"
+                                    ? "bg-orange-100 border-2 border-orange-400 text-orange-700 dark:bg-orange-600/30 dark:border-orange-500 dark:text-orange-300"
+                                    : "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
+                                  : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
                               }`}
                           >
                             <Icon className="h-7 w-7" />
                             <span className="text-xs font-medium">{label}</span>
+                            {disabled && (
+                              <span className="absolute top-1 right-1 px-1.5 py-0.5 text-[8px] font-bold rounded-full bg-gray-300 dark:bg-white/20 text-gray-600 dark:text-white/60 leading-none">
+                                Soon
+                              </span>
+                            )}
                           </button>
                         ))}
                       </div>
@@ -820,7 +834,22 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         </Button>
                       </div>
 
-                      {!splitPay ? (
+                      {primaryMethod === "credit" ? (
+                        <div className={`rounded-2xl border-2 border-orange-300 dark:border-orange-500/40 bg-orange-50 dark:bg-orange-600/10 p-4 space-y-3`}>
+                          <div className="flex items-center gap-2">
+                            <FileText className="h-5 w-5 text-orange-500" />
+                            <div className="text-sm font-semibold text-orange-700 dark:text-orange-300">Credit Transaction</div>
+                          </div>
+                          <div className="text-xs text-orange-600 dark:text-orange-400 leading-relaxed">
+                            The full amount of <span className="font-bold">₱ {amountDue.toFixed(2)}</span> will be charged to the customer&apos;s credit account. No cash payment is needed now.
+                          </div>
+                          <div className={`rounded-xl bg-white/60 dark:bg-white/5 border border-orange-200 dark:border-orange-500/20 p-3 space-y-2`}>
+                            <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
+                            <StatRow label="Payment" value={<span className="text-orange-600 dark:text-orange-400 font-medium">Credit</span>} />
+                            <StatRow label="Balance" value={<Money value={0} />} />
+                          </div>
+                        </div>
+                      ) : !splitPay ? (
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">Amount Tendered</div>
                           <div className="flex items-center gap-2">
@@ -922,7 +951,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
                       <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
                         <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
-                        <StatRow label="Paid" value={<Money value={paid} />} />
+                        <StatRow label="Paid" value={primaryMethod === "credit" ? <span className="text-orange-600 dark:text-orange-400 font-medium">Credit</span> : <Money value={paid} />} />
                         <StatRow label="Balance" value={<Money value={balance} />} />
                       </div>
                     </CardContent>
@@ -978,18 +1007,35 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                   </div>
 
                   <div className="shrink-0 pt-3">
-                    <Button
-                      className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 py-5 text-base font-semibold"
-                      disabled={!canComplete}
-                      onClick={() => {
-                        if (completeOrder) {
-                          completeOrder();
-                        }
-                      }}
-                    >
-                      Confirm Payment
-                      <ArrowRight className="h-5 w-5 ml-2" />
-                    </Button>
+                    {primaryMethod === "credit" ? (
+                      <Button
+                        className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 py-5 text-base font-semibold text-white"
+                        disabled={cart.length === 0 || totals.total <= 0}
+                        onClick={async () => {
+                          if (completeOrder) {
+                            await completeOrder();
+                          }
+                          router.push("/pos/credit-accounts");
+                        }}
+                      >
+                        <FileText className="h-5 w-5 mr-2" />
+                        Confirm Credit
+                        <ArrowRight className="h-5 w-5 ml-2" />
+                      </Button>
+                    ) : (
+                      <Button
+                        className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 py-5 text-base font-semibold"
+                        disabled={!canComplete}
+                        onClick={() => {
+                          if (completeOrder) {
+                            completeOrder();
+                          }
+                        }}
+                      >
+                        Confirm Payment
+                        <ArrowRight className="h-5 w-5 ml-2" />
+                      </Button>
+                    )}
 
                     <Button
                       variant="secondary"
@@ -1000,7 +1046,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     </Button>
 
                     <div className={`mt-2 text-xs ${THEME.muted}`}>
-                      {canComplete ? "Ready to confirm payment." : "Enter payment amount to cover the balance."}
+                      {primaryMethod === "credit"
+                        ? "Transaction will be added to the customer's credit account."
+                        : canComplete ? "Ready to confirm payment." : "Enter payment amount to cover the balance."}
                     </div>
                   </div>
                 </div>

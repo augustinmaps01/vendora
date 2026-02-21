@@ -37,7 +37,7 @@ import {
 } from "lucide-react"
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
 import { ThemeToggle } from "@/components/pos/ThemeToggle"
-import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
+// import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
 import { OfflineBanner } from "@/components/pos/OfflineBanner"
 import { useOfflineInit } from "@/hooks/use-offline-init"
 import { authService } from "@/services/auth-jwt.service"
@@ -598,16 +598,16 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               */}
             </div>
 
-            {/* Right Side - Network Status, Theme Toggle, Notifications & User Profile */}
+            {/* Right Side - Theme Toggle, Notifications & User Profile */}
             <div className="flex items-center gap-3">
-              {/* Network Status */}
-              <NetworkStatusBadge
+              {/* Network Status — hidden for now */}
+              {/* <NetworkStatusBadge
                 isOnline={offline.isOnline}
                 networkQuality={offline.networkQuality}
                 pendingCount={offline.pendingCount}
                 isSyncing={offline.isSyncing}
                 onSync={offline.triggerSync}
-              />
+              /> */}
 
               {/* Theme Toggle */}
               <ThemeToggle />

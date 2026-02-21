@@ -12,7 +12,7 @@ import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Shield, Clock, Eye, EyeOff, Loader2, LogOut, Mail, Lock, ShoppingBag, LogIn } from "lucide-react"
+import { Shield, Clock, Eye, EyeOff, Loader2, LogOut, Mail, Lock, LogIn } from "lucide-react"
 import { VendorLoginCredentials } from "@/types/auth"
 import { authService } from "@/services/auth-jwt.service"
 import { TOKEN_CONFIG } from "@/config/api.config"
@@ -344,19 +344,19 @@ function VendorLoginContent() {
   // Beautiful branded loading overlay
   if (isNavigating) {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-300" style={{ backgroundColor: '#110228' }}>
+      <div className="fixed inset-0 z-50 flex items-center justify-center animate-in fade-in duration-300 bg-white dark:bg-[#110228]">
         {/* Decorative background elements */}
         <div className="absolute inset-0 overflow-hidden">
-          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl" />
-          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400/10 rounded-full blur-3xl" />
+          <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-600/10 dark:bg-purple-600/20 rounded-full blur-3xl" />
+          <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/10 dark:bg-purple-500/20 rounded-full blur-3xl" />
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-purple-400/5 dark:bg-purple-400/10 rounded-full blur-3xl" />
         </div>
 
         {/* Content */}
         <div className="relative flex flex-col items-center gap-8 p-8">
           {/* Logo with pulse animation */}
           <div className="relative">
-            <div className="absolute inset-0 bg-white/20 rounded-3xl blur-xl animate-pulse" />
+            <div className="absolute inset-0 bg-purple-100/60 dark:bg-white/20 rounded-3xl blur-xl animate-pulse" />
             <div className="relative flex items-center justify-center w-32 h-32 bg-white rounded-3xl shadow-2xl p-5">
               <Image
                 src="/new-logo/vendora 2.png"
@@ -369,23 +369,14 @@ function VendorLoginContent() {
           </div>
 
           {/* Brand name */}
-          <h1 className="text-4xl font-bold text-white tracking-wide">Vendora</h1>
+          <h1 className="text-4xl font-bold text-gray-900 dark:text-white tracking-wide">Vendora</h1>
 
           {/* Loading indicator */}
           <div className="flex flex-col items-center gap-4 mt-2">
-            <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
-            <p className="text-purple-300 text-sm">Loading...</p>
+            <Loader2 className="w-10 h-10 text-purple-600 dark:text-purple-400 animate-spin" />
+            <p className="text-purple-500 dark:text-purple-300 text-sm">Loading...</p>
           </div>
         </div>
-
-        {/* CSS for loading progress animation */}
-        <style jsx>{`
-          @keyframes loading-progress {
-            0% { width: 0%; }
-            50% { width: 70%; }
-            100% { width: 100%; }
-          }
-        `}</style>
       </div>
     )
   }
@@ -465,24 +456,24 @@ function VendorLoginContent() {
           <div className="flex flex-col items-center gap-3 mb-2">
             <div className="relative">
               {/* Circular ring container */}
-       
-                {/* Colored logo in light, white logo in dark */}
-                <Image
-                  src="/new-logo/vendora 2.png"
-                  alt="Vendora"
-                  width={56}
-                  height={56}
-                  className="object-contain block dark:hidden"
-                />
-                <Image
-                  src="/new-logo/vendora 2 white.png"
-                  alt="Vendora"
-                  width={56}
-                  height={56}
-                  className="object-contain hidden dark:block"
-                />
-   
-            
+
+              {/* Colored logo in light, white logo in dark */}
+              <Image
+                src="/new-logo/vendora 2.png"
+                alt="Vendora"
+                width={56}
+                height={56}
+                className="object-contain block dark:hidden"
+              />
+              <Image
+                src="/new-logo/vendora 2 white.png"
+                alt="Vendora"
+                width={56}
+                height={56}
+                className="object-contain hidden dark:block"
+              />
+
+
             </div>
             <div className="text-center">
               <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Vendora POS</h1>
@@ -608,11 +599,11 @@ function VendorLoginContent() {
             </div>
           </form>
 
-          {/* ── DARK MODE: Footer ── */}
-          <div className="hidden dark:block text-center pt-4 space-y-0.5">
-            <p className="text-xs text-gray-500">Point of Sale System</p>
-            <p className="text-xs text-purple-400 font-medium">Vendora Technologies, Inc.</p>
-            <p className="text-xs text-gray-600">v1.0.0</p>
+          {/* Footer — visible in both light and dark mode */}
+          <div className="text-center pt-4 space-y-0.5">
+            <p className="text-xs text-gray-400 dark:text-gray-500">Point of Sale System</p>
+            <p className="text-xs text-purple-600 dark:text-purple-400 font-medium">Vendora Technologies, Inc.</p>
+            <p className="text-xs text-gray-400 dark:text-gray-600">v1.0.0</p>
           </div>
 
         </div>
@@ -624,8 +615,8 @@ function VendorLoginContent() {
 export default function VendorLoginPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-gradient-to-br from-purple-900 via-purple-800 to-magenta-600 flex items-center justify-center">
-        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-white"></div>
+      <div className="min-h-screen bg-white dark:bg-[#0b0b1a] flex items-center justify-center">
+        <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-purple-600 dark:border-purple-400"></div>
       </div>
     }>
       <VendorLoginContent />
