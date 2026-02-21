@@ -104,4 +104,8 @@ export interface POSScreenProps {
   categories?: any[];
   receiptData?: ReceiptData | null;
   startNewTransaction?: () => void;
+  creditorName?: string;
+  setCreditorName?: (value: string) => void;
+  creditorPhone?: string;
+  setCreditorPhone?: (value: string) => void;
 }

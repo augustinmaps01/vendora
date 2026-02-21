@@ -103,9 +103,9 @@ type ProductForm = {
   price: number
   cost: number
   currency: string
-  stock: number
-  min_stock: number
-  max_stock: number
+  stock: number | ""
+  min_stock: number | ""
+  max_stock: number | ""
   unit: string
   description: string
   image: string
@@ -123,9 +123,9 @@ const initialFormState: ProductForm = {
   price: 0,
   cost: 0,
   currency: "PHP",
-  stock: 0,
-  min_stock: 0,
-  max_stock: 0,
+  stock: "",
+  min_stock: "",
+  max_stock: "",
   unit: "pc",
   description: "",
   image: "",
@@ -278,14 +278,14 @@ const buildProductPayload = (data: ProductForm, imageFile?: File | null): Produc
   category_id: data.category_id ?? 0,
   price: data.price,
   currency: data.currency,
-  stock: data.stock,
+  stock: Number(data.stock) || 0,
   // Optional fields
   description: data.description || undefined,
   barcode: data.barcode || undefined,
-  cost: data.cost || undefined,
+  cost: Number(data.cost) || undefined,
   unit: data.unit || undefined,
-  min_stock: data.min_stock || undefined,
-  max_stock: data.max_stock || undefined,
+  min_stock: data.min_stock !== "" ? Number(data.min_stock) : undefined,
+  max_stock: data.max_stock !== "" ? Number(data.max_stock) : undefined,
   image: imageFile || undefined,
   is_active: data.is_active,
   is_ecommerce: data.is_ecommerce,
@@ -628,8 +628,8 @@ function DesktopInventoryLayout() {
       cost: product.cost || 0,
       currency: product.currency,
       stock: product.stock,
-      min_stock: product.min_stock || 0,
-      max_stock: product.max_stock || 0,
+      min_stock: product.min_stock ?? "",
+      max_stock: product.max_stock ?? "",
       unit: product.unit || "pc",
       description: product.description || "",
       image: product.image || "",
@@ -665,6 +665,14 @@ function DesktopInventoryLayout() {
     }
     if (formData.price <= 0) {
       setActionError("Price must be greater than 0.")
+      return
+    }
+    if (formData.stock === "") {
+      setActionError("Stock is required.")
+      return
+    }
+    if (formData.min_stock === "") {
+      setActionError("Minimum stock is required.")
       return
     }
     // Validate image is required for new products
@@ -1741,15 +1749,15 @@ function DesktopInventoryLayout() {
                           placeholder="0"
                           type="number"
                           min="0"
-                          value={formData.stock || ""}
-                          onChange={(e) => handleInputChange("stock", Number(e.target.value))}
+                          value={formData.stock === "" ? "" : formData.stock}
+                          onChange={(e) => handleInputChange("stock", e.target.value === "" ? "" : Number(e.target.value))}
                         />
                       </div>
                     </div>
 
                     {/* Min Stock */}
                     <div className="space-y-2">
-                      <p className="text-xs text-white/70">Min Stock</p>
+                      <p className="text-xs text-white/70">Min Stock *</p>
                       <div className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3">
                         <Boxes className="h-4 w-4 text-white/50" />
                         <Input
@@ -1757,8 +1765,8 @@ function DesktopInventoryLayout() {
                           placeholder="0"
                           type="number"
                           min="0"
-                          value={formData.min_stock || ""}
-                          onChange={(e) => handleInputChange("min_stock", Number(e.target.value))}
+                          value={formData.min_stock === "" ? "" : formData.min_stock}
+                          onChange={(e) => handleInputChange("min_stock", e.target.value === "" ? "" : Number(e.target.value))}
                         />
                       </div>
                     </div>
@@ -1773,8 +1781,8 @@ function DesktopInventoryLayout() {
                           placeholder="0"
                           type="number"
                           min="0"
-                          value={formData.max_stock || ""}
-                          onChange={(e) => handleInputChange("max_stock", Number(e.target.value))}
+                          value={formData.max_stock === "" ? "" : formData.max_stock}
+                          onChange={(e) => handleInputChange("max_stock", e.target.value === "" ? "" : Number(e.target.value))}
                         />
                       </div>
                     </div>

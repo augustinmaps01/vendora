@@ -38,7 +38,7 @@ import {
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
 import { ThemeToggle } from "@/components/pos/ThemeToggle"
 // import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
-import { OfflineBanner } from "@/components/pos/OfflineBanner"
+// import { OfflineBanner } from "@/components/pos/OfflineBanner"
 import { useOfflineInit } from "@/hooks/use-offline-init"
 import { authService } from "@/services/auth-jwt.service"
 import { tokenManager } from "@/lib/axios-client"
@@ -91,8 +91,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Initialize offline support for all POS pages
-  const offline = useOfflineInit()
+  // Initialize offline support for all POS pages (kept for background sync side effects)
+  useOfflineInit()
 
   useEffect(() => {
     setMounted(true)
@@ -543,12 +543,12 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           paddingTop: '4rem',
         }}
       >
-        {/* Offline Banner - appears below the header */}
-        <OfflineBanner
+        {/* Offline Banner — hidden for now */}
+        {/* <OfflineBanner
           isOnline={offline.isOnline}
           networkQuality={offline.networkQuality}
           pendingCount={offline.pendingCount}
-        />
+        /> */}
 
         {/* Header */}
         <header

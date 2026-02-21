@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -129,7 +129,22 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     categories = [],
     receiptData = null,
     startNewTransaction = () => { },
+    creditorName = "",
+    setCreditorName = () => { },
+    creditorPhone = "",
+    setCreditorPhone = () => { },
   } = props || {};
+
+  const [activeDiscountPreset, setActiveDiscountPreset] = useState<string>("None");
+
+  useEffect(() => {
+    if (discountValue === 0) {
+      setActiveDiscountPreset("None");
+    } else if (discountMode === "amount" || ![5, 10, 20].includes(discountValue)) {
+      setActiveDiscountPreset("Custom");
+    }
+  }, [discountValue, discountMode]);
+
   if (screen === "receipt" && receiptData) {
     return (
       <div className="h-full flex items-start justify-center overflow-auto py-4">
@@ -188,6 +203,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <span className="text-emerald-400">- ₱ {receiptData.discount.toFixed(2)}</span>
                   </div>
                 )}
+                <div className="flex items-center justify-between text-sm">
+                  <span className={THEME.muted}>Vatable Sales</span>
+                  <span className="text-gray-900 dark:text-white">₱ {(receiptData.subtotal - receiptData.discount).toFixed(2)}</span>
+                </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className={THEME.muted}>{receiptData.taxLabel}</span>
                   <span className="text-gray-900 dark:text-white">₱ {receiptData.tax.toFixed(2)}</span>
@@ -296,6 +315,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
               <span>- ₱ {receiptData.discount.toFixed(2)}</span>
             </div>
           )}
+          <div className="receipt-row">
+            <span>Vatable Sales</span>
+            <span>₱ {(receiptData.subtotal - receiptData.discount).toFixed(2)}</span>
+          </div>
           <div className="receipt-row">
             <span>{receiptData.taxLabel}</span>
             <span>₱ {receiptData.tax.toFixed(2)}</span>
@@ -450,7 +473,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
 
                         <div className="flex items-center justify-between text-[11px]">
                           <div className={`${THEME.muted}`}>
-                            {p.sku} â€¢ {p.unit}
+                            {p.sku} &bull; {p.unit}
                           </div>
                           <div className={`${THEME.muted} ${p.stock <= 0 ? 'text-red-400' : ''}`}>
                             Stock {p.stock}
@@ -552,6 +575,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className="h-px bg-gray-200 dark:bg-white/10" />
                     <StatRow label="Subtotal" value={<Money value={totals.subtotal} />} />
                     <StatRow label="Discount" value={<Money value={discountAmount} />} />
+                    <StatRow label="Vatable Sales" value={<Money value={totals.subtotal - discountAmount} />} />
                     <StatRow label="Tax" value={<Money value={totals.tax} />} />
                     <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
                     <div className="h-px bg-gray-200 dark:bg-white/10" />
@@ -652,16 +676,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           { label: "Promo", mode: "percent" as const, value: 5 },
                           { label: "Custom", mode: discountMode, value: -1 },
                         ].map((preset) => {
-                          const isActive =
-                            preset.label === "Custom"
-                              ? discountValue > 0 && ![0, 5, 10, 20].includes(discountValue)
-                              : preset.label === "None"
-                                ? discountValue === 0
-                                : (discountMode === "percent" && discountValue === preset.value &&
-                                  ((preset.label === "SC 20%" && discountValue === 20) ||
-                                    (preset.label === "PWD 20%" && discountValue === 20) ||
-                                    (preset.label === "Emp 10%" && discountValue === 10) ||
-                                    (preset.label === "Promo" && discountValue === 5)));
+                          const isActive = activeDiscountPreset === preset.label;
                           return (
                             <Button
                               key={preset.label}
@@ -672,6 +687,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                                 : "bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"
                                 }`}
                               onClick={() => {
+                                setActiveDiscountPreset(preset.label);
                                 if (preset.label === "None") {
                                   setDiscountMode("percent");
                                   setDiscountValue(0);
@@ -717,7 +733,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                       <div className="flex items-center gap-2">
                         <Input
                           value={discountValue}
-                          onChange={(e) => setDiscountValue(Number(e.target.value || 0))}
+                          onChange={(e) => {
+                            setDiscountValue(Number(e.target.value || 0));
+                            setActiveDiscountPreset("Custom");
+                          }}
                           className="rounded-xl bg-gray-100 border-gray-200 text-gray-900 dark:bg-white/10 dark:border-white/10 dark:text-white"
                           inputMode="numeric"
                           placeholder={discountMode === "amount" ? "₱ 0" : "0 to 100"}
@@ -727,7 +746,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     </CardContent>
                   </Card>
 
-                  <Card className={`rounded-2xl ${THEME.card}`}>
+                  <Card className={`rounded-2xl ${THEME.card} hidden`}>
                     <CardHeader className="pb-2">
                       <CardTitle className="text-sm text-gray-900 dark:text-white">Tax Rate (%)</CardTitle>
                     </CardHeader>
@@ -779,12 +798,12 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             disabled={disabled}
                             onClick={() => { if (!disabled) { setPrimaryMethod(key); setSplitPay(false); } }}
                             className={`relative flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${disabled
-                                ? "opacity-40 cursor-not-allowed " + THEME.panel + " text-gray-400 dark:text-white/30"
-                                : !splitPay && primaryMethod === key
-                                  ? key === "credit"
-                                    ? "bg-orange-100 border-2 border-orange-400 text-orange-700 dark:bg-orange-600/30 dark:border-orange-500 dark:text-orange-300"
-                                    : "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
-                                  : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
+                              ? "opacity-40 cursor-not-allowed " + THEME.panel + " text-gray-400 dark:text-white/30"
+                              : !splitPay && primaryMethod === key
+                                ? key === "credit"
+                                  ? "bg-orange-100 border-2 border-orange-400 text-orange-700 dark:bg-orange-600/30 dark:border-orange-500 dark:text-orange-300"
+                                  : "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
+                                : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
                               }`}
                           >
                             <Icon className="h-7 w-7" />
@@ -798,40 +817,43 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         ))}
                       </div>
 
-                      {/* Split payment toggle */}
-                      <div className="flex items-center justify-between">
-                        <div>
-                          <div className="text-sm font-medium text-gray-900 dark:text-white">Split payment</div>
-                          <div className={`text-xs ${THEME.muted}`}>Combine methods</div>
+                      {/* Split payment and Full/Partial toggles hidden by request */}
+                      <div className="hidden">
+                        {/* Split payment toggle */}
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <div className="text-sm font-medium text-gray-900 dark:text-white">Split payment</div>
+                            <div className={`text-xs ${THEME.muted}`}>Combine methods</div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <Switch checked={splitPay} onCheckedChange={(v) => setSplitPay(Boolean(v))} />
+                            <Label className="text-gray-600 dark:text-white/70">Split</Label>
+                          </div>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <Switch checked={splitPay} onCheckedChange={(v) => setSplitPay(Boolean(v))} />
-                          <Label className="text-gray-600 dark:text-white/70">Split</Label>
-                        </div>
-                      </div>
 
-                      {/* Full / Partial */}
-                      <div className="grid grid-cols-2 gap-2">
-                        <Button
-                          type="button"
-                          variant={paymentType === "full" ? "default" : "secondary"}
-                          className={paymentType === "full"
-                            ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
-                            : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
-                          onClick={() => setPaymentType("full")}
-                        >
-                          Full
-                        </Button>
-                        <Button
-                          type="button"
-                          variant={paymentType === "partial" ? "default" : "secondary"}
-                          className={paymentType === "partial"
-                            ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
-                            : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
-                          onClick={() => setPaymentType("partial")}
-                        >
-                          Partial
-                        </Button>
+                        {/* Full / Partial */}
+                        <div className="grid grid-cols-2 gap-2 mt-3">
+                          <Button
+                            type="button"
+                            variant={paymentType === "full" ? "default" : "secondary"}
+                            className={paymentType === "full"
+                              ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                              : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
+                            onClick={() => setPaymentType("full")}
+                          >
+                            Full
+                          </Button>
+                          <Button
+                            type="button"
+                            variant={paymentType === "partial" ? "default" : "secondary"}
+                            className={paymentType === "partial"
+                              ? "rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600"
+                              : "rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white"}
+                            onClick={() => setPaymentType("partial")}
+                          >
+                            Partial
+                          </Button>
+                        </div>
                       </div>
 
                       {primaryMethod === "credit" ? (
@@ -840,9 +862,32 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             <FileText className="h-5 w-5 text-orange-500" />
                             <div className="text-sm font-semibold text-orange-700 dark:text-orange-300">Credit Transaction</div>
                           </div>
-                          <div className="text-xs text-orange-600 dark:text-orange-400 leading-relaxed">
-                            The full amount of <span className="font-bold">₱ {amountDue.toFixed(2)}</span> will be charged to the customer&apos;s credit account. No cash payment is needed now.
+
+                          <div className="space-y-2">
+                            <div>
+                              <Label className="text-xs text-orange-700 dark:text-orange-300">Creditor Name</Label>
+                              <Input
+                                placeholder="Enter creditor name"
+                                value={creditorName}
+                                onChange={(e) => setCreditorName(e.target.value)}
+                                className="bg-white dark:bg-black/20 border-orange-200 dark:border-orange-500/20 focus-visible:ring-orange-500 h-9"
+                              />
+                            </div>
+                            <div>
+                              <Label className="text-xs text-orange-700 dark:text-orange-300">Contact Number</Label>
+                              <Input
+                                placeholder="Optional"
+                                value={creditorPhone}
+                                onChange={(e) => setCreditorPhone(e.target.value)}
+                                className="bg-white dark:bg-black/20 border-orange-200 dark:border-orange-500/20 focus-visible:ring-orange-500 h-9"
+                              />
+                            </div>
                           </div>
+
+                          <div className="text-xs text-orange-600 dark:text-orange-400 leading-relaxed mt-1">
+                            The full amount of <span className="font-bold">₱ {amountDue.toFixed(2)}</span> will be charged to this credit account.
+                          </div>
+
                           <div className={`rounded-xl bg-white/60 dark:bg-white/5 border border-orange-200 dark:border-orange-500/20 p-3 space-y-2`}>
                             <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
                             <StatRow label="Payment" value={<span className="text-orange-600 dark:text-orange-400 font-medium">Credit</span>} />
@@ -980,7 +1025,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                           <div key={x.id} className="flex items-center justify-between text-sm">
                             <div className="min-w-0">
                               <div className="truncate text-gray-900 dark:text-white">{x.name}</div>
-                              <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} Ã— <Money value={x.price} /></div>
+                              <div className={`text-xs ${THEME.muted}`}>{x.qty} {x.unit} &times; <Money value={x.price} /></div>
                             </div>
                             <div className="font-medium text-gray-900 dark:text-white"><Money value={x.qty * x.price} /></div>
                           </div>
@@ -991,6 +1036,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className={`mt-3 rounded-2xl ${THEME.panel} p-3 space-y-2`}>
                       <StatRow label="Subtotal" value={<Money value={totals.subtotal} />} />
                       <StatRow label="Discount" value={<Money value={totals.discount} />} />
+                      <StatRow label="Vatable Sales" value={<Money value={totals.subtotal - totals.discount} />} />
                       <StatRow label="Tax" value={<Money value={totals.tax} />} />
                       <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
                       <div className="h-px bg-gray-200 dark:bg-white/10" />
@@ -1010,7 +1056,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     {primaryMethod === "credit" ? (
                       <Button
                         className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 py-5 text-base font-semibold text-white"
-                        disabled={cart.length === 0 || totals.total <= 0}
+                        disabled={cart.length === 0 || totals.total <= 0 || !creditorName.trim()}
                         onClick={async () => {
                           if (completeOrder) {
                             await completeOrder();

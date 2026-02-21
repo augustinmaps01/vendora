@@ -192,12 +192,6 @@ export default function DesktopDashboard() {
         </div>
       </div>
 
-      {/* Footer Note */}
-      <div className="text-center py-4">
-        <p className="text-xs text-gray-500 dark:text-[#b4b4d0]">
-          Dashboard connected to live API data.
-        </p>
-      </div>
     </div>
   )
 }

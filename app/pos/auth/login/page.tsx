@@ -436,9 +436,8 @@ function VendorLoginContent() {
 
   return (
     <div className="min-h-screen w-full flex flex-col md:flex-row">
-      {/* Left Column - Image */}
-      {/* Mobile: Short banner | Tablet: 50% width | Desktop: 60% width */}
-      <div className="relative w-full h-48 sm:h-64 md:h-screen md:w-1/2 lg:w-3/5 bg-slate-900">
+      {/* Left Column - Image: hidden on mobile, visible from md and up */}
+      <div className="hidden md:block md:relative md:w-1/2 lg:w-3/5 md:h-screen bg-slate-900">
         <img
           src="/images/Login.jpg"
           alt="Login Background"
@@ -448,8 +447,8 @@ function VendorLoginContent() {
         <div className="hidden md:block lg:hidden absolute inset-0 bg-gradient-to-r from-black/20 to-transparent" />
       </div>
 
-      {/* Right Column - Login Form */}
-      <div className="w-full md:w-1/2 lg:w-2/5 md:h-screen flex flex-col items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-white dark:bg-[#1a1525]">
+      {/* Right Column - Login Form: full screen on mobile, half on tablet/desktop */}
+      <div className="w-full min-h-screen md:w-1/2 lg:w-2/5 md:h-screen flex flex-col items-center justify-center p-6 sm:p-8 md:p-10 lg:p-12 bg-white dark:bg-[#1a1525]">
         <div className="w-full max-w-sm space-y-5">
 
           {/* Logo + Title — same layout for both modes */}
