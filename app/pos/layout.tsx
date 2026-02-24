@@ -85,6 +85,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
+  const [wasCollapsedByRoute, setWasCollapsedByRoute] = useState(false)
   const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
   const [userData, setUserData] = useState<{ name?: string; email?: string } | null>(null)
@@ -97,6 +98,19 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     setMounted(true)
   }, [])
+
+  // Auto-collapse sidebar when navigating to POS screen for maximum width
+  useEffect(() => {
+    if (pathname === "/pos/pos-screen") {
+      if (!sidebarCollapsed) {
+        setSidebarCollapsed(true)
+        setWasCollapsedByRoute(true)
+      }
+    } else if (wasCollapsedByRoute) {
+      setSidebarCollapsed(false)
+      setWasCollapsedByRoute(false)
+    }
+  }, [pathname]) // eslint-disable-line react-hooks/exhaustive-deps
 
   // Resizable sidebar state
   const [sidebarWidth, setSidebarWidth] = useState(256) // 16rem = 256px (default w-64)
@@ -702,7 +716,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </header>
 
         {/* Page Content */}
-        <div className="max-w-full px-4 pt-6 pb-24 overflow-x-hidden sm:px-6 sm:pt-6 sm:pb-6">
+        <div className={`max-w-full overflow-x-hidden ${isPOSScreen ? '' : 'px-4 pt-6 pb-24 sm:px-6 sm:pt-6 sm:pb-6'}`}>
           {children}
         </div>
 

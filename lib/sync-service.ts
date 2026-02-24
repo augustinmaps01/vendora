@@ -202,7 +202,7 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
       uuid: transaction.uuid,
       customer_id: transaction.customer_id,
       ordered_at: transaction.ordered_at,
-      status: 'pending',
+      status: transaction.status,
       store_id: transaction.store_id,
       total: Math.round(transaction.total),
       items: transaction.items.map(item => ({

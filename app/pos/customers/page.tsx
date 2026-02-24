@@ -8,6 +8,9 @@ import {
   Search,
   Plus,
   Users,
+  UserCheck,
+  Star,
+  UserX,
   Mail,
   Phone,
   Edit,
@@ -59,18 +62,39 @@ export default function CustomersPage() {
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Active</p>
-          <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">298</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Active</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">298</p>
+            </div>
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg">
+              <UserCheck className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">VIP</p>
-          <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">24</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">VIP</p>
+              <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">24</p>
+            </div>
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 sm:p-3 rounded-lg">
+              <Star className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Inactive</p>
-          <p className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">20</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Inactive</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">20</p>
+            </div>
+            <div className="bg-gray-100 dark:bg-gray-800/50 p-2 sm:p-3 rounded-lg">
+              <UserX className="h-4 w-4 sm:h-6 sm:w-6 text-gray-500 dark:text-gray-400" />
+            </div>
+          </div>
         </div>
       </div>
 

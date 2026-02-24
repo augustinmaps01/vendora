@@ -3,6 +3,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import type { InventoryHealth as InventoryHealthData } from "@/types/dashboard"
 
+import { BarChart, Bar, Cell, XAxis, YAxis, Tooltip as RechartsTooltip, ResponsiveContainer } from "recharts"
+
 type InventoryHealthProps = {
   data?: InventoryHealthData | null
   variant?: "default" | "embedded"
@@ -10,51 +12,87 @@ type InventoryHealthProps = {
 
 export function InventoryHealth({ data, variant = "default" }: InventoryHealthProps) {
   const isEmbedded = variant === "embedded"
-  const headerClass = isEmbedded ? "px-0 pt-0" : undefined
-  const contentClass = isEmbedded ? "px-0 pb-0" : undefined
 
-  // Transform API data to percentage format
-  const inventoryData = data ? data.breakdown.map(item => {
-    const percentage = (item.count / data.total_items) * 100
+  // Transform API data to chart format
+  const chartData = data ? data.breakdown.map(item => {
     const label = item.status === "in_stock" ? "In Stock" :
       item.status === "low_stock" ? "Low Stock" : "Out of Stock"
     return {
-      label,
-      value: Math.round(percentage),
+      name: label,
+      count: item.count,
+      color: item.status === "in_stock" ? "#10b981" : // Emerald
+        item.status === "low_stock" ? "#f59e0b" : // Amber
+          "#f43f5e", // Rose
     }
   }) : []
 
   const content = (
     <>
-      <CardHeader className={headerClass}>
-        <CardTitle className="text-lg font-semibold">Inventory Health</CardTitle>
-        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">Stock status</p>
+      <CardHeader className={`${isEmbedded ? "px-0 pb-2 pt-0" : "pb-4 pt-5 px-5"} flex flex-row items-center justify-between border-b border-gray-100 dark:border-white/5`}>
+        <div>
+          <CardTitle className="text-base font-semibold text-gray-900 dark:text-white">Inventory Health</CardTitle>
+          <p className="text-xs text-gray-500 mt-1 dark:text-[#b4b4d0]">Stock levels overview</p>
+        </div>
+        <div className="text-right">
+          <p className="text-2xl font-bold text-gray-900 dark:text-white leading-none">
+            {data?.total_items.toLocaleString() || 0}
+          </p>
+          <p className="text-[10px] uppercase text-gray-400 font-medium tracking-wider mt-1">Total Items</p>
+        </div>
       </CardHeader>
-      <CardContent className={`space - y - 6 ${contentClass ?? ""} `.trim()}>
-        {inventoryData.map((item) => (
-          <div key={item.label} className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span className="text-gray-700 dark:text-[#e0e0f0] font-medium">{item.label}</span>
-              <span className="font-semibold dark:text-white">{item.value}%</span>
-            </div>
-            <div className="w-full bg-gray-200 dark:bg-[#1a1a35] rounded-full h-2">
-              <div
-                className="bg-purple-600 h-2 rounded-full transition-all"
-                style={{ width: `${item.value}% ` }}
-              ></div>
-            </div>
-          </div>
-        ))}
+      <CardContent className={`${isEmbedded ? "px-0 pt-4 pb-0" : "px-5 py-6"} h-[300px]`}>
+        <ResponsiveContainer width="100%" height="100%">
+          <BarChart data={chartData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+            <XAxis
+              dataKey="name"
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12, fill: "#6b7280" }}
+              dy={10}
+            />
+            <YAxis
+              axisLine={false}
+              tickLine={false}
+              tick={{ fontSize: 12, fill: "#6b7280" }}
+              allowDecimals={false}
+            />
+            <RechartsTooltip
+              cursor={{ fill: 'transparent' }}
+              content={({ active, payload }) => {
+                if (active && payload && payload.length) {
+                  const data = payload[0].payload
+                  return (
+                    <div className="bg-gray-900/95 dark:bg-black/90 backdrop-blur-sm border border-gray-800 dark:border-white/10 rounded-lg p-3 shadow-xl">
+                      <div className="flex items-center gap-2 mb-1">
+                        <div className="w-2 h-2 rounded-full" style={{ backgroundColor: data.color }} />
+                        <span className="text-sm font-medium text-white">{data.name}</span>
+                      </div>
+                      <div className="text-lg font-bold text-white pl-4">
+                        {data.count} <span className="text-xs font-normal text-gray-400">items</span>
+                      </div>
+                    </div>
+                  )
+                }
+                return null
+              }}
+            />
+            <Bar dataKey="count" radius={[4, 4, 0, 0]} maxBarSize={50}>
+              {chartData.map((entry, index) => (
+                <Cell key={`cell-${index}`} fill={entry.color} />
+              ))}
+            </Bar>
+          </BarChart>
+        </ResponsiveContainer>
       </CardContent>
     </>
   )
 
   if (isEmbedded) {
-    return <div>{content}</div>
+    return <div className="h-full flex flex-col">{content}</div>
   }
 
   return (
-    <Card>
+    <Card className="rounded-xl border border-gray-100 dark:border-white/5 shadow-sm h-full flex flex-col">
       {content}
     </Card>
   )

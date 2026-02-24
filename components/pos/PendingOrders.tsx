@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { ShoppingBag, Clock, RefreshCw } from "lucide-react"
@@ -12,6 +13,7 @@ type PendingOrdersProps = {
 }
 
 export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
+  const router = useRouter()
   const [orders, setOrders] = useState<PendingOrder[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const isEmbedded = variant === "embedded"
@@ -76,7 +78,12 @@ export function PendingOrders({ variant = "default" }: PendingOrdersProps) {
                   <p className="font-semibold text-gray-900 dark:text-white text-sm mb-1">
                     ₱ {order.total.toLocaleString()}
                   </p>
-                  <Button size="sm" variant="default" className="text-xs bg-blue-600 hover:bg-blue-700">
+                  <Button
+                    size="sm"
+                    variant="default"
+                    className="text-xs bg-blue-600 hover:bg-blue-700"
+                    onClick={() => router.push(`/pos/orders?order=${order.id}&highlight=${encodeURIComponent(order.order_number)}`)}
+                  >
                     View
                   </Button>
                 </div>

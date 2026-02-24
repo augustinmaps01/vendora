@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { dashboardService } from '@/services/dashboard.service'
+import { orderService } from '@/services/order.service'
 import { db } from '@/lib/db'
 import type {
     DashboardKPIs,
@@ -75,6 +76,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                     productsData,
                     inventoryData,
                     activityData,
+                    recentOrdersData,
                 ] = await Promise.all([
                     dashboardService.getKPIs(dateParams),
                     dashboardService.getSalesTrend(dateParams),
@@ -83,7 +85,30 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                     dashboardService.getTopProducts({ ...dateParams, limit: 5 }),
                     dashboardService.getInventoryHealth(),
                     dashboardService.getRecentActivity({ limit: 4 }),
+                    orderService.getAll({ sort: 'desc', limit: 10 } as any), // Fetch latest orders
                 ])
+
+                // Map orders to ActivityItem format
+                const orderActivities = (recentOrdersData?.data || []).map(order => ({
+                    id: Number(order.id) || 0,
+                    action: "create",
+                    model_type: "Order",
+                    model_id: Number(order.id) || 0,
+                    message: `Processed order #${order.orderNumber || order.id} for ₱${Number(order.total || 0).toLocaleString()}`,
+                    created_at: new Date(order.createdAt || new Date()).toISOString()
+                }))
+
+                // Merge and sort
+                const combinedActivities = [
+                    ...(activityData?.items || []),
+                    ...orderActivities
+                ].sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+                    .slice(0, 10) // Keep top 10 most recent
+
+                const mergedActivityData = {
+                    ...activityData,
+                    items: combinedActivities
+                }
 
                 setKpis(kpisData)
                 setSalesTrend(salesData)
@@ -91,7 +116,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                 setPaymentMethods(paymentsData)
                 setTopProducts(productsData)
                 setInventoryHealth(inventoryData)
-                setRecentActivity(activityData)
+                setRecentActivity(mergedActivityData)
                 setIsStale(false)
                 setLastSyncedAt(new Date())
 
@@ -106,7 +131,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                             paymentMethods: paymentsData,
                             topProducts: productsData,
                             inventoryHealth: inventoryData,
-                            recentActivity: activityData,
+                            recentActivity: mergedActivityData,
                         }),
                         lastSyncedAt: new Date(),
                     })

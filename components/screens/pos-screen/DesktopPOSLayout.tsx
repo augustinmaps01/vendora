@@ -1,6 +1,6 @@
 ﻿"use client"
 
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/select";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import {
   Search,
   Barcode,
@@ -119,8 +120,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     onlinePay = 0,
     setOnlinePay = () => { },
     amountDue = 0,
-    paid = 0,
-    balance = 0,
+    paid: _paid = 0,
+    balance: _balance = 0,
     change = 0,
     canComplete = false,
     setReceiptOpen = () => { },
@@ -129,13 +130,28 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     categories = [],
     receiptData = null,
     startNewTransaction = () => { },
-    creditorName = "",
+    creditorName: _creditorName = "",
     setCreditorName = () => { },
-    creditorPhone = "",
+    creditorPhone: _creditorPhone = "",
     setCreditorPhone = () => { },
+    creditorAddress: _creditorAddress = "",
+    setCreditorAddress = () => { },
   } = props || {};
 
   const [activeDiscountPreset, setActiveDiscountPreset] = useState<string>("None");
+  const [isCreditDialogOpen, setIsCreditDialogOpen] = useState(false);
+  const [localCreditorName, setLocalCreditorName] = useState("");
+  const [localCreditorPhone, setLocalCreditorPhone] = useState("");
+  const [localCreditorAddress, setLocalCreditorAddress] = useState("");
+  const barcodeInputRef = useRef<HTMLInputElement>(null);
+
+  // Auto-focus barcode input when on sale screen
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (screen === "sale") barcodeInputRef.current?.focus();
+    }, 150);
+    return () => clearTimeout(timer);
+  }, [screen]);
 
   useEffect(() => {
     if (discountValue === 0) {
@@ -384,6 +400,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className={`rounded-2xl ${THEME.panel} p-2 flex flex-col gap-2 sm:flex-row sm:items-center`}>
                       <Barcode className={`h-4 w-4 ${THEME.muted}`} />
                       <Input
+                        ref={barcodeInputRef}
                         value={barcodeInput}
                         onChange={(e) => setBarcodeInput(e.target.value)}
                         className="w-full sm:w-[220px] rounded-xl bg-gray-100 border-gray-200 text-gray-900 placeholder:text-gray-400 dark:bg-white/10 dark:border-white/10 dark:text-white dark:placeholder:text-gray-400 dark:text-white/40"
@@ -800,9 +817,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             className={`relative flex flex-col items-center gap-2 rounded-2xl p-4 transition-all ${disabled
                               ? "opacity-40 cursor-not-allowed " + THEME.panel + " text-gray-400 dark:text-white/30"
                               : !splitPay && primaryMethod === key
-                                ? key === "credit"
-                                  ? "bg-orange-100 border-2 border-orange-400 text-orange-700 dark:bg-orange-600/30 dark:border-orange-500 dark:text-orange-300"
-                                  : "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
+                                ? "bg-purple-100 border-2 border-purple-400 text-purple-700 dark:bg-purple-600/30 dark:border-purple-500 dark:text-purple-300"
                                 : `${THEME.panel} text-gray-600 dark:text-white/60 hover:bg-gray-100 dark:hover:bg-white/10`
                               }`}
                           >
@@ -856,45 +871,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                         </div>
                       </div>
 
-                      {primaryMethod === "credit" ? (
-                        <div className={`rounded-2xl border-2 border-orange-300 dark:border-orange-500/40 bg-orange-50 dark:bg-orange-600/10 p-4 space-y-3`}>
-                          <div className="flex items-center gap-2">
-                            <FileText className="h-5 w-5 text-orange-500" />
-                            <div className="text-sm font-semibold text-orange-700 dark:text-orange-300">Credit Transaction</div>
-                          </div>
-
-                          <div className="space-y-2">
-                            <div>
-                              <Label className="text-xs text-orange-700 dark:text-orange-300">Creditor Name</Label>
-                              <Input
-                                placeholder="Enter creditor name"
-                                value={creditorName}
-                                onChange={(e) => setCreditorName(e.target.value)}
-                                className="bg-white dark:bg-black/20 border-orange-200 dark:border-orange-500/20 focus-visible:ring-orange-500 h-9"
-                              />
-                            </div>
-                            <div>
-                              <Label className="text-xs text-orange-700 dark:text-orange-300">Contact Number</Label>
-                              <Input
-                                placeholder="Optional"
-                                value={creditorPhone}
-                                onChange={(e) => setCreditorPhone(e.target.value)}
-                                className="bg-white dark:bg-black/20 border-orange-200 dark:border-orange-500/20 focus-visible:ring-orange-500 h-9"
-                              />
-                            </div>
-                          </div>
-
-                          <div className="text-xs text-orange-600 dark:text-orange-400 leading-relaxed mt-1">
-                            The full amount of <span className="font-bold">₱ {amountDue.toFixed(2)}</span> will be charged to this credit account.
-                          </div>
-
-                          <div className={`rounded-xl bg-white/60 dark:bg-white/5 border border-orange-200 dark:border-orange-500/20 p-3 space-y-2`}>
-                            <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
-                            <StatRow label="Payment" value={<span className="text-orange-600 dark:text-orange-400 font-medium">Credit</span>} />
-                            <StatRow label="Balance" value={<Money value={0} />} />
-                          </div>
-                        </div>
-                      ) : !splitPay ? (
+                      {primaryMethod !== "credit" && (!splitPay ? (
                         <div className={`rounded-2xl ${THEME.panel} p-3 space-y-3`}>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">Amount Tendered</div>
                           <div className="flex items-center gap-2">
@@ -992,13 +969,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                             <span className="text-emerald-400 font-bold text-lg">₱ {change.toFixed(2)}</span>
                           </div>
                         </div>
-                      )}
+                      ))}
 
-                      <div className={`rounded-2xl ${THEME.panel} p-3 space-y-2`}>
-                        <StatRow label="Amount due" value={<Money value={amountDue} />} strong />
-                        <StatRow label="Paid" value={primaryMethod === "credit" ? <span className="text-orange-600 dark:text-orange-400 font-medium">Credit</span> : <Money value={paid} />} />
-                        <StatRow label="Balance" value={<Money value={balance} />} />
-                      </div>
                     </CardContent>
                   </Card>
                 </div>
@@ -1055,14 +1027,9 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                   <div className="shrink-0 pt-3">
                     {primaryMethod === "credit" ? (
                       <Button
-                        className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 dark:bg-orange-600 dark:hover:bg-orange-700 py-5 text-base font-semibold text-white"
-                        disabled={cart.length === 0 || totals.total <= 0 || !creditorName.trim()}
-                        onClick={async () => {
-                          if (completeOrder) {
-                            await completeOrder();
-                          }
-                          router.push("/pos/credit-accounts");
-                        }}
+                        className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 py-5 text-base font-semibold text-white"
+                        disabled={cart.length === 0 || totals.total <= 0}
+                        onClick={() => setIsCreditDialogOpen(true)}
                       >
                         <FileText className="h-5 w-5 mr-2" />
                         Confirm Credit
@@ -1103,6 +1070,54 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           </div>
         </div>
       )}
+
+      {/* Credit Info Dialog */}
+      <Dialog open={isCreditDialogOpen} onOpenChange={(v) => { setIsCreditDialogOpen(v); if (!v) { setLocalCreditorName(""); setLocalCreditorPhone(""); setLocalCreditorAddress(""); } }}>
+        <DialogContent className="sm:max-w-[420px] bg-white dark:bg-[#1e1340] border-gray-200 dark:border-white/10 rounded-2xl">
+          <DialogHeader>
+            <DialogTitle className="text-gray-900 dark:text-white flex items-center gap-2">
+              <FileText className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+              Credit Account Info
+            </DialogTitle>
+            <p className={`text-sm ${THEME.muted} pt-1`}>Fill in the customer&apos;s details to complete this credit transaction.</p>
+          </DialogHeader>
+          <div className="grid gap-3 py-2">
+            <div className="grid gap-1.5">
+              <Label htmlFor="cd-name" className="text-gray-700 dark:text-white/80 text-sm">Full Name <span className="text-red-500">*</span></Label>
+              <Input id="cd-name" placeholder="Customer's full name" value={localCreditorName} onChange={(e) => setLocalCreditorName(e.target.value)} className="rounded-xl bg-gray-50 border-gray-200 dark:bg-white/10 dark:border-white/10 dark:text-white" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="cd-phone" className="text-gray-700 dark:text-white/80 text-sm">Contact Number <span className="text-red-500">*</span></Label>
+              <Input id="cd-phone" placeholder="Phone or mobile number" value={localCreditorPhone} onChange={(e) => setLocalCreditorPhone(e.target.value)} className="rounded-xl bg-gray-50 border-gray-200 dark:bg-white/10 dark:border-white/10 dark:text-white" />
+            </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="cd-address" className="text-gray-700 dark:text-white/80 text-sm">Address <span className="text-red-500">*</span></Label>
+              <Input id="cd-address" placeholder="Complete address" value={localCreditorAddress} onChange={(e) => setLocalCreditorAddress(e.target.value)} className="rounded-xl bg-gray-50 border-gray-200 dark:bg-white/10 dark:border-white/10 dark:text-white" />
+            </div>
+            <div className={`rounded-xl ${THEME.panel} p-3 flex items-center justify-between`}>
+              <span className={`text-sm ${THEME.muted}`}>Amount to Credit</span>
+              <span className="font-bold text-purple-600 dark:text-purple-400 text-base">&#8369; {amountDue.toFixed(2)}</span>
+            </div>
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" className="rounded-xl" onClick={() => setIsCreditDialogOpen(false)}>Cancel</Button>
+            <Button
+              className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
+              disabled={!localCreditorName.trim() || !localCreditorPhone.trim() || !localCreditorAddress.trim()}
+              onClick={async () => {
+                if (setCreditorName) setCreditorName(localCreditorName);
+                if (setCreditorPhone) setCreditorPhone(localCreditorPhone);
+                if (setCreditorAddress) setCreditorAddress(localCreditorAddress);
+                setIsCreditDialogOpen(false);
+                if (completeOrder) await completeOrder();
+                router.push("/pos/credit-accounts");
+              }}
+            >
+              Confirm Credit
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

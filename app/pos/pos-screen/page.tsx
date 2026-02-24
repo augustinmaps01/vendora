@@ -207,6 +207,7 @@ export default function VendoraPOS() {
   const [onlinePay, setOnlinePay] = useState<number>(0);
   const [creditorName, setCreditorName] = useState("");
   const [creditorPhone, setCreditorPhone] = useState("");
+  const [creditorAddress, setCreditorAddress] = useState("");
 
   // Modal states
   const [holdOpen, setHoldOpen] = useState(false);
@@ -519,8 +520,6 @@ export default function VendoraPOS() {
   }, [paymentType, totals.total]);
 
   const paid = useMemo(() => {
-    // Credit: full amount is charged to customer's credit account
-    if (primaryMethod === "credit") return amountDue;
     const c = Math.max(0, Number(cashPay) || 0);
     const k = Math.max(0, Number(cardPay) || 0);
     const o = Math.max(0, Number(onlinePay) || 0);
@@ -536,8 +535,9 @@ export default function VendoraPOS() {
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
   // Complete order (Local-first: Save to IndexedDB, then sync)
-  const completeOrder = useCallback(async () => {
-    if (!canComplete) return;
+  const completeOrder = useCallback(async (isCredit = false) => {
+    // For non-credit, ensure balance is 0. For credit, ignore balance as user is promising to pay later.
+    if (!isCredit && !canComplete) return;
     setIsProcessing(true);
 
     try {
@@ -567,9 +567,9 @@ export default function VendoraPOS() {
         customerName = customers[1].name;
       }
 
-      if (!customerId && primaryMethod !== "credit") throw new Error("Customer selection required");
+      if (!customerId && !isCredit) throw new Error("Customer selection required");
 
-      if (primaryMethod === "credit" && creditorName.trim() !== "") {
+      if (isCredit && creditorName.trim() !== "") {
         customerName = creditorName.trim();
       }
 
@@ -586,7 +586,7 @@ export default function VendoraPOS() {
         customer_id: customerId || 1, // Fallback if Walk-in customer ID is not set for credit transactions
         customer_name: customerName,
         ordered_at: new Date().toISOString().split('T')[0] || "",
-        status: 'completed',
+        status: isCredit ? 'pending' : 'completed',
         items: cart.map(item => ({
           product_id: Number(item.id),
           product_name: item.name,
@@ -598,13 +598,17 @@ export default function VendoraPOS() {
         tax: totals.tax,
         delivery_fee: totals.deliveryFee,
         total: totals.total,
-        payment_method: primaryMethod === "credit" ? "cash" : primaryMethod, // Treat system method as cash, but it's recorded as credit in our UI
+        payment_method: (isCredit || primaryMethod === "credit") ? "cash" : primaryMethod as "cash" | "card" | "online", // Credit is stored separately
         payment_methods: paymentMethods,
-        amount_tendered: paid,
-        change: change,
+        amount_tendered: isCredit ? amountDue : paid,
+        change: isCredit ? 0 : change,
         store_id: selectedStore || undefined,
-        notes: (primaryMethod === "credit" && creditorPhone.trim() !== "")
-          ? `Creditor Contact: ${creditorPhone.trim()}${notes ? ` | Notes: ${notes}` : ''}`
+        notes: isCredit
+          ? [
+            creditorPhone.trim() ? `Contact: ${creditorPhone.trim()}` : '',
+            creditorAddress.trim() ? `Address: ${creditorAddress.trim()}` : '',
+            notes ? `Notes: ${notes}` : ''
+          ].filter(Boolean).join(' | ') || undefined
           : (notes || undefined)
       });
 
@@ -625,7 +629,9 @@ export default function VendoraPOS() {
 
       // Determine payment method label
       let paymentMethodLabel: string;
-      if (splitPay) {
+      if (isCredit) {
+        paymentMethodLabel = "Credit";
+      } else if (splitPay) {
         const parts: string[] = [];
         if (cashPay > 0) parts.push("Cash");
         if (cardPay > 0) parts.push("Card");
@@ -639,7 +645,7 @@ export default function VendoraPOS() {
         ? "Walk-in Customer"
         : customers.find(c => c.id === customerId)?.name || "Customer";
 
-      if (primaryMethod === "credit" && creditorName.trim() !== "") {
+      if (isCredit && creditorName.trim() !== "") {
         customerName = creditorName.trim();
       }
 
@@ -664,8 +670,8 @@ export default function VendoraPOS() {
         deliveryFee: totals.deliveryFee,
         total: totals.total,
         paymentMethod: paymentMethodLabel,
-        amountTendered: paid,
-        change,
+        amountTendered: isCredit ? amountDue : paid,
+        change: isCredit ? 0 : change,
       };
 
       setReceiptData(receipt);
@@ -710,7 +716,7 @@ export default function VendoraPOS() {
     } finally {
       setIsProcessing(false);
     }
-  }, [canComplete, customer, customers, selectedCustomerId, cart, splitPay, cashPay, cardPay, onlinePay, paid, primaryMethod, totals, change, loadInitialData, creditorName, creditorPhone]);
+  }, [canComplete, customer, customers, selectedCustomerId, cart, splitPay, cashPay, cardPay, onlinePay, paid, primaryMethod, totals, change, loadInitialData, creditorName, creditorPhone, creditorAddress]);
 
   const startNewTransaction = useCallback(() => {
     // Close success modal
@@ -729,6 +735,7 @@ export default function VendoraPOS() {
     setOnlinePay(0);
     setCreditorName("");
     setCreditorPhone("");
+    setCreditorAddress("");
 
     // Reset customer and payment settings
     setSelectedCustomerId(null);
@@ -758,12 +765,12 @@ export default function VendoraPOS() {
     splitPay, setSplitPay, primaryMethod, setPrimaryMethod, cashPay, setCashPay,
     cardPay, setCardPay, onlinePay, setOnlinePay, amountDue, paid, balance, change,
     canComplete, setReceiptOpen, calcDeliveryFee, completeOrder, categories,
-    receiptData, startNewTransaction, creditorName, setCreditorName, creditorPhone, setCreditorPhone
+    receiptData, startNewTransaction, creditorName, setCreditorName, creditorPhone, setCreditorPhone, creditorAddress, setCreditorAddress
   }), [screen, cart, query, barcodeInput, category, customer, notes, filtered, addToCart,
     applyBarcode, changeQty, removeItem, totals, discountAmount, canGoCheckout, discountMode,
     discountValue, taxEnabled, taxRate, fulfillment, deliveryKm, paymentType, splitPay,
     primaryMethod, cashPay, cardPay, onlinePay, amountDue, paid, balance, change,
-    canComplete, completeOrder, categories, receiptData, startNewTransaction, creditorName, creditorPhone]);
+    canComplete, completeOrder, categories, receiptData, startNewTransaction, creditorName, creditorPhone, creditorAddress]);
 
   // Show loading
   if (isLoading) {
@@ -876,7 +883,7 @@ export default function VendoraPOS() {
         {receiptOpen && <InlineReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} cart={cart} totals={totals} saleId={saleId} notes={notes} receiptData={receiptData} />}
         {settingsOpen && <InlineSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} taxEnabled={taxEnabled} setTaxEnabled={setTaxEnabled} taxRate={taxRate} setTaxRate={setTaxRate} />}
         {orderHistoryOpen && <InlineOrderHistoryDialog open={orderHistoryOpen} onOpenChange={setOrderHistoryOpen} recentOrders={recentOrders} />}
-        {successModalOpen && <TransactionSuccessDialog open={successModalOpen} onOpenChange={setSuccessModalOpen} receiptData={receiptData} onNewTransaction={startNewTransaction} />}
+        {successModalOpen && <TransactionSuccessDialog open={successModalOpen} onOpenChange={(open: boolean) => { if (!open) startNewTransaction(); }} receiptData={receiptData} onNewTransaction={startNewTransaction} />}
       </Suspense>
 
       {/* Hidden thermal receipt for printing */}

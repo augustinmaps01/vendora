@@ -100,7 +100,7 @@ export interface POSScreenProps {
   canComplete: boolean;
   setReceiptOpen: (value: boolean) => void;
   calcDeliveryFee: (fulfillment: Fulfillment, deliveryKm: number) => number;
-  completeOrder?: () => Promise<void>;
+  completeOrder?: (isCredit?: boolean) => Promise<void>;
   categories?: any[];
   receiptData?: ReceiptData | null;
   startNewTransaction?: () => void;
@@ -108,4 +108,6 @@ export interface POSScreenProps {
   setCreditorName?: (value: string) => void;
   creditorPhone?: string;
   setCreditorPhone?: (value: string) => void;
+  creditorAddress?: string;
+  setCreditorAddress?: (value: string) => void;
 }

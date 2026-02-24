@@ -1,6 +1,7 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { Suspense, useEffect, useMemo, useState, useCallback, useRef } from "react"
+import { useSearchParams } from "next/navigation"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -22,6 +23,9 @@ import {
 import {
   Search,
   ClipboardList,
+  Clock,
+  RefreshCw,
+  CheckCircle,
   Eye,
   Printer,
   Filter,
@@ -94,6 +98,13 @@ const normalizeOrder = (raw: any): OrderRow => {
 const normalizeOrderDetails = (raw: any): any => {
   if (!raw) return null
 
+  // Items may be under `items` or `order_items`
+  const rawItems: any[] = Array.isArray(raw?.items)
+    ? raw.items
+    : Array.isArray(raw?.order_items)
+      ? raw.order_items
+      : []
+
   return {
     ...raw,
     total: Number(raw?.total ?? 0) / 100,
@@ -101,13 +112,34 @@ const normalizeOrderDetails = (raw: any): any => {
     tax: Number(raw?.tax ?? 0) / 100,
     delivery_fee: Number(raw?.delivery_fee ?? 0) / 100,
     discount: Number(raw?.discount ?? 0) / 100,
-    items: Array.isArray(raw?.items)
-      ? raw.items.map((item: any) => ({
+    items: rawItems.map((item: any) => {
+      // Try every common field name the API might use for unit price
+      const rawPrice =
+        item?.price ??
+        item?.unit_price ??
+        item?.sale_price ??
+        item?.product?.price ??
+        0
+      const unitPrice = Number(rawPrice) / 100
+
+      const qty = Number(item?.quantity ?? item?.qty ?? 1)
+
+      // Try every common field name for line total
+      const rawLineTotal =
+        item?.total ??
+        item?.subtotal ??
+        item?.line_total ??
+        item?.amount ??
+        rawPrice * qty
+      const lineTotal = Number(rawLineTotal) / 100
+
+      return {
         ...item,
-        price: Number(item?.price ?? 0) / 100,
-        total: Number(item?.total ?? 0) / 100,
-      }))
-      : [],
+        price: unitPrice,
+        quantity: qty,
+        total: lineTotal || unitPrice * qty,
+      }
+    }),
   }
 }
 
@@ -118,6 +150,11 @@ function DesktopOrdersLayout() {
   const [orders, setOrders] = useState<OrderRow[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [loadError, setLoadError] = useState<string | null>(null)
+
+  const searchParams = useSearchParams()
+  const highlightOrderId = searchParams.get("order")       // numeric DB id
+  const highlightOrderNum = searchParams.get("highlight")  // human-readable order number
+  const autoOpenedRef = useRef(false)
 
   const [orderDetails, setOrderDetails] = useState<any>(null)
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
@@ -198,7 +235,7 @@ function DesktopOrdersLayout() {
 
 
 
-  const loadOrderDetails = async (orderId: number) => {
+  const loadOrderDetails = useCallback(async (orderId: number) => {
     setIsLoadingDetails(true)
     setIsDetailsModalOpen(true)
     try {
@@ -210,7 +247,7 @@ function DesktopOrdersLayout() {
     } finally {
       setIsLoadingDetails(false)
     }
-  }
+  }, [])
 
   const printInvoice = async (orderId: number) => {
     try {
@@ -231,6 +268,21 @@ function DesktopOrdersLayout() {
   useEffect(() => {
     loadOrders()
   }, [statusFilter, currentPage, startDate, endDate])
+
+  // Auto-open order detail modal when navigated from Pending Orders dashboard
+  useEffect(() => {
+    if (!highlightOrderId || isLoading || orders.length === 0 || autoOpenedRef.current) return
+    autoOpenedRef.current = true
+    const numericId = Number(highlightOrderId.replace(/\D/g, "") || 0)
+    if (numericId) {
+      loadOrderDetails(numericId)
+    }
+    // Scroll highlighted row into view
+    setTimeout(() => {
+      const rowEl = document.getElementById(`order-row-${highlightOrderNum || highlightOrderId}`)
+      rowEl?.scrollIntoView({ behavior: "smooth", block: "center" })
+    }, 400)
+  }, [isLoading, orders.length, highlightOrderId])
 
   // Auto-refresh every 30 seconds
   useEffect(() => {
@@ -297,18 +349,39 @@ function DesktopOrdersLayout() {
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Pending</p>
-          <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{pendingOrders}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Pending</p>
+              <p className="text-xl sm:text-2xl font-bold text-yellow-600 mt-0.5 sm:mt-1">{pendingOrders}</p>
+            </div>
+            <div className="bg-yellow-100 dark:bg-yellow-900/30 p-2 sm:p-3 rounded-lg">
+              <Clock className="h-4 w-4 sm:h-6 sm:w-6 text-yellow-600" />
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Processing</p>
-          <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">{processingOrders}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Processing</p>
+              <p className="text-xl sm:text-2xl font-bold text-purple-600 mt-0.5 sm:mt-1">{processingOrders}</p>
+            </div>
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 sm:p-3 rounded-lg">
+              <RefreshCw className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
+            </div>
+          </div>
         </div>
 
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
-          <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Completed</p>
-          <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{completedOrders}</p>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Completed</p>
+              <p className="text-xl sm:text-2xl font-bold text-green-600 mt-0.5 sm:mt-1">{completedOrders}</p>
+            </div>
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg">
+              <CheckCircle className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
+            </div>
+          </div>
         </div>
       </div>
 
@@ -368,49 +441,61 @@ function DesktopOrdersLayout() {
               </tr>
             </thead>
             <tbody className="bg-white dark:bg-[#13132a] divide-y divide-gray-200 dark:divide-[#2d1b69]">
-              {filteredOrders.map((order) => (
-                <tr key={order.id} className="hover:bg-gray-50 dark:hover:bg-[#1a1a35]">
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">{order.id}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900 dark:text-white">{order.customer}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.date}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.items} items</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="text-sm font-medium text-gray-900 dark:text-white">₱{order.total.toFixed(2)}</div>
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    {order.status === "completed" && (
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
-                    )}
-                    {order.status === "pending" && (
-                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
-                    )}
-                    {order.status === "processing" && (
-                      <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400">Processing</Badge>
-                    )}
-                    {order.status === "cancelled" && (
-                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Cancelled</Badge>
-                    )}
-                  </td>
-                  <td className="px-6 py-4 whitespace-nowrap text-sm">
-                    <div className="flex gap-2">
-                      <Button size="sm" variant="ghost" onClick={() => loadOrderDetails(Number(order.id.replace(/\D/g, '') || 0))}>
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => printInvoice(Number(order.id.replace(/\D/g, '') || 0))}>
-                        <Printer className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredOrders.map((order) => {
+                const isHighlighted =
+                  (highlightOrderNum && order.id === highlightOrderNum) ||
+                  (highlightOrderId && order.id === highlightOrderId)
+                return (
+                  <tr
+                    key={order.id}
+                    id={`order-row-${order.id}`}
+                    className={`transition-colors ${isHighlighted
+                      ? "bg-yellow-50 dark:bg-yellow-900/20 border-l-4 border-l-yellow-400"
+                      : "hover:bg-gray-50 dark:hover:bg-[#1a1a35]"
+                      }`}
+                  >
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">{order.id}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-900 dark:text-white">{order.customer}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.date}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm text-gray-600 dark:text-[#b4b4d0]">{order.items} items</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">₱{order.total.toFixed(2)}</div>
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap">
+                      {order.status === "completed" && (
+                        <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
+                      )}
+                      {order.status === "pending" && (
+                        <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
+                      )}
+                      {order.status === "processing" && (
+                        <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 dark:bg-purple-900/30 dark:text-purple-400">Processing</Badge>
+                      )}
+                      {order.status === "cancelled" && (
+                        <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Cancelled</Badge>
+                      )}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <div className="flex gap-2">
+                        <Button size="sm" variant="ghost" onClick={() => loadOrderDetails(Number(order.id.replace(/\D/g, '') || 0))}>
+                          <Eye className="h-4 w-4" />
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => printInvoice(Number(order.id.replace(/\D/g, '') || 0))}>
+                          <Printer className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
             </tbody>
           </table>
         </div>
@@ -763,5 +848,9 @@ function DesktopOrdersLayout() {
 }
 
 export default function OrdersPage() {
-  return <DesktopOrdersLayout />
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" /></div>}>
+      <DesktopOrdersLayout />
+    </Suspense>
+  )
 }

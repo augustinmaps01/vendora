@@ -148,7 +148,7 @@ export default function DesktopDashboard() {
 
         {/* Payment Methods + Inventory - Stacked */}
         <div className="flex flex-col gap-4 lg:col-span-3">
-          <PaymentMethodsChart data={paymentMethods} className="h-[400px]" />
+          <PaymentMethodsChart data={paymentMethods} className="h-auto min-h-[400px] flex-1" />
           <Card className="border-gray-200 dark:border-border dark:bg-card h-[450px]">
             <CardContent className="p-4 h-full">
               <InventoryHealth data={inventoryHealth} variant="embedded" />
@@ -168,14 +168,16 @@ export default function DesktopDashboard() {
 
       {/* Row 3: Actionable Items + Activity Feed */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Left: Alerts & Orders - What needs attention */}
-        <div className="lg:col-span-7">
+        {/* Left: Alerts & Orders - Separated Widgets */}
+        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-5">
-              <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
-                <LowStockAlerts variant="embedded" />
-                <PendingOrders variant="embedded" />
-              </div>
+              <LowStockAlerts variant="embedded" />
+            </CardContent>
+          </Card>
+          <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
+            <CardContent className="p-5">
+              <PendingOrders variant="embedded" />
             </CardContent>
           </Card>
         </div>
