@@ -15,10 +15,10 @@ export function Footer() {
                     {/* Brand Info */}
                     <div className="space-y-4">
                         <Image
-                            src="/logos/full logo-light.png"
+                            src="/new-logo/website logo white.png"
                             alt="Vendora"
-                            width={180}
-                            height={50}
+                            width={200}
+                            height={56}
                             className="h-auto"
                         />
                         <p className="text-sm leading-relaxed" style={{ color: '#a0a0c0' }}>

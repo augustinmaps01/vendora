@@ -166,22 +166,20 @@ export default function VendoraPOS() {
   const [barcodeInput, setBarcodeInput] = useState("");
   const [category, setCategory] = useState<string>("all");
 
-  // Cart state
-  const [cart, setCart] = useState<CartItem[]>([]);
-
-  // Load cart from localStorage on mount
-  useEffect(() => {
+  // Cart state — initialized synchronously from localStorage to avoid
+  // the effect ordering race where the save effect fires with [] before
+  // the load effect's setState can correct it.
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    if (typeof window === "undefined") return [];
     try {
-      const savedCart = localStorage.getItem("vendora_pos_cart");
-      if (savedCart) {
-        setCart(JSON.parse(savedCart));
-      }
-    } catch (e) {
-      console.error("Failed to parse cart from localStorage", e);
+      const saved = localStorage.getItem("vendora_pos_cart");
+      return saved ? (JSON.parse(saved) as CartItem[]) : [];
+    } catch {
+      return [];
     }
-  }, []);
+  });
 
-  // Save cart to localStorage whenever it changes
+  // Persist cart to localStorage on every change
   useEffect(() => {
     try {
       localStorage.setItem("vendora_pos_cart", JSON.stringify(cart));
@@ -675,9 +673,8 @@ export default function VendoraPOS() {
       };
 
       setReceiptData(receipt);
-      setSuccessModalOpen(true);  // Open success modal instead of changing screen
-
-      // Don't reset cart yet - wait for user to click "New Transaction"
+      setSuccessModalOpen(true);
+      setCart([]);  // Clear cart immediately — receipt snapshot already captured above
 
     } catch (err: any) {
       // Extract full error details for debugging

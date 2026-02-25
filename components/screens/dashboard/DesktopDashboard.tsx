@@ -1,5 +1,6 @@
 ﻿"use client"
 
+import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import Link from "next/link"
 import { DollarSign, Package, Plus, ShoppingBag, Wallet, ShoppingCart, Loader2 } from "lucide-react"
@@ -13,6 +14,8 @@ import { LowStockAlerts } from "@/components/pos/LowStockAlerts"
 import { PendingOrders } from "@/components/pos/PendingOrders"
 import { RecentActivity } from "@/components/pos/RecentActivity"
 import { QuickActions } from "@/components/pos/QuickActions"
+import { CashVsCreditChart } from "@/components/pos/CashVsCreditChart"
+import { AddProductModal } from "@/components/pos/AddProductModal"
 import { Card, CardContent } from "@/components/ui/card"
 import {
   Select,
@@ -29,6 +32,8 @@ import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
  * Uses responsive grid utilities for all screen sizes
  */
 export default function DesktopDashboard() {
+  const [isAddProductOpen, setIsAddProductOpen] = useState(false)
+
   // Fetch dashboard data from API (with offline cache support)
   const {
     kpis,
@@ -128,7 +133,11 @@ export default function DesktopDashboard() {
               Open POS
             </Link>
           </Button>
-          <Button variant="outline" className="w-full sm:w-auto border-gray-300 dark:border-border">
+          <Button
+            variant="outline"
+            className="w-full sm:w-auto border-gray-300 dark:border-border"
+            onClick={() => setIsAddProductOpen(true)}
+          >
             <Plus className="mr-2 h-4 w-4" />
             Add Product
           </Button>
@@ -139,37 +148,48 @@ export default function DesktopDashboard() {
       <DashboardStats stats={stats} />
 
       {/* Row 2: Sales Overview + Activity Metrics + Distribution */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Sales Overview + Orders by Channel - Stacked */}
-        <div className="flex flex-col gap-4 lg:col-span-5">
-          <SalesTrendChart data={salesTrend} className="h-[400px]" contentClassName="flex-1" />
-          <OrdersByChannelChart data={ordersByChannel} className="h-[450px]" />
+      {/* 2-row explicit grid so cards in the same row share equal height */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[400px_450px]">
+
+        {/* Row 1, Col 1-5: Sales Trend */}
+        <div className="lg:col-span-5 lg:row-start-1">
+          <SalesTrendChart data={salesTrend} className="h-[400px] lg:h-full" contentClassName="flex-1" />
         </div>
 
-        {/* Payment Methods + Inventory - Stacked */}
-        <div className="flex flex-col gap-4 lg:col-span-3">
-          <PaymentMethodsChart data={paymentMethods} className="h-auto min-h-[400px] flex-1" />
-          <Card className="border-gray-200 dark:border-border dark:bg-card h-[450px]">
+        {/* Row 1, Col 6-8: Payment Methods */}
+        <div className="lg:col-span-3 lg:row-start-1">
+          <PaymentMethodsChart data={paymentMethods} className="h-[400px] lg:h-full" />
+        </div>
+
+        {/* Col 9-12, spans both rows: Top Selling Products */}
+        <div className="lg:col-span-4 lg:row-span-2 h-full">
+          <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
+            <CardContent className="p-4 h-full overflow-y-auto">
+              <TopSellingProducts data={topProducts} variant="embedded" />
+            </CardContent>
+          </Card>
+        </div>
+
+        {/* Row 2, Col 1-5: Orders by Channel */}
+        <div className="lg:col-span-5 lg:row-start-2">
+          <OrdersByChannelChart data={ordersByChannel} className="h-[450px] lg:h-full" />
+        </div>
+
+        {/* Row 2, Col 6-8: Inventory Health */}
+        <div className="lg:col-span-3 lg:row-start-2">
+          <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-4 h-full">
               <InventoryHealth data={inventoryHealth} variant="embedded" />
             </CardContent>
           </Card>
         </div>
 
-        {/* Top Selling Products */}
-        <div className="lg:col-span-4">
-          <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
-            <CardContent className="p-4">
-              <TopSellingProducts data={topProducts} variant="embedded" />
-            </CardContent>
-          </Card>
-        </div>
       </div>
 
       {/* Row 3: Actionable Items + Activity Feed */}
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
-        {/* Left: Alerts & Orders - Separated Widgets */}
-        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-2 gap-4">
+        {/* Left: Alerts, Orders & Cash vs Credit */}
+        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-3 gap-4">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-5">
               <LowStockAlerts variant="embedded" />
@@ -180,6 +200,7 @@ export default function DesktopDashboard() {
               <PendingOrders variant="embedded" />
             </CardContent>
           </Card>
+          <CashVsCreditChart data={paymentMethods} className="h-full dark:bg-card dark:border-border" />
         </div>
 
         {/* Right: Recent Activity + Quick Actions */}
@@ -188,12 +209,17 @@ export default function DesktopDashboard() {
             <CardContent className="p-5">
               <RecentActivity data={recentActivity} variant="embedded" />
               <div className="h-px bg-gray-200 dark:bg-border my-4" />
-              <QuickActions variant="embedded" />
+              <QuickActions variant="embedded" onAddProduct={() => setIsAddProductOpen(true)} />
             </CardContent>
           </Card>
         </div>
       </div>
 
+      {/* Add Product Modal - accessible from header button & Quick Actions */}
+      <AddProductModal
+        open={isAddProductOpen}
+        onOpenChange={setIsAddProductOpen}
+      />
     </div>
   )
 }

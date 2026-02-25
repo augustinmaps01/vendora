@@ -48,17 +48,17 @@ export function PaymentMethodsChart({ data, className, contentClassName }: Payme
         </div>
       </CardHeader>
       <CardContent className={`p-4 ${contentClassName ?? ""}`.trim()}>
-        <div className="flex flex-col items-center gap-4 h-full justify-center">
+        <div className="flex flex-col items-center gap-4">
           {/* Donut Chart */}
-          <div className="w-[170px] h-[170px] relative shrink-0">
+          <div className="w-[140px] h-[140px] relative shrink-0">
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
                 <Pie
                   data={chartData}
                   cx="50%"
                   cy="50%"
-                  innerRadius={60}
-                  outerRadius={80}
+                  innerRadius={48}
+                  outerRadius={65}
                   paddingAngle={2}
                   dataKey="value"
                   stroke="none"
@@ -69,26 +69,21 @@ export function PaymentMethodsChart({ data, className, contentClassName }: Payme
                 </Pie>
               </PieChart>
             </ResponsiveContainer>
-            {/* Center Text overlay */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-2xl font-bold text-gray-900 dark:text-white leading-none">
-                3
-              </span>
-              <span className="text-[10px] uppercase text-gray-400 font-medium tracking-wider mt-1">Providers</span>
+              <span className="text-xl font-bold text-gray-900 dark:text-white leading-none">3</span>
+              <span className="text-[9px] uppercase text-gray-400 font-medium tracking-wider mt-0.5">Providers</span>
             </div>
           </div>
 
-          {/* Enhanced Legend */}
-          <div className="w-full sm:w-10/12 flex flex-col gap-1.5 min-w-[150px]">
+          {/* 3-column method cards */}
+          <div className="grid grid-cols-3 gap-3 w-full">
             {chartData.map((item) => (
-              <div key={item.name} className="flex items-center justify-between py-1.5 px-2 rounded-lg bg-gray-50 dark:bg-white/5">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-md`} style={{ backgroundColor: `${item.color}20`, color: item.color }}>
-                    <item.icon className="w-3.5 h-3.5" />
-                  </div>
-                  <span className="text-xs font-medium text-gray-700 dark:text-[#e0e0f0]">{item.name}</span>
+              <div key={item.name} className="flex flex-col items-center gap-1.5">
+                <div className="p-2 rounded-lg" style={{ backgroundColor: `${item.color}20`, color: item.color }}>
+                  <item.icon className="w-4 h-4" />
                 </div>
-                <span className="text-xs font-bold text-gray-900 dark:text-white">{item.value.toFixed(1)}%</span>
+                <span className="text-[11px] font-medium text-gray-600 dark:text-[#b4b4d0] text-center leading-tight">{item.name}</span>
+                <span className="text-sm font-bold" style={{ color: item.color }}>{item.value.toFixed(1)}%</span>
               </div>
             ))}
           </div>

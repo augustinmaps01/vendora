@@ -14,6 +14,10 @@ const nextConfig = {
         protocol: 'https',
         hostname: 'vendora-api.abedubas.dev',
       },
+      {
+        protocol: 'https',
+        hostname: 'images.unsplash.com',
+      },
     ],
   },
 
