@@ -1254,11 +1254,12 @@ function printThermalReceipt(receiptData: ReceiptData) {
   const html = `<!DOCTYPE html>
 <html><head>
   <meta charset="UTF-8">
-  <style>
+  <style id="page-style">
     @page { size: 58mm auto; margin: 0; }
     * { box-sizing: border-box; margin: 0; padding: 0; }
-    body {
+    html, body {
       width: 58mm;
+      margin: 0;
       font-family: 'Courier New', Courier, monospace;
       font-size: 10px;
       line-height: 1.4;
@@ -1304,7 +1305,7 @@ function printThermalReceipt(receiptData: ReceiptData) {
     <div>Thank you for your purchase!</div>
     <div>Please come again</div>
   </div>
-  <div style="height:15mm;"></div>
+  <div style="height:3mm;"></div>
 </body></html>`;
 
   const win = window.open('', '_blank', 'width=300,height=600,toolbar=no,menubar=no,scrollbars=no');
@@ -1315,11 +1316,22 @@ function printThermalReceipt(receiptData: ReceiptData) {
   win.document.write(html);
   win.document.close();
   win.focus();
-  // Close the popup only AFTER the print dialog is dismissed (not before).
-  // Calling win.close() immediately after win.print() destroys the document
-  // before Chrome can render the preview or communicate with the printer.
-  win.addEventListener('afterprint', () => win.close());
-  setTimeout(() => win.print(), 500);
+
+  // Measure actual content height and set @page size to match exactly.
+  // Browsers treat `@page { size: 58mm auto }` as default page height (A4),
+  // so we must inject the real height to avoid blank space below the receipt.
+  setTimeout(() => {
+    const contentH = win.document.body.scrollHeight;
+    const pageStyle = win.document.getElementById('page-style');
+    if (pageStyle) {
+      pageStyle.textContent = pageStyle.textContent.replace(
+        /@page\s*\{[^}]*\}/,
+        `@page { size: 58mm ${contentH}px; margin: 0; }`
+      );
+    }
+    win.addEventListener('afterprint', () => win.close());
+    setTimeout(() => win.print(), 300);
+  }, 200);
 }
 
 // Thermal Receipt Component (Hidden, for printing only)
