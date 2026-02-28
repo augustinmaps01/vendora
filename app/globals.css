@@ -406,9 +406,9 @@
     page-break-inside: avoid !important;
   }
 
-  /* Page settings — @page must be top-level, not nested inside selectors */
+  /* Page settings — let the POS-58 printer driver control paper size.
+     Only reset margins so the receipt content starts at the edge. */
   @page {
-    size: 58mm auto;
     margin: 0;
   }
 }

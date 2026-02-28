@@ -994,7 +994,7 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
         </div>
         <DialogFooter>
           <Button variant="secondary" className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white" onClick={() => onOpenChange(false)}>Close</Button>
-          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={() => receiptData && printThermalReceipt(receiptData)}>Print</Button>
+          <Button className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600" onClick={() => window.print()}>Print</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>
@@ -1197,7 +1197,7 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                 <Button
                   variant="secondary"
                   className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white py-5"
-                  onClick={() => printThermalReceipt(receiptData)}
+                  onClick={() => window.print()}
                 >
                   <Printer className="h-4 w-4 mr-2" />
                   Print
@@ -1227,115 +1227,10 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
 }
 
 // Opens a dedicated print window with only the receipt HTML so that
-// @page { size: 58mm auto } is applied at the correct CSS level and
-// no hidden POS-screen content can bleed into a second page.
-function printThermalReceipt(receiptData: ReceiptData) {
-  const fmt = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
-
-  const itemRows = receiptData.items.map((item) => {
-    const lineTotal = fmt(item.qty * item.price);
-    return `<div style="margin-bottom:4px;">
-      <div style="font-weight:bold;word-break:break-word;">${item.name}</div>
-      <div style="display:flex;justify-content:space-between;">
-        <span>${item.qty} x &#8369;${fmt(item.price)}</span>
-        <span>&#8369;${lineTotal}</span>
-      </div>
-    </div>`;
-  }).join('');
-
-  const discountRow = receiptData.discount > 0
-    ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>${receiptData.discountLabel}:</span><span>-&#8369;${fmt(receiptData.discount)}</span></div>`
-    : '';
-
-  const deliveryRow = receiptData.deliveryFee > 0
-    ? `<div style="display:flex;justify-content:space-between;margin-bottom:2px;"><span>Delivery Fee:</span><span>&#8369;${fmt(receiptData.deliveryFee)}</span></div>`
-    : '';
-
-  const html = `<!DOCTYPE html>
-<html><head>
-  <meta charset="UTF-8">
-  <style id="page-style">
-    @page { size: 58mm auto; margin: 0; }
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    html, body {
-      width: 58mm;
-      margin: 0;
-      font-family: 'Courier New', Courier, monospace;
-      font-size: 10px;
-      line-height: 1.4;
-      color: #000;
-      background: #fff;
-      padding: 2mm 3mm;
-    }
-    .center { text-align: center; }
-    .row { display: flex; justify-content: space-between; margin-bottom: 2px; }
-    .divider { border-top: 1px dashed #000; margin: 5px 0; }
-    .total-row { display: flex; justify-content: space-between; font-size: 13px; font-weight: bold; margin: 4px 0; }
-  </style>
-</head><body>
-  <div class="center" style="margin-bottom:6px;">
-    <div style="font-size:15px;font-weight:bold;">VENDORA POS</div>
-    <div>Point of Sale System</div>
-  </div>
-  <div class="divider"></div>
-  <div style="margin:5px 0;">
-    <div class="row"><span>TXN:</span><span>${receiptData.transactionNumber}</span></div>
-    <div class="row"><span>Date:</span><span>${receiptData.date}</span></div>
-    <div class="row"><span>Customer:</span><span>${receiptData.customerName || 'Walk-in Customer'}</span></div>
-    <div class="row"><span>Cashier:</span><span>Staff</span></div>
-  </div>
-  <div class="divider"></div>
-  <div style="margin:5px 0;">${itemRows}</div>
-  <div class="divider"></div>
-  <div style="margin:5px 0;">
-    <div class="row"><span>Subtotal:</span><span>&#8369;${fmt(receiptData.subtotal)}</span></div>
-    ${discountRow}${deliveryRow}
-    <div class="row"><span>Vatable Sales:</span><span>&#8369;${fmt(receiptData.vatableSales)}</span></div>
-    <div class="row"><span>Tax (12% VAT):</span><span>&#8369;${fmt(receiptData.tax)}</span></div>
-  </div>
-  <div class="divider"></div>
-  <div class="total-row"><span>TOTAL:</span><span>&#8369;${fmt(receiptData.total)}</span></div>
-  <div class="divider"></div>
-  <div style="margin:5px 0;">
-    <div class="row"><span>Payment (${receiptData.paymentMethod}):</span><span>&#8369;${fmt(receiptData.amountTendered)}</span></div>
-    <div class="row"><span>Change:</span><span>&#8369;${fmt(receiptData.change)}</span></div>
-  </div>
-  <div class="divider"></div>
-  <div class="center" style="margin-top:8px;">
-    <div>Thank you for your purchase!</div>
-    <div>Please come again</div>
-  </div>
-  <div style="height:3mm;"></div>
-</body></html>`;
-
-  const win = window.open('', '_blank', 'width=300,height=600,toolbar=no,menubar=no,scrollbars=no');
-  if (!win) {
-    alert('Allow pop-ups to print the receipt.');
-    return;
-  }
-  win.document.write(html);
-  win.document.close();
-  win.focus();
-
-  // Measure actual content height and set @page size to match exactly.
-  // Browsers treat `@page { size: 58mm auto }` as default page height (A4),
-  // so we must inject the real height to avoid blank space below the receipt.
-  setTimeout(() => {
-    const contentH = win.document.body.scrollHeight;
-    const pageStyle = win.document.getElementById('page-style');
-    if (pageStyle) {
-      pageStyle.textContent = pageStyle.textContent.replace(
-        /@page\s*\{[^}]*\}/,
-        `@page { size: 58mm ${contentH}px; margin: 0; }`
-      );
-    }
-    win.addEventListener('afterprint', () => win.close());
-    setTimeout(() => win.print(), 300);
-  }, 200);
-}
-
 // Thermal Receipt Component (Hidden, for printing only)
-// Thermal Receipt Component (Hidden, for printing only)
+// Rendered on-page; when window.print() is called, @media print in globals.css
+// hides everything except #thermal-receipt and the POS-58 printer driver
+// controls the paper height (no fixed @page height override needed).
 function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
   return (
     <div id="thermal-receipt" className="hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:z-[9999] print:m-0 print:p-0">
