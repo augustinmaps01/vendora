@@ -684,8 +684,17 @@ export default function VendoraPOS() {
       };
 
       setReceiptData(receipt);
-      setSuccessModalOpen(true);
       setCart([]);  // Clear cart immediately — receipt snapshot already captured above
+
+      // Auto-print the thermal receipt, then show the success modal after print completes
+      setTimeout(() => {
+        const showModal = () => {
+          window.removeEventListener('afterprint', showModal);
+          setSuccessModalOpen(true);
+        };
+        window.addEventListener('afterprint', showModal);
+        window.print();
+      }, 400); // Wait for the ThermalReceipt portal to render in DOM
 
     } catch (err: any) {
       // Extract full error details for debugging
@@ -1241,7 +1250,7 @@ function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
 
   return createPortal(
     <div id="thermal-receipt" style={{ display: 'none' }}>
-      <div style={{ width: '100%', fontFamily: '"Courier New", Courier, monospace', fontSize: '10px', lineHeight: '1.2', color: '#000', backgroundColor: '#fff', padding: '0' }}>
+      <div style={{ width: '100%', fontFamily: '"Courier New", Courier, monospace', fontSize: '9px', lineHeight: '1.1', color: '#000', backgroundColor: '#fff', padding: '0' }}>
 
         {/* Header */}
         <div style={{ textAlign: 'center', marginBottom: '3px' }}>
