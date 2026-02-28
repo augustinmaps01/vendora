@@ -1236,94 +1236,67 @@ function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
   useEffect(() => { setMounted(true); }, []);
   if (!mounted) return null;
 
+  const S = { row: { display: 'flex', justifyContent: 'space-between' } as const, dash: { borderBottom: '1px dashed #000', margin: '3px 0' } as const };
+  const fmt2 = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
   return createPortal(
     <div id="thermal-receipt" style={{ display: 'none' }}>
-      <div className="thermal-receipt-content" style={{ width: '100%', maxWidth: '100%', fontFamily: '"Courier New", Courier, monospace', fontSize: '11px', lineHeight: '1.3', color: '#000', backgroundColor: '#fff', padding: '0', boxSizing: 'border-box' }}>
+      <div style={{ width: '100%', fontFamily: '"Courier New", Courier, monospace', fontSize: '10px', lineHeight: '1.2', color: '#000', backgroundColor: '#fff', padding: '0' }}>
 
         {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
-          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '2px' }}>VENDORA POS</div>
-          <div style={{ fontSize: '11px' }}>Point of Sale System</div>
-          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
+        <div style={{ textAlign: 'center', marginBottom: '3px' }}>
+          <div style={{ fontSize: '13px', fontWeight: 'bold' }}>VENDORA POS</div>
+          <div style={{ fontSize: '9px' }}>Point of Sale System</div>
         </div>
+        <div style={S.dash} />
 
         {/* Transaction Info */}
-        <div style={{ marginBottom: '8px', fontSize: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>TXN:</span>
-            <span style={{ textAlign: 'right', wordBreak: 'break-all', paddingLeft: '8px' }}>{receiptData.transactionNumber}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Date:</span>
-            <span>{receiptData.date}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Customer:</span>
-            <span style={{ textAlign: 'right', wordBreak: 'break-word', paddingLeft: '8px' }}>{receiptData.customerName || 'Walk-in Customer'}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-            <span>Cashier:</span>
-            <span>Staff</span>
-          </div>
-          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
+        <div style={{ fontSize: '9px', marginBottom: '1px' }}>
+          <div style={S.row}><span>TXN:</span><span>{receiptData.transactionNumber}</span></div>
+          <div style={S.row}><span>Date:</span><span>{receiptData.date}</span></div>
+          <div style={S.row}><span>Customer:</span><span>{receiptData.customerName || 'Walk-in Customer'}</span></div>
+          <div style={S.row}><span>Cashier:</span><span>Staff</span></div>
         </div>
+        <div style={S.dash} />
 
         {/* Items */}
-        <div style={{ marginBottom: '8px', fontSize: '10px' }}>
+        <div style={{ fontSize: '9px', marginBottom: '1px' }}>
           {receiptData.items.map((item, index) => (
-            <div key={index} style={{ marginBottom: '4px' }}>
+            <div key={index} style={{ marginBottom: '2px' }}>
               <div style={{ fontWeight: 'bold', wordBreak: 'break-word' }}>{item.name}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{item.qty} x ₱{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-                <span>₱{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+              <div style={S.row}>
+                <span>{item.qty} x ₱{fmt2(item.price)}</span>
+                <span>₱{fmt2(item.qty * item.price)}</span>
               </div>
             </div>
           ))}
-          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
         </div>
+        <div style={S.dash} />
 
         {/* Totals */}
-        <div style={{ fontSize: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-            <span>Subtotal:</span>
-            <span>₱{receiptData.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-            <span>Vatable Sales:</span>
-            <span>₱{receiptData.vatableSales.toFixed(2)}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-            <span>Tax (12% VAT):</span>
-            <span>₱{receiptData.tax.toFixed(2)}</span>
-          </div>
+        <div style={{ fontSize: '9px' }}>
+          <div style={S.row}><span>Subtotal:</span><span>₱{fmt2(receiptData.subtotal)}</span></div>
+          <div style={S.row}><span>Vatable Sales:</span><span>₱{receiptData.vatableSales.toFixed(2)}</span></div>
+          <div style={S.row}><span>Tax (12% VAT):</span><span>₱{receiptData.tax.toFixed(2)}</span></div>
         </div>
-
-        <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }}></div>
+        <div style={S.dash} />
 
         {/* Grand Total */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold', margin: '4px 0' }}>
+        <div style={{ ...S.row, fontSize: '12px', fontWeight: 'bold', margin: '2px 0' }}>
           <span>TOTAL:</span>
-          <span>₱{receiptData.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          <span>₱{fmt2(receiptData.total)}</span>
         </div>
-
-        <div style={{ borderBottom: '1px dashed #000', margin: '6px 0' }}></div>
+        <div style={S.dash} />
 
         {/* Payment */}
-        <div style={{ fontSize: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
-            <span>Payment ({receiptData.paymentMethod}):</span>
-            <span>₱{receiptData.amountTendered.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
-          <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
-            <span>Change:</span>
-            <span>₱{receiptData.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
-          </div>
+        <div style={{ fontSize: '9px' }}>
+          <div style={S.row}><span>Payment ({receiptData.paymentMethod}):</span><span>₱{fmt2(receiptData.amountTendered)}</span></div>
+          <div style={{ ...S.row, fontWeight: 'bold' }}><span>Change:</span><span>₱{fmt2(receiptData.change)}</span></div>
         </div>
+        <div style={S.dash} />
 
-        <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }}></div>
-
-        {/* Footer — last printed content, nothing after this */}
-        <div style={{ textAlign: 'center', fontSize: '10px' }}>
+        {/* Footer */}
+        <div style={{ textAlign: 'center', fontSize: '9px', marginTop: '3px' }}>
           <div>Thank you for your purchase!</div>
           <div>Please come again</div>
         </div>
