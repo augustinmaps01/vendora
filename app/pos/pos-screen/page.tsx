@@ -1322,8 +1322,8 @@ function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
 
         <div style={{ borderBottom: '1px dashed #000', margin: '8px 0' }}></div>
 
-        {/* Footer — printing stops after this */}
-        <div style={{ textAlign: 'center', fontSize: '10px', paddingBottom: '2mm' }}>
+        {/* Footer — last printed content, nothing after this */}
+        <div style={{ textAlign: 'center', fontSize: '10px' }}>
           <div>Thank you for your purchase!</div>
           <div>Please come again</div>
         </div>

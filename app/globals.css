@@ -339,6 +339,13 @@
 /* ===== POS Receipt Print Styles ===== */
 @media print {
 
+  /* size: auto removes any fixed page dimensions — thermal printers
+     print continuously so height must be determined by content only. */
+  @page {
+    size: auto;
+    margin: 0;
+  }
+
   /* Remove ALL page content from layout — prevents blank pages.
      #thermal-receipt is rendered via Portal as a direct <body> child,
      so this selector hides every sibling (Next.js root, overlays, etc.). */
@@ -346,22 +353,29 @@
     display: none !important;
   }
 
+  /* Collapse html & body so they only wrap the receipt content */
   html,
   body {
     height: auto !important;
     min-height: 0 !important;
+    max-height: none !important;
+    width: auto !important;
     margin: 0 !important;
     padding: 0 !important;
     overflow: visible !important;
     background: white !important;
   }
 
-  /* Thermal receipt — shown only when printing */
+  /* Thermal receipt — shown only when printing.
+     height: auto so it shrinks to fit content exactly. */
   #thermal-receipt {
     display: block !important;
     position: static !important;
     width: 58mm !important;
     max-width: 58mm !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
     margin: 0 !important;
     padding: 0 1.5mm !important;
     background: white !important;
@@ -369,6 +383,15 @@
     font-family: "Courier New", Courier, monospace !important;
     font-size: 10px !important;
     line-height: 1.3 !important;
+    overflow: visible !important;
+  }
+
+  #thermal-receipt *,
+  #thermal-receipt .thermal-receipt-content {
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    overflow: visible !important;
   }
 
   /* Professional invoice for orders */
@@ -376,6 +399,7 @@
     display: block !important;
     position: static !important;
     width: 100% !important;
+    height: auto !important;
     margin: 0 !important;
     background: white !important;
     color: black !important;
@@ -383,11 +407,5 @@
 
   #printable-invoice table {
     page-break-inside: avoid !important;
-  }
-
-  /* Let the POS-58 printer driver control paper size.
-     Only reset margins so content starts at the paper edge. */
-  @page {
-    margin: 0;
   }
 }
