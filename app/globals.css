@@ -406,19 +406,9 @@
     page-break-inside: avoid !important;
   }
 
-  /* Page settings for thermal receipt */
-  body:has(#thermal-receipt:not(.hidden)) {
-    @page {
-      size: 58mm auto;
-      margin: 0 !important;
-    }
-  }
-
-  /* Page settings for invoice */
-  body:has(#printable-invoice:not(.hidden)) {
-    @page {
-      size: A4;
-      margin: 0 !important;
-    }
+  /* Page settings — @page must be top-level, not nested inside selectors */
+  @page {
+    size: 58mm auto;
+    margin: 0;
   }
 }
