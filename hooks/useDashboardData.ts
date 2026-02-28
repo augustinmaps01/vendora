@@ -138,8 +138,11 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                 } catch {
                     // Cache failure is non-critical
                 }
-            } catch (err) {
-                console.error('Error fetching dashboard data:', err)
+            } catch (err: any) {
+                // Don't trigger Next.js dev overlay for intentionally thrown offline errors
+                if (!err?.isOffline && !err?.message?.includes('offline mode')) {
+                    console.error('Error fetching dashboard data:', err)
+                }
 
                 // Only show error if we have no cached data
                 if (!kpis) {

@@ -126,16 +126,20 @@ export const dashboardService = {
      * Get inventory health breakdown
      */
     async getInventoryHealth(): Promise<InventoryHealth> {
-        const { data } = await axiosClient.get<ApiResponse<InventoryHealth>>('/dashboard/inventory-health')
-        return data.data
+        return retryWithBackoff(async () => {
+            const { data } = await axiosClient.get<ApiResponse<InventoryHealth>>('/dashboard/inventory-health')
+            return data.data
+        })
     },
 
     /**
      * Get recent activity feed
      */
     async getRecentActivity(params?: { limit?: number }): Promise<RecentActivity> {
-        const { data } = await axiosClient.get<ApiResponse<RecentActivity>>('/dashboard/recent-activity', { params })
-        return data.data
+        return retryWithBackoff(async () => {
+            const { data } = await axiosClient.get<ApiResponse<RecentActivity>>('/dashboard/recent-activity', { params })
+            return data.data
+        })
     },
 
     /**
@@ -143,8 +147,10 @@ export const dashboardService = {
      * Returns items that are below minimum stock thresholds
      */
     async getLowStockAlerts(): Promise<LowStockAlerts> {
-        const { data } = await axiosClient.get<ApiResponse<LowStockAlerts>>('/dashboard/low-stock-alerts')
-        return data.data
+        return retryWithBackoff(async () => {
+            const { data } = await axiosClient.get<ApiResponse<LowStockAlerts>>('/dashboard/low-stock-alerts')
+            return data.data
+        })
     },
 
     /**
@@ -152,7 +158,9 @@ export const dashboardService = {
      * Returns unprocessed/pending orders for dashboard display
      */
     async getPendingOrders(): Promise<PendingOrders> {
-        const { data } = await axiosClient.get<ApiResponse<PendingOrders>>('/dashboard/pending-orders')
-        return data.data
+        return retryWithBackoff(async () => {
+            const { data } = await axiosClient.get<ApiResponse<PendingOrders>>('/dashboard/pending-orders')
+            return data.data
+        })
     },
 }

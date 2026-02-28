@@ -241,6 +241,11 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // Calculate effective sidebar width for styles
   const effectiveSidebarWidth = sidebarCollapsed ? 80 : sidebarWidth
 
+  // Fix hydration mismatch by only rendering once mounted
+  if (!mounted) {
+    return <>{children}</> // Or a loading skeleton if preferred, but rendering children directly is safer for SSR
+  }
+
   // For non-auth pages, render with sidebar and navigation
   return (
     <div

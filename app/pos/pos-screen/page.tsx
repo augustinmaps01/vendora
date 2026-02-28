@@ -1,4 +1,4 @@
-"use client"
+﻿"use client"
 
 import React, { useEffect, useMemo, useState, useCallback, lazy, Suspense } from "react";
 import { useRouter } from "next/navigation";
@@ -80,12 +80,21 @@ export function calcTotals(input: TotalsInput) {
   const safeDiscount = Math.max(0, Math.min(Number(input.discountAmount) || 0, safeSubtotal));
   const deliveryFee = calcDeliveryFee(input.fulfillment, input.deliveryKm);
 
+  // Prices are VAT-inclusive, so we extract VAT from the subtotal
   const taxableBase = Math.max(0, safeSubtotal - safeDiscount);
-  const tax = input.taxEnabled ? Math.round(taxableBase * Math.max(0, input.taxRate)) : 0;
-  const total = taxableBase + tax + deliveryFee;
+
+  // Vatable Sales = Subtotal / 1.12
+  const vatableSales = input.taxEnabled ? taxableBase / 1.12 : taxableBase;
+
+  // Tax = Vatable Sales × 12%
+  const tax = input.taxEnabled ? vatableSales * 0.12 : 0;
+
+  // Total = subtotal - discount + delivery (tax is already included in item prices)
+  const total = taxableBase + deliveryFee;
 
   return {
     subtotal: safeSubtotal,
+    vatableSales,
     discount: safeDiscount,
     tax,
     deliveryFee,
@@ -661,6 +670,7 @@ export default function VendoraPOS() {
         customerName,
         items: [...cart],
         subtotal: totals.subtotal,
+        vatableSales: totals.vatableSales,
         discount: totals.discount,
         discountLabel,
         tax: totals.tax,
@@ -966,8 +976,9 @@ function InlineReceiptDialog({ open, onOpenChange, cart, totals, saleId, notes, 
           <div className="h-px bg-white/10" />
           <div className="space-y-1 text-sm">
             <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Subtotal</span><span>₱ {totals.subtotal.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Vatable Sales</span><span className="text-blue-500 dark:text-blue-400">₱ {(totals.total / 1.12).toFixed(2)}</span></div>
             <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Discount</span><span>₱ {totals.discount.toLocaleString()}</span></div>
-            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Tax</span><span>₱ {totals.tax.toLocaleString()}</span></div>
+            <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Tax</span><span>₱ {totals.tax.toFixed(2)}</span></div>
             <div className="flex items-center justify-between"><span className="text-gray-600 dark:text-white/60">Delivery</span><span>₱ {totals.deliveryFee.toLocaleString()}</span></div>
             <div className="h-px bg-white/10" />
             <div className="flex items-center justify-between font-semibold"><span>Total</span><span>₱ {totals.total.toLocaleString()}</span></div>
@@ -1132,6 +1143,10 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                 <span className={THEME.muted}>Subtotal</span>
                 <span className="text-gray-900 dark:text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
               </div>
+              <div className="flex items-center justify-between text-sm">
+                <span className={THEME.muted}>Vatable Sales</span>
+                <span className="text-blue-500 dark:text-blue-400 font-medium">₱ {receiptData.vatableSales.toFixed(2)}</span>
+              </div>
               {receiptData.discount > 0 && (
                 <div className="flex items-center justify-between text-sm">
                   <span className={THEME.muted}>{receiptData.discountLabel}</span>
@@ -1212,84 +1227,143 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
 }
 
 // Thermal Receipt Component (Hidden, for printing only)
+// Thermal Receipt Component (Hidden, for printing only)
 function ThermalReceipt({ receiptData }: { receiptData: ReceiptData }) {
   return (
-    <div id="thermal-receipt" className="hidden print:block print:p-0 print:m-0">
-      <div className="thermal-receipt" style={{ width: '80mm', fontFamily: 'monospace', fontSize: '12px', lineHeight: '1.5' }}>
-        {/* Header */}
-        <div style={{ textAlign: 'center', marginBottom: '10px', borderBottom: '1px dashed #000', paddingBottom: '10px' }}>
-          <div style={{ fontSize: '18px', fontWeight: 'bold' }}>VENDORA POS</div>
+    <div id="thermal-receipt" className="hidden print:block print:absolute print:top-0 print:left-0 print:w-full print:bg-white print:z-[9999] print:m-0 print:p-0">
+      {/* 
+        Width is set to 100% to fill whatever paper size the printer defines in the print dialog (e.g. 58mm).
+        Strict word-break and font sizes ensure it doesn't push the bounds.
+      */}
+      <div className="thermal-receipt-content" style={{ width: '100%', maxWidth: '100%', fontFamily: '"Courier New", Courier, monospace', fontSize: '11px', lineHeight: '1.3', color: '#000', backgroundColor: '#fff', padding: '0', boxSizing: 'border-box' }}>
+
+        {/* Header Section */}
+        <div style={{ textAlign: 'center', marginBottom: '8px' }}>
+          <div style={{ fontSize: '16px', fontWeight: 'bold', marginBottom: '2px' }}>VENDORA</div>
           <div style={{ fontSize: '11px' }}>Point of Sale System</div>
+          <div style={{ fontSize: '10px', marginTop: '2px' }}>Manila, Philippines</div>
+          <div style={{ fontSize: '10px' }}>VAT REG TIN: 000-000-000-000</div>
+          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
         </div>
 
         {/* Transaction Info */}
-        <div style={{ marginBottom: '10px', fontSize: '11px' }}>
-          <div>TXN: {receiptData.transactionNumber}</div>
-          <div>Date: {receiptData.date}</div>
-          <div>Customer: {receiptData.customerName}</div>
-          <div>Cashier: Staff</div>
+        <div style={{ marginBottom: '8px', fontSize: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>TXN NO:</span>
+            <span style={{ textAlign: 'right', wordBreak: 'break-all', paddingLeft: '8px' }}>{receiptData.transactionNumber}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>DATE:</span>
+            <span>{receiptData.date}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>CASHIER:</span>
+            <span>Staff</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between' }}>
+            <span>CUSTOMER:</span>
+            <span style={{ textAlign: 'right', wordBreak: 'break-word', paddingLeft: '8px' }}>{receiptData.customerName || 'Walk-in'}</span>
+          </div>
+          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
         </div>
 
-        {/* Items */}
-        <div style={{ borderTop: '1px dashed #000', borderBottom: '1px dashed #000', padding: '10px 0' }}>
+        {/* Item Headers */}
+        <div style={{ display: 'grid', gridTemplateColumns: '40% 30% 30%', fontSize: '10px', fontWeight: 'bold', marginBottom: '4px' }}>
+          <div>ITEM/QTY</div>
+          <div style={{ textAlign: 'right' }}>PRICE</div>
+          <div style={{ textAlign: 'right' }}>AMT</div>
+        </div>
+        <div style={{ borderBottom: '1px dashed #000', marginBottom: '6px' }}></div>
+
+        {/* Items List */}
+        <div style={{ marginBottom: '8px', fontSize: '10px' }}>
           {receiptData.items.map((item, index) => (
-            <div key={index} style={{ marginBottom: '8px' }}>
-              <div style={{ fontWeight: 'bold' }}>{item.name}</div>
-              <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                <span>{item.qty} x ₱{item.price.toLocaleString()}</span>
-                <span>₱{(item.qty * item.price).toLocaleString()}</span>
+            <div key={index} style={{ marginBottom: '4px', display: 'flex', flexWrap: 'wrap' }}>
+              <div style={{ fontWeight: 'bold', width: '100%', wordBreak: 'break-word', marginBottom: '2px' }}>{item.name}</div>
+              <div style={{ display: 'grid', gridTemplateColumns: '40% 30% 30%', width: '100%' }}>
+                <div>{item.qty} {item.unit || 'pc'}</div>
+                <div style={{ textAlign: 'right' }}>{item.price.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
+                <div style={{ textAlign: 'right' }}>{(item.qty * item.price).toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</div>
               </div>
             </div>
           ))}
+          <div style={{ marginTop: '6px', borderBottom: '1px dashed #000' }}></div>
         </div>
 
-        {/* Totals */}
-        <div style={{ marginTop: '10px' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
+        {/* Totals Section */}
+        <div style={{ fontSize: '10px' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>Items count:</span>
+            <span>{receiptData.items.reduce((sum, item) => sum + item.qty, 0)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
             <span>Subtotal:</span>
-            <span>₱{receiptData.subtotal.toLocaleString()}</span>
+            <span>{receiptData.subtotal.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
-          {receiptData.discount > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-              <span>{receiptData.discountLabel}:</span>
-              <span>-₱{receiptData.discount.toLocaleString()}</span>
-            </div>
-          )}
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>{receiptData.taxLabel}:</span>
-            <span>₱{receiptData.tax.toLocaleString()}</span>
-          </div>
-          {receiptData.deliveryFee > 0 && (
-            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-              <span>Delivery Fee:</span>
-              <span>₱{receiptData.deliveryFee.toLocaleString()}</span>
-            </div>
-          )}
-          <div style={{ borderTop: '1px solid #000', marginTop: '5px', paddingTop: '5px' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
-              <span>TOTAL:</span>
-              <span>₱{receiptData.total.toLocaleString()}</span>
-            </div>
-          </div>
-        </div>
 
-        {/* Payment */}
-        <div style={{ marginTop: '10px', paddingTop: '10px', borderTop: '1px dashed #000' }}>
-          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '5px' }}>
-            <span>Payment ({receiptData.paymentMethod}):</span>
-            <span>₱{receiptData.amountTendered.toLocaleString()}</span>
+          {receiptData.discount > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span>{receiptData.discountLabel}:</span>
+              <span>-{receiptData.discount.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
+
+          {receiptData.deliveryFee > 0 && (
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+              <span>Delivery Fee:</span>
+              <span>{receiptData.deliveryFee.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+            </div>
+          )}
+
+          {/* Grand Total */}
+          <div style={{ marginTop: '4px', marginBottom: '4px', display: 'flex', justifyContent: 'space-between', fontSize: '14px', fontWeight: 'bold' }}>
+            <span>TOTAL:</span>
+            <span>PHP {receiptData.total.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+
+          <div style={{ borderBottom: '1px dashed #000', marginBottom: '6px' }}></div>
+
+          {/* Payment Section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>Tender ({receiptData.paymentMethod}):</span>
+            <span>{receiptData.amountTendered.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', fontWeight: 'bold' }}>
             <span>Change:</span>
-            <span>₱{receiptData.change.toLocaleString()}</span>
+            <span>{receiptData.change.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })}</span>
+          </div>
+
+          <div style={{ marginTop: '8px', borderBottom: '1px dashed #000', marginBottom: '8px' }}></div>
+
+          {/* VAT Section */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>Vatable Sales:</span>
+            <span>{receiptData.vatableSales.toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>VAT Amount (12%):</span>
+            <span>{receiptData.tax.toFixed(2)}</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>VAT Exempt Sales:</span>
+            <span>0.00</span>
+          </div>
+          <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '2px' }}>
+            <span>Zero Rated Sales:</span>
+            <span>0.00</span>
           </div>
         </div>
 
         {/* Footer */}
-        <div style={{ textAlign: 'center', marginTop: '15px', paddingTop: '10px', borderTop: '1px dashed #000', fontSize: '11px' }}>
-          <div>Thank you for your purchase!</div>
-          <div style={{ marginTop: '5px' }}>Please come again</div>
+        <div style={{ textAlign: 'center', marginTop: '15px', paddingTop: '10px', borderTop: '1px dashed #000', fontSize: '10px' }}>
+          <div style={{ fontWeight: 'bold', marginBottom: '4px' }}>THIS IS NOT AN OFFICIAL RECEIPT</div>
+          <div>Thank you for shopping!</div>
+          <div style={{ marginTop: '2px' }}>Please come again</div>
+          <div style={{ marginTop: '10px' }}>Software Provider: Vendora POS</div>
         </div>
+
+        {/* Extra spacing for continuous roll tearing */}
+        <div style={{ height: '20px' }}></div>
       </div>
     </div>
   );

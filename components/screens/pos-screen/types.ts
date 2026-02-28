@@ -30,6 +30,7 @@ export interface ReceiptData {
   customerName: string;
   items: CartItem[];
   subtotal: number;
+  vatableSales: number;
   discount: number;
   discountLabel: string;
   tax: number;
@@ -61,6 +62,7 @@ export interface POSScreenProps {
   removeItem: (id: string) => void;
   totals: {
     subtotal: number;
+    vatableSales: number;
     discount: number;
     tax: number;
     deliveryFee: number;

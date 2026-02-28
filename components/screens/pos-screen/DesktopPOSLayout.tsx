@@ -91,7 +91,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     applyBarcode = () => { },
     changeQty = () => { },
     removeItem = () => { },
-    totals = { subtotal: 0, discount: 0, tax: 0, deliveryFee: 0, total: 0 },
+    totals = { subtotal: 0, vatableSales: 0, discount: 0, tax: 0, deliveryFee: 0, total: 0 },
     discountAmount = 0,
     canGoCheckout = false,
     setScreen = () => { },
@@ -221,7 +221,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                 )}
                 <div className="flex items-center justify-between text-sm">
                   <span className={THEME.muted}>Vatable Sales</span>
-                  <span className="text-gray-900 dark:text-white">₱ {(receiptData.subtotal - receiptData.discount).toFixed(2)}</span>
+                  <span className="text-blue-500 dark:text-blue-400 font-medium">₱ {receiptData.vatableSales.toFixed(2)}</span>
                 </div>
                 <div className="flex items-center justify-between text-sm">
                   <span className={THEME.muted}>{receiptData.taxLabel}</span>
@@ -333,7 +333,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
           )}
           <div className="receipt-row">
             <span>Vatable Sales</span>
-            <span>₱ {(receiptData.subtotal - receiptData.discount).toFixed(2)}</span>
+            <span>₱ {receiptData.vatableSales.toFixed(2)}</span>
           </div>
           <div className="receipt-row">
             <span>{receiptData.taxLabel}</span>
@@ -592,8 +592,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className="h-px bg-gray-200 dark:bg-white/10" />
                     <StatRow label="Subtotal" value={<Money value={totals.subtotal} />} />
                     <StatRow label="Discount" value={<Money value={discountAmount} />} />
-                    <StatRow label="Vatable Sales" value={<Money value={totals.subtotal - discountAmount} />} />
-                    <StatRow label="Tax" value={<Money value={totals.tax} />} />
+                    <StatRow label="Vatable Sales" value={<span className="text-blue-500 dark:text-blue-400">{"₱ "}{totals.vatableSales.toFixed(2)}</span>} />
+                    <StatRow label="Tax" value={<span className="text-gray-900 dark:text-white">{"₱ "}{totals.tax.toFixed(2)}</span>} />
                     <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
                     <div className="h-px bg-gray-200 dark:bg-white/10" />
                     <StatRow label="Total" value={<Money value={totals.total} />} strong />
@@ -1008,8 +1008,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
                     <div className={`mt-3 rounded-2xl ${THEME.panel} p-3 space-y-2`}>
                       <StatRow label="Subtotal" value={<Money value={totals.subtotal} />} />
                       <StatRow label="Discount" value={<Money value={totals.discount} />} />
-                      <StatRow label="Vatable Sales" value={<Money value={totals.subtotal - totals.discount} />} />
-                      <StatRow label="Tax" value={<Money value={totals.tax} />} />
+                      <StatRow label="Vatable Sales" value={<span className="text-blue-500 dark:text-blue-400">{"₱ "}{totals.vatableSales.toFixed(2)}</span>} />
+                      <StatRow label="Tax" value={<span className="text-gray-900 dark:text-white">{"₱ "}{totals.tax.toFixed(2)}</span>} />
                       <StatRow label="Delivery" value={<Money value={totals.deliveryFee} />} />
                       <div className="h-px bg-gray-200 dark:bg-white/10" />
                       <StatRow label="Total" value={<Money value={totals.total} />} strong />
