@@ -110,7 +110,7 @@ export default function DesktopDashboard() {
       {/* Stale data indicator for offline/cached data */}
       <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
       {/* Desktop Header */}
-      <div className="hidden sm:flex sm:flex-col gap-3 bg-white dark:bg-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-border lg:flex-row lg:items-center lg:justify-between">
+      <div className="hidden sm:flex sm:flex-col gap-3 bg-white dark:bg-card p-4 sm:p-6 rounded-lg border border-gray-200 dark:border-border xl:flex-row xl:items-center xl:justify-between">
         <div>
           <p className="text-xs sm:text-sm text-gray-500 dark:text-[#b4b4d0]">Welcome back</p>
           <h1 className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-1">Bunya Retail Shop</h1>
@@ -148,21 +148,21 @@ export default function DesktopDashboard() {
       <DashboardStats stats={stats} />
 
       {/* Row 2: Sales Overview + Activity Metrics + Distribution */}
-      {/* 2-row explicit grid so cards in the same row share equal height */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12 lg:grid-rows-[400px_450px]">
+      {/* md: 2-col grid, lg: full 12-col layout */}
+      <div className="grid grid-cols-1 gap-4 md:grid-cols-2 xl:grid-cols-12 xl:grid-rows-[400px_450px]">
 
-        {/* Row 1, Col 1-5: Sales Trend */}
-        <div className="lg:col-span-5 lg:row-start-1">
-          <SalesTrendChart data={salesTrend} className="h-[400px] lg:h-full" contentClassName="flex-1" />
+        {/* Sales Trend */}
+        <div className="md:col-span-2 xl:col-span-5 xl:row-start-1">
+          <SalesTrendChart data={salesTrend} className="h-[400px] xl:h-full" contentClassName="flex-1" />
         </div>
 
-        {/* Row 1, Col 6-8: Payment Methods */}
-        <div className="lg:col-span-3 lg:row-start-1">
-          <PaymentMethodsChart data={paymentMethods} className="h-[400px] lg:h-full" />
+        {/* Payment Methods */}
+        <div className="xl:col-span-3 xl:row-start-1">
+          <PaymentMethodsChart data={paymentMethods} className="h-[400px] xl:h-full" />
         </div>
 
-        {/* Col 9-12, spans both rows: Top Selling Products */}
-        <div className="lg:col-span-4 lg:row-span-2 h-full">
+        {/* Top Selling Products */}
+        <div className="xl:col-span-4 xl:row-span-2 h-full">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-4 h-full overflow-y-auto">
               <TopSellingProducts data={topProducts} variant="embedded" />
@@ -170,13 +170,13 @@ export default function DesktopDashboard() {
           </Card>
         </div>
 
-        {/* Row 2, Col 1-5: Orders by Channel */}
-        <div className="lg:col-span-5 lg:row-start-2">
-          <OrdersByChannelChart data={ordersByChannel} className="h-[450px] lg:h-full" />
+        {/* Orders by Channel */}
+        <div className="xl:col-span-5 xl:row-start-2">
+          <OrdersByChannelChart data={ordersByChannel} className="h-[450px] xl:h-full" />
         </div>
 
-        {/* Row 2, Col 6-8: Inventory Health */}
-        <div className="lg:col-span-3 lg:row-start-2">
+        {/* Inventory Health */}
+        <div className="xl:col-span-3 xl:row-start-2">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-4 h-full">
               <InventoryHealth data={inventoryHealth} variant="embedded" />
@@ -187,9 +187,9 @@ export default function DesktopDashboard() {
       </div>
 
       {/* Row 3: Actionable Items + Activity Feed */}
-      <div className="grid grid-cols-1 gap-4 lg:grid-cols-12">
+      <div className="grid grid-cols-1 gap-4 xl:grid-cols-12">
         {/* Left: Alerts, Orders & Cash vs Credit */}
-        <div className="lg:col-span-7 grid grid-cols-1 md:grid-cols-3 gap-4">
+        <div className="xl:col-span-7 grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-5">
               <LowStockAlerts variant="embedded" />
@@ -200,11 +200,13 @@ export default function DesktopDashboard() {
               <PendingOrders variant="embedded" />
             </CardContent>
           </Card>
-          <CashVsCreditChart data={paymentMethods} className="h-full dark:bg-card dark:border-border" />
+          <div className="md:col-span-2 xl:col-span-1">
+            <CashVsCreditChart data={paymentMethods} className="h-full dark:bg-card dark:border-border" />
+          </div>
         </div>
 
         {/* Right: Recent Activity + Quick Actions */}
-        <div className="lg:col-span-5">
+        <div className="xl:col-span-5">
           <Card className="border-gray-200 dark:border-border dark:bg-card h-full">
             <CardContent className="p-5">
               <RecentActivity data={recentActivity} variant="embedded" />

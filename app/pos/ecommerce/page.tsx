@@ -28,13 +28,17 @@ export default function EcommercePage() {
           <p className="text-gray-600 dark:text-[#b4b4d0] mt-1">Manage your online store and web presence</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
-            <Eye className="w-4 h-4 mr-2" />
-            Preview Store
+          <Button variant="outline" asChild>
+            <a href="/ecommerce/products" target="_blank">
+              <Eye className="w-4 h-4 mr-2" />
+              Preview Store
+            </a>
           </Button>
-          <Button className="bg-purple-600 hover:bg-purple-700">
-            <ExternalLink className="w-4 h-4 mr-2" />
-            Visit Store
+          <Button className="bg-purple-600 hover:bg-purple-700" asChild>
+            <a href="/ecommerce/products" target="_blank">
+              <ExternalLink className="w-4 h-4 mr-2" />
+              Visit Store
+            </a>
           </Button>
         </div>
       </div>
@@ -49,7 +53,7 @@ export default function EcommercePage() {
             <div>
               <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Online Store Status</h3>
               <p className="text-sm text-gray-600 dark:text-[#b4b4d0] mt-1">
-                Your store URL: <span className="font-medium text-purple-600">bunyaretail.vendora.shop</span>
+                Your store URL: <a href="/ecommerce/products" target="_blank" className="font-medium text-purple-600 hover:underline">bunyaretail.vendora.shop</a>
               </p>
             </div>
           </div>

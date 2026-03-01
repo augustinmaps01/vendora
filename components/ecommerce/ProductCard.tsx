@@ -1,7 +1,6 @@
 "use client"
 
 import { Product, useCartStore } from "@/store/useCartStore"
-import { Button } from "@/components/ui/button"
 import { ShoppingCart, Star, Check } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -26,21 +25,19 @@ export function ProductCard({ product }: ProductCardProps) {
         for (let i = 0; i < seed.length; i += 1) {
             hash = (hash * 31 + seed.charCodeAt(i)) | 0
         }
-        const normalized = Math.abs(hash)
-        return 50 + (normalized % 300)
+        return 50 + (Math.abs(hash) % 300)
     }
 
-    // Generate badge styling based on type
     const getBadgeStyles = (type?: string) => {
         switch (type) {
             case "hot":
                 return "bg-gradient-to-r from-red-500 to-orange-500 text-white"
             case "bestseller":
-                return "bg-gradient-to-r from-blue-500 to-indigo-500 text-white"
+                return "bg-gradient-to-r from-[#7C3AED] to-[#7C3AED] text-white"
             case "discount":
-                return "bg-gradient-to-r from-green-500 to-emerald-500 text-white"
+                return "bg-gradient-to-r from-emerald-500 to-teal-500 text-white"
             default:
-                return "bg-gray-900 text-white"
+                return "bg-gray-100 dark:bg-white/10 text-gray-700 dark:text-white backdrop-blur-sm"
         }
     }
 
@@ -49,128 +46,107 @@ export function ProductCard({ product }: ProductCardProps) {
     const reviewSeed = String(product.id ?? product.name ?? product.category ?? "product")
     const reviewCount = product.reviewCount ?? getDeterministicReviewCount(reviewSeed)
 
+    const handleAddToCart = (e?: React.MouseEvent) => {
+        e?.preventDefault()
+        e?.stopPropagation()
+        addItem(product)
+        toast.success(
+            <div className="flex items-start gap-3">
+                <div className="relative w-10 h-10 rounded-lg overflow-hidden bg-gray-800 flex-shrink-0">
+                    <Image src={productImage} alt={product.name} fill className="object-cover" />
+                </div>
+                <div className="flex-1 min-w-0">
+                    <p className="font-semibold text-sm text-gray-900 line-clamp-1">Added to cart</p>
+                    <p className="text-xs text-gray-600 line-clamp-1">{product.name}</p>
+                </div>
+            </div>,
+            {
+                duration: 2000,
+                className: "bg-white border border-gray-200 shadow-xl",
+                icon: <Check className="w-5 h-5 text-emerald-500" />,
+            }
+        )
+    }
+
     return (
-        <div
-            className="group bg-white rounded-xl sm:rounded-2xl overflow-hidden border-2 hover:shadow-xl active:scale-[0.98] transition-all duration-300 flex flex-col h-full"
-            style={{ borderColor: '#e5e7eb' }}
-            onMouseEnter={(e) => e.currentTarget.style.borderColor = '#26D5FF'}
-            onMouseLeave={(e) => e.currentTarget.style.borderColor = '#e5e7eb'}
-        >
+        <div className="glass-card rounded-xl sm:rounded-2xl overflow-hidden flex flex-col h-full">
             {/* Product Image */}
-            <Link href={`/ecommerce/products/${product.id}`} className="relative aspect-square overflow-hidden bg-gray-50 block">
+            <Link href={`/ecommerce/products/${product.id}`} className="relative aspect-square overflow-hidden block">
                 <Image
                     src={productImage}
                     alt={product.name}
                     fill
-                    className="object-cover group-hover:scale-105 transition-transform duration-500"
+                    className="object-cover"
+                    unoptimized
                 />
 
                 {/* Badge */}
                 {product.badge && (
-                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10">
+                    <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10">
                         <div className={cn(
-                            "px-2 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg backdrop-blur-sm",
+                            "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg",
                             getBadgeStyles(product.badgeType)
                         )}>
                             {product.badge}
                         </div>
                     </div>
                 )}
-
-                {/* Quick View Overlay - appears on hover */}
-                <div className="absolute inset-0 bg-black/0 group-hover:bg-black/10 transition-colors duration-300" />
             </Link>
 
             {/* Product Info */}
-            <div className="p-3 sm:p-4 flex flex-col flex-1 space-y-2 sm:space-y-3">
+            <div className="p-2 sm:p-2.5 flex flex-col gap-0.5">
                 {/* Category */}
-                <p className="text-[10px] sm:text-xs uppercase tracking-wide font-medium" style={{ color: '#26D5FF' }}>{product.category}</p>
+                <p className="text-[9px] uppercase tracking-wider font-semibold text-[#7C3AED]/80 dark:text-[#7C3AED]/80">
+                    {product.category}
+                </p>
 
                 {/* Product Name */}
                 <Link href={`/ecommerce/products/${product.id}`}>
-                    <h3
-                        className="font-bold text-sm sm:text-base line-clamp-2 min-h-10 sm:min-h-12 transition-colors leading-snug cursor-pointer"
-                        style={{ color: '#110228' }}
-                        onMouseEnter={(e) => e.currentTarget.style.color = '#26D5FF'}
-                        onMouseLeave={(e) => e.currentTarget.style.color = '#110228'}
-                    >
+                    <h3 className="font-medium text-[11px] sm:text-xs line-clamp-2 leading-tight text-gray-800 dark:text-white/85 hover:text-[#7C3AED] dark:hover:text-[#7C3AED] transition-colors cursor-pointer" style={{ minHeight: "2.5em" }}>
                         {product.name}
                     </h3>
                 </Link>
 
-                {/* Rating Row */}
-                <div className="flex items-center gap-1.5 sm:gap-2 text-sm">
-                    <div className="flex items-center gap-0.5">
+                {/* Rating */}
+                <div className="flex items-center gap-1 mt-0.5">
+                    <div className="flex items-center gap-px">
                         {[...Array(5)].map((_, i) => (
                             <Star
                                 key={i}
                                 className={cn(
-                                    "w-3 h-3 sm:w-3.5 sm:h-3.5",
+                                    "w-2.5 h-2.5",
                                     i < Math.floor(rating)
                                         ? "fill-yellow-400 text-yellow-400"
-                                        : "fill-gray-200 text-gray-200"
+                                        : "fill-gray-200 dark:fill-white/10 text-gray-200 dark:text-white/10"
                                 )}
                             />
                         ))}
                     </div>
-                    <span className="text-gray-600 text-[10px] sm:text-xs font-medium hidden sm:inline">
-                        {rating} ({reviewCount})
-                    </span>
-                    <span className="text-gray-600 text-[10px] font-medium sm:hidden">
-                        {rating}
+                    <span className="text-[9px] font-medium text-gray-400 dark:text-white/35">
+                        ({reviewCount})
                     </span>
                 </div>
 
-                {/* Spacer to push price and button to bottom */}
-                <div className="flex-1" />
-
-                {/* Price Row */}
-                <div className="flex items-baseline gap-1.5 sm:gap-2 pt-2 border-t border-gray-100">
-                    <span className="text-lg sm:text-2xl font-black" style={{ color: '#110228' }}>
+                {/* Price */}
+                <div className="flex items-baseline gap-1.5 mt-1 pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
+                    <span className="text-sm sm:text-sm font-black text-[#7C3AED] dark:text-[#7C3AED]">
                         ${product.price.toFixed(2)}
                     </span>
                     {product.originalPrice && (
-                        <span className="text-xs sm:text-sm text-gray-400 line-through font-medium">
+                        <span className="text-[10px] text-gray-400 dark:text-white/30 line-through">
                             ${product.originalPrice.toFixed(2)}
                         </span>
                     )}
                 </div>
 
-                {/* Add to Cart Button */}
-                <Button
-                    onClick={() => {
-                        addItem(product)
-                        toast.success(
-                            <div className="flex items-start gap-3">
-                                <div className="relative w-12 h-12 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
-                                    <Image
-                                        src={productImage}
-                                        alt={product.name}
-                                        fill
-                                        className="object-cover"
-                                    />
-                                </div>
-                                <div className="flex-1 min-w-0">
-                                    <p className="font-semibold text-sm text-gray-900 line-clamp-1">Added to cart</p>
-                                    <p className="text-xs text-gray-600 line-clamp-1">{product.name}</p>
-                                </div>
-                            </div>,
-                            {
-                                duration: 2000,
-                                className: 'bg-white border border-gray-200 shadow-xl',
-                                icon: <Check className="w-5 h-5 text-green-600" />,
-                            }
-                        )
-                    }}
-                    className="w-full h-9 sm:h-11 text-white rounded-lg sm:rounded-xl text-xs sm:text-sm font-semibold shadow-sm hover:shadow-md active:scale-95 transition-all group/button mt-2 sm:mt-3"
-                    style={{ backgroundColor: '#110228' }}
-                    onMouseEnter={(e) => e.currentTarget.style.backgroundColor = '#1a0440'}
-                    onMouseLeave={(e) => e.currentTarget.style.backgroundColor = '#110228'}
+                {/* Add to Cart */}
+                <button
+                    onClick={() => handleAddToCart()}
+                    className="w-full h-8 rounded-lg text-[11px] font-bold mt-1.5 transition-all active:scale-95 bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white dark:text-[#110228] flex items-center justify-center gap-1"
                 >
-                    <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4 mr-1.5 sm:mr-2 group-hover/button:scale-110 transition-transform" />
-                    <span className="hidden sm:inline">Add to Cart</span>
-                    <span className="sm:hidden">Add</span>
-                </Button>
+                    <ShoppingCart className="w-3 h-3" />
+                    Add to Cart
+                </button>
             </div>
         </div>
     )

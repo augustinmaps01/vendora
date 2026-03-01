@@ -3,13 +3,12 @@
 import Autoplay from "embla-carousel-autoplay"
 import { Carousel, CarouselContent, CarouselItem, CarouselPrevious, CarouselNext } from "@/components/ui/carousel"
 import { Button } from "@/components/ui/button"
-import { ArrowRight, Package, Shield, Headphones, Star, Badge } from "lucide-react"
+import { ArrowRight, Package, Shield, Headphones, Star, Sparkles } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
 import { useRef, useState, useEffect } from "react"
 
 export function Hero() {
-    // Cast to any to avoid Embla plugin type mismatch across packages
     const plugin = useRef<any>(
         Autoplay({ delay: 5000, stopOnInteraction: true })
     )
@@ -18,9 +17,7 @@ export function Hero() {
 
     useEffect(() => {
         if (!api) return
-
         setCurrent(api.selectedScrollSnap())
-
         api.on("select", () => {
             setCurrent(api.selectedScrollSnap())
         })
@@ -30,9 +27,9 @@ export function Hero() {
         {
             id: 1,
             badge: "New Arrivals",
-            title: "Upgrade Your Everyday Essentials",
+            title: "Upgrade Your Everyday",
+            titleAccent: "Essentials",
             subtitle: "Premium quality products at unbeatable prices. Save up to 40% on selected items.",
-            bgGradient: "from-blue-50 via-indigo-50 to-purple-50",
             productImage: "https://images.unsplash.com/photo-1505740420928-5e560c06d30e?q=80&w=2070&auto=format&fit=crop",
             productName: "Premium Wireless Headphones",
             originalPrice: "$299.00",
@@ -44,9 +41,9 @@ export function Hero() {
         {
             id: 2,
             badge: "Limited Time Sale",
-            title: "Style Meets Comfort",
+            title: "Style Meets",
+            titleAccent: "Comfort",
             subtitle: "Discover the latest trends in fashion and lifestyle. Exclusive deals just for you.",
-            bgGradient: "from-orange-50 via-amber-50 to-yellow-50",
             productImage: "https://images.unsplash.com/photo-1542291026-7eec264c27ff?q=80&w=2070&auto=format&fit=crop",
             productName: "Ultra Comfort Running Shoes",
             originalPrice: "$159.00",
@@ -58,9 +55,9 @@ export function Hero() {
         {
             id: 3,
             badge: "Best Sellers",
-            title: "Elevate Your Living Space",
+            title: "Elevate Your",
+            titleAccent: "Living Space",
             subtitle: "Transform your home with our curated collection of modern essentials.",
-            bgGradient: "from-emerald-50 via-teal-50 to-cyan-50",
             productImage: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?q=80&w=2058&auto=format&fit=crop",
             productName: "Minimalist Table Lamp",
             originalPrice: "$89.00",
@@ -72,40 +69,39 @@ export function Hero() {
     ]
 
     return (
-        <section className="relative w-full overflow-hidden bg-gradient-to-b from-gray-50 to-white">
+        <section className="relative w-full overflow-hidden">
             <Carousel
                 plugins={[plugin.current]}
                 setApi={setApi}
                 className="w-full"
-                opts={{
-                    loop: true,
-                    align: "start",
-                }}
+                opts={{ loop: true, align: "start" }}
             >
                 <CarouselContent className="ml-0">
                     {slides.map((slide, index) => (
                         <CarouselItem key={slide.id} className="pl-0">
                             {/* Desktop Layout */}
-                            <div className={`hidden lg:block relative bg-gradient-to-br ${slide.bgGradient} transition-all duration-700`}>
+                            <div className="hidden lg:block relative overflow-hidden animate-gradient-mesh bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-[#110228] dark:via-[#1a0440] dark:to-[#0d0120]">
                                 <div className="container mx-auto px-8 xl:px-12">
-                                    <div className="grid lg:grid-cols-2 gap-12 items-center min-h-[600px] py-16">
+                                    <div className="grid lg:grid-cols-2 gap-8 items-center min-h-[380px] py-10">
                                         {/* Left Content */}
-                                        <div className="space-y-8 animate-in fade-in slide-in-from-left duration-700">
+                                        <div className="space-y-5">
                                             {/* Badge */}
-                                            <div className="inline-flex items-center gap-2 px-4 py-2 bg-white/80 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
-                                                <Badge className="w-4 h-4 text-gray-700" />
-                                                <span className="text-sm font-semibold text-gray-700 tracking-wide">
+                                            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/10 dark:border-[#7C3AED]/30 dark:bg-[#7C3AED]/10 backdrop-blur-sm">
+                                                <Sparkles className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
+                                                <span className="text-sm font-semibold text-[#7C3AED] dark:text-[#7C3AED] tracking-wide">
                                                     {slide.badge}
                                                 </span>
                                             </div>
 
                                             {/* Headline */}
-                                            <h1 className="text-5xl xl:text-6xl font-bold text-gray-900 leading-tight tracking-tight">
-                                                {slide.title}
+                                            <h1 className="text-4xl xl:text-5xl font-bold leading-tight tracking-tight text-gray-900 dark:text-white">
+                                                {slide.title}{" "}
+                                                <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7C3AED] to-[#7C3AED] dark:from-[#7C3AED] dark:to-[#7C3AED]">
+                                                    {slide.titleAccent}
+                                                </span>
                                             </h1>
 
-                                            {/* Subheading */}
-                                            <p className="text-lg text-gray-600 leading-relaxed max-w-xl">
+                                            <p className="text-lg leading-relaxed max-w-xl text-gray-600 dark:text-white/60">
                                                 {slide.subtitle}
                                             </p>
 
@@ -114,7 +110,7 @@ export function Hero() {
                                                 <Link href="/ecommerce/products">
                                                     <Button
                                                         size="lg"
-                                                        className="bg-gray-900 hover:bg-gray-800 text-white rounded-full px-8 h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all hover:scale-105"
+                                                        className="bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white dark:text-[#110228] rounded-full px-8 h-12 text-base font-bold shadow-lg shadow-[#7C3AED]/20 dark:shadow-[#7C3AED]/20 hover:shadow-[#7C3AED]/40 dark:hover:shadow-[#7C3AED]/40 transition-all hover:scale-105"
                                                     >
                                                         Shop Now
                                                         <ArrowRight className="ml-2 w-5 h-5" />
@@ -124,7 +120,7 @@ export function Hero() {
                                                     <Button
                                                         size="lg"
                                                         variant="outline"
-                                                        className="border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-full px-8 h-12 text-base font-semibold transition-all"
+                                                        className="border-2 border-gray-300 dark:border-white/20 text-gray-700 dark:text-white hover:bg-gray-100 dark:hover:bg-white/10 hover:border-gray-400 dark:hover:border-white/40 rounded-full px-8 h-12 text-base font-semibold transition-all"
                                                     >
                                                         View Deals
                                                     </Button>
@@ -132,34 +128,34 @@ export function Hero() {
                                             </div>
 
                                             {/* Trust Indicators */}
-                                            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200">
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <Package className="w-5 h-5 text-gray-700" />
+                                            <div className="flex flex-wrap items-center gap-6 pt-4 border-t border-gray-200 dark:border-white/10">
+                                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
+                                                    <Package className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                     <span className="font-medium">Free Shipping over $50</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <Shield className="w-5 h-5 text-gray-700" />
+                                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
+                                                    <Shield className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                     <span className="font-medium">Secure Payments</span>
                                                 </div>
-                                                <div className="flex items-center gap-2 text-sm text-gray-600">
-                                                    <Headphones className="w-5 h-5 text-gray-700" />
+                                                <div className="flex items-center gap-2 text-sm text-gray-500 dark:text-white/50">
+                                                    <Headphones className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                     <span className="font-medium">24/7 Support</span>
                                                 </div>
                                             </div>
                                         </div>
 
                                         {/* Right Product Showcase */}
-                                        <div className="relative animate-in fade-in slide-in-from-right duration-700 delay-200">
-                                            <div className="relative bg-white rounded-3xl shadow-2xl p-8 max-w-lg ml-auto">
+                                        <div className="relative">
+                                            <div className="relative rounded-3xl p-5 max-w-sm ml-auto backdrop-blur-xl bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 shadow-lg dark:shadow-none">
                                                 {/* Discount Badge */}
-                                                <div className="absolute top-6 right-6 z-10">
-                                                    <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg">
+                                                <div className="absolute -top-3 -right-3 z-10">
+                                                    <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-sm font-bold px-4 py-2 rounded-full shadow-lg shadow-red-500/30">
                                                         {slide.discount}
                                                     </div>
                                                 </div>
 
                                                 {/* Product Image */}
-                                                <div className="relative w-full aspect-square mb-6 rounded-2xl overflow-hidden bg-gray-50">
+                                                <div className="relative w-full aspect-[4/3] mb-4 rounded-2xl overflow-hidden">
                                                     <Image
                                                         src={slide.productImage}
                                                         alt={slide.productName}
@@ -172,34 +168,32 @@ export function Hero() {
 
                                                 {/* Product Details */}
                                                 <div className="space-y-3">
-                                                    <h3 className="text-xl font-bold text-gray-900">
+                                                    <h3 className="text-lg font-bold text-gray-900 dark:text-white">
                                                         {slide.productName}
                                                     </h3>
 
-                                                    {/* Star Rating */}
                                                     <div className="flex items-center gap-2">
                                                         <div className="flex items-center gap-0.5">
                                                             {[...Array(5)].map((_, i) => (
                                                                 <Star
                                                                     key={i}
                                                                     className={`w-4 h-4 ${i < Math.floor(slide.rating)
-                                                                            ? "fill-yellow-400 text-yellow-400"
-                                                                            : "fill-gray-200 text-gray-200"
-                                                                        }`}
+                                                                        ? "fill-yellow-400 text-yellow-400"
+                                                                        : "fill-gray-200 dark:fill-white/10 text-gray-200 dark:text-white/10"
+                                                                    }`}
                                                                 />
                                                             ))}
                                                         </div>
-                                                        <span className="text-sm font-medium text-gray-600">
-                                                            {slide.rating} ({slide.reviewCount} reviews)
+                                                        <span className="text-sm font-medium text-gray-400 dark:text-white/40">
+                                                            {slide.rating} ({slide.reviewCount})
                                                         </span>
                                                     </div>
 
-                                                    {/* Price */}
                                                     <div className="flex items-center gap-3">
-                                                        <span className="text-3xl font-bold text-gray-900">
+                                                        <span className="text-2xl font-black text-[#7C3AED] dark:text-[#7C3AED]">
                                                             {slide.price}
                                                         </span>
-                                                        <span className="text-lg text-gray-400 line-through">
+                                                        <span className="text-base line-through text-gray-400 dark:text-white/30">
                                                             {slide.originalPrice}
                                                         </span>
                                                     </div>
@@ -211,16 +205,16 @@ export function Hero() {
                             </div>
 
                             {/* Mobile Layout */}
-                            <div className={`lg:hidden relative bg-gradient-to-br ${slide.bgGradient} pb-6 sm:pb-8`}>
+                            <div className="lg:hidden relative overflow-hidden pb-5 bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-[#110228] dark:via-[#1a0440] dark:to-[#2E0F5F]">
                                 <div className="container mx-auto px-4 sm:px-6">
                                     {/* Product Image */}
-                                    <div className="relative w-full aspect-square max-w-sm mx-auto mb-6 sm:mb-8 pt-6 sm:pt-8">
-                                        <div className="absolute top-8 sm:top-12 right-2 sm:right-4 z-10">
-                                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs sm:text-sm font-bold px-3 sm:px-4 py-1.5 sm:py-2 rounded-full shadow-lg">
+                                    <div className="relative w-full aspect-[4/3] max-w-xs mx-auto mb-4 pt-4">
+                                        <div className="absolute top-8 right-2 z-10">
+                                            <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                                                 {slide.discount}
                                             </div>
                                         </div>
-                                        <div className="relative w-full h-full rounded-2xl sm:rounded-3xl overflow-hidden bg-white shadow-xl">
+                                        <div className="relative w-full h-full rounded-2xl overflow-hidden bg-white dark:bg-white/[0.06] border border-gray-200 dark:border-white/10 shadow-md dark:shadow-none">
                                             <Image
                                                 src={slide.productImage}
                                                 alt={slide.productName}
@@ -233,58 +227,50 @@ export function Hero() {
                                     </div>
 
                                     {/* Content */}
-                                    <div className="space-y-4 sm:space-y-6 text-center px-2">
-                                        <div className="inline-flex items-center gap-2 px-3 sm:px-4 py-1.5 sm:py-2 bg-white/90 backdrop-blur-sm rounded-full shadow-sm border border-gray-200">
-                                            <Badge className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-gray-700" />
-                                            <span className="text-xs sm:text-sm font-semibold text-gray-700">
+                                    <div className="space-y-4 text-center px-2">
+                                        <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-full border border-[#7C3AED]/30 bg-[#7C3AED]/10 dark:border-[#7C3AED]/30 dark:bg-[#7C3AED]/10">
+                                            <Sparkles className="w-3.5 h-3.5 text-[#7C3AED] dark:text-[#7C3AED]" />
+                                            <span className="text-xs font-semibold text-[#7C3AED] dark:text-[#7C3AED]">
                                                 {slide.badge}
                                             </span>
                                         </div>
 
-                                        <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 leading-tight px-2">
-                                            {slide.title}
+                                        <h1 className="text-2xl sm:text-3xl font-bold leading-tight px-2 text-gray-900 dark:text-white">
+                                            {slide.title}{" "}
+                                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7C3AED] to-[#7C3AED] dark:from-[#7C3AED] dark:to-[#7C3AED]">
+                                                {slide.titleAccent}
+                                            </span>
                                         </h1>
 
-                                        <p className="text-sm sm:text-base text-gray-600 leading-relaxed max-w-lg mx-auto">
+                                        <p className="text-sm leading-relaxed max-w-md mx-auto text-gray-500 dark:text-white/50">
                                             {slide.subtitle}
                                         </p>
 
-                                        {/* Mobile CTA Buttons */}
-                                        <div className="pt-2 sm:pt-4 space-y-3 sm:flex sm:flex-row sm:space-y-0 sm:gap-3 sm:justify-center">
+                                        <div className="pt-2 space-y-3 sm:flex sm:flex-row sm:space-y-0 sm:gap-3 sm:justify-center">
                                             <Link href="/ecommerce/products" className="block sm:inline-block">
                                                 <Button
                                                     size="lg"
-                                                    className="w-full sm:w-auto sm:min-w-40 bg-gray-900 hover:bg-gray-800 text-white rounded-full h-12 sm:h-13 text-base font-semibold shadow-lg active:scale-95 transition-transform"
+                                                    className="w-full sm:w-auto sm:min-w-40 bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white dark:text-[#110228] rounded-full h-12 text-base font-bold shadow-lg shadow-[#7C3AED]/20 dark:shadow-[#7C3AED]/20 active:scale-95 transition-all"
                                                 >
                                                     Shop Now
                                                     <ArrowRight className="ml-2 w-5 h-5" />
                                                 </Button>
                                             </Link>
-                                            <Link href="/ecommerce/deals" className="hidden sm:inline-block">
-                                                <Button
-                                                    size="lg"
-                                                    variant="outline"
-                                                    className="w-full sm:w-auto sm:min-w-40 border-2 border-gray-900 text-gray-900 hover:bg-gray-900 hover:text-white rounded-full h-12 sm:h-13 text-base font-semibold active:scale-95 transition-transform"
-                                                >
-                                                    View Deals
-                                                </Button>
-                                            </Link>
                                         </div>
 
-                                        {/* Mobile Trust Indicators */}
-                                        <div className="flex flex-wrap items-center justify-center gap-3 sm:gap-4 pt-4 text-xs sm:text-sm">
-                                            <div className="flex items-center gap-1.5 text-gray-600">
-                                                <Package className="w-4 h-4 text-gray-700" />
+                                        <div className="flex flex-wrap items-center justify-center gap-3 pt-4 text-xs">
+                                            <div className="flex items-center gap-1.5 text-gray-400 dark:text-white/40">
+                                                <Package className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                 <span className="font-medium">Free Ship $50+</span>
                                             </div>
-                                            <div className="w-1 h-1 rounded-full bg-gray-300" />
-                                            <div className="flex items-center gap-1.5 text-gray-600">
-                                                <Shield className="w-4 h-4 text-gray-700" />
+                                            <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-white/20" />
+                                            <div className="flex items-center gap-1.5 text-gray-400 dark:text-white/40">
+                                                <Shield className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                 <span className="font-medium">Secure</span>
                                             </div>
-                                            <div className="w-1 h-1 rounded-full bg-gray-300" />
-                                            <div className="flex items-center gap-1.5 text-gray-600">
-                                                <Headphones className="w-4 h-4 text-gray-700" />
+                                            <div className="w-1 h-1 rounded-full bg-gray-300 dark:bg-white/20" />
+                                            <div className="flex items-center gap-1.5 text-gray-400 dark:text-white/40">
+                                                <Headphones className="w-4 h-4 text-[#7C3AED] dark:text-[#7C3AED]" />
                                                 <span className="font-medium">24/7 Support</span>
                                             </div>
                                         </div>
@@ -295,38 +281,37 @@ export function Hero() {
                     ))}
                 </CarouselContent>
 
-                {/* Carousel Navigation */}
+                {/* Desktop Navigation */}
                 <div className="hidden lg:flex absolute bottom-8 left-1/2 -translate-x-1/2 items-center gap-3 z-10">
-                    <CarouselPrevious className="static translate-y-0 bg-white hover:bg-gray-100 border border-gray-300 text-gray-900 rounded-full h-10 w-10 shadow-md" />
-
-                    {/* Pagination Dots */}
+                    <CarouselPrevious className="static translate-y-0 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-white rounded-full h-10 w-10 backdrop-blur-sm" />
                     <div className="flex items-center gap-2 px-4">
                         {slides.map((_, index) => (
                             <button
                                 key={index}
                                 onClick={() => api?.scrollTo(index)}
-                                className={`transition-all duration-300 rounded-full ${current === index
-                                        ? "w-8 h-2 bg-gray-900"
-                                        : "w-2 h-2 bg-gray-400 hover:bg-gray-600"
-                                    }`}
+                                className={`transition-all duration-300 rounded-full ${
+                                    current === index
+                                        ? "w-8 h-2 bg-[#7C3AED] dark:bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/40 dark:shadow-[#7C3AED]/40"
+                                        : "w-2 h-2 bg-gray-300 dark:bg-white/30 hover:bg-gray-400 dark:hover:bg-white/50"
+                                }`}
                                 aria-label={`Go to slide ${index + 1}`}
                             />
                         ))}
                     </div>
-
-                    <CarouselNext className="static translate-y-0 bg-white hover:bg-gray-100 border border-gray-300 text-gray-900 rounded-full h-10 w-10 shadow-md" />
+                    <CarouselNext className="static translate-y-0 bg-gray-100 hover:bg-gray-200 dark:bg-white/10 dark:hover:bg-white/20 border border-gray-200 dark:border-white/20 text-gray-700 dark:text-white rounded-full h-10 w-10 backdrop-blur-sm" />
                 </div>
 
                 {/* Mobile Dots */}
-                <div className="flex lg:hidden justify-center items-center gap-2 py-4 sm:py-6">
+                <div className="flex lg:hidden justify-center items-center gap-2 py-5 bg-[#f8f8fc] dark:bg-[#110228]">
                     {slides.map((_, index) => (
                         <button
                             key={index}
                             onClick={() => api?.scrollTo(index)}
-                            className={`transition-all duration-300 rounded-full active:scale-90 ${current === index
-                                    ? "w-8 h-2.5 bg-gray-900"
-                                    : "w-2.5 h-2.5 bg-gray-400 hover:bg-gray-600"
-                                }`}
+                            className={`transition-all duration-300 rounded-full active:scale-90 ${
+                                current === index
+                                    ? "w-8 h-2.5 bg-[#7C3AED] dark:bg-[#7C3AED] shadow-lg shadow-[#7C3AED]/40 dark:shadow-[#7C3AED]/40"
+                                    : "w-2.5 h-2.5 bg-gray-300 dark:bg-white/30 hover:bg-gray-400 dark:hover:bg-white/50"
+                            }`}
                             aria-label={`Go to slide ${index + 1}`}
                         />
                     ))}
