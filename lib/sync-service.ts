@@ -198,12 +198,10 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
 
   try {
     // Create order on server
-    const orderPayload = {
-      uuid: transaction.uuid,
+    const orderPayload: Record<string, any> = {
       customer_id: transaction.customer_id,
       ordered_at: transaction.ordered_at,
       status: transaction.status,
-      store_id: transaction.store_id,
       total: Math.round(transaction.total),
       items: transaction.items.map(item => ({
         product_id: item.product_id,
@@ -211,6 +209,11 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
         price: Math.round(item.price)
       }))
     };
+
+    // Only include store_id if set — sending null/undefined causes 422
+    if (transaction.store_id) {
+      orderPayload.store_id = transaction.store_id;
+    }
 
     const order = await orderService.create(orderPayload as any);
     console.log(`✅ Order created on server: ${order.id}`);
@@ -274,7 +277,22 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
       last_sync_error: err?.message || 'Unknown error'
     });
 
-    console.error(`❌ Failed to sync transaction ${uuid}:`, err?.message);
+    const responseData = err?.response?.data;
+    console.error(`❌ Failed to sync transaction ${uuid}:`, {
+      status: err?.response?.status,
+      message: responseData?.message || err?.message,
+      errors: responseData?.errors || null,
+      payload: {
+        order: {
+          customer_id: transaction.customer_id,
+          ordered_at: transaction.ordered_at,
+          status: transaction.status,
+          store_id: transaction.store_id,
+          total: Math.round(transaction.total),
+          items: transaction.items,
+        }
+      }
+    });
     throw err;
   }
 }
