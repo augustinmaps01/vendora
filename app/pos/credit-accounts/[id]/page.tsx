@@ -255,18 +255,18 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                 )}
             </div>
 
-            {/* Compact Summary - Single Row */}
-            <div className="flex items-center gap-4 p-3 bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] text-sm">
+            {/* Compact Summary */}
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-2 p-3 bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] text-sm">
                 <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-[#b4b4d0]">Total:</span>
                     <span className="font-semibold text-gray-900 dark:text-white">₱{account.totalAmount.toLocaleString()}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-200 dark:bg-[#2d1b69]" />
+                <div className="w-px h-4 bg-gray-200 dark:bg-[#2d1b69] hidden sm:block" />
                 <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-[#b4b4d0]">Paid:</span>
                     <span className="font-semibold text-emerald-600">₱{account.paidAmount.toLocaleString()}</span>
                 </div>
-                <div className="w-px h-4 bg-gray-200" />
+                <div className="w-px h-4 bg-gray-200 dark:bg-[#2d1b69] hidden sm:block" />
                 <div className="flex items-center gap-2">
                     <span className="text-gray-500 dark:text-[#b4b4d0]">Balance:</span>
                     <span className={`font-bold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>

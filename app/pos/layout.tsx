@@ -86,7 +86,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [sidebarOpen, setSidebarOpen] = useState(false)
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false)
   const [wasCollapsedByRoute, setWasCollapsedByRoute] = useState(false)
-  const [mobileMoreOpen, setMobileMoreOpen] = useState(false)
   const [mobileSidebarMoreOpen, setMobileSidebarMoreOpen] = useState(false)
   const [userData, setUserData] = useState<{ name?: string; email?: string } | null>(null)
   const [mounted, setMounted] = useState(false)
@@ -115,7 +114,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // Resizable sidebar state
   const [sidebarWidth, setSidebarWidth] = useState(256) // 16rem = 256px (default w-64)
   const [isResizing, setIsResizing] = useState(false)
-  const [isDesktop, setIsDesktop] = useState(false)
   const MIN_SIDEBAR_WIDTH = 200
   const MAX_SIDEBAR_WIDTH = 400
   const sidebarRef = useRef<HTMLElement>(null)
@@ -124,7 +122,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   useEffect(() => {
     const checkDesktop = () => {
       const newIsDesktop = window.innerWidth >= 1024  // 1024px+ for sidebar (laptop/desktop)
-      setIsDesktop(newIsDesktop)
 
       // Close mobile sidebar when switching to desktop
       if (newIsDesktop && sidebarOpen) {
@@ -222,12 +219,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
     return <>{children}</>
   }
 
-  // Get all menu items for mobile view
-  const visibleMobileItems = 4 // Show first 4 items on mobile
-  const allItems = sidebarSections.flatMap(section => section.items)
-  const mobileVisibleItems = allItems.slice(0, visibleMobileItems)
-  const mobileMoreItems = allItems.slice(visibleMobileItems)
-
   // Check if current page is the POS terminal for full-bleed layout
   const isPOSDashboard = pathname === "/pos/dashboard"
   const isPOSScreen = pathname === "/pos/pos-screen"
@@ -241,9 +232,20 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   // Calculate effective sidebar width for styles
   const effectiveSidebarWidth = sidebarCollapsed ? 80 : sidebarWidth
 
-  // Fix hydration mismatch by only rendering once mounted
+  // Show loading screen until client is ready to prevent hydration crash
   if (!mounted) {
-    return <>{children}</> // Or a loading skeleton if preferred, but rendering children directly is safer for SSR
+    return (
+      <div className="min-h-screen" style={{ backgroundColor: '#110228' }}>
+        <div className="flex items-center justify-center min-h-screen">
+          <div className="flex flex-col items-center gap-4">
+            <div className="relative flex items-center justify-center w-16 h-16 bg-white rounded-2xl shadow-lg p-3">
+              <Image src="/new-logo/vendora 2.png" alt="Vendora" width={48} height={48} className="object-contain" />
+            </div>
+            <Loader2 className="w-6 h-6 text-purple-400 animate-spin" />
+          </div>
+        </div>
+      </div>
+    )
   }
 
   // For non-auth pages, render with sidebar and navigation
@@ -253,6 +255,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       style={{
         '--sidebar-width': `${effectiveSidebarWidth}px`
       } as React.CSSProperties}
+      suppressHydrationWarning
     >
       {/* Logout Loading Overlay */}
       {isLoggingOut && (
@@ -304,27 +307,25 @@ export default function POSLayout({ children }: { children: ReactNode }) {
       )}
 
       {/* Collapse Toggle Button (Laptop/Desktop Only - 1024px+) - Hidden on Mobile/Tablet */}
-      {isDesktop && (
-        <div
-          className="fixed z-50 top-20 transition-all duration-300 hidden lg:block"
-          style={{
-            left: sidebarCollapsed ? '68px' : `${sidebarWidth - 12}px`
-          }}
+      <div
+        className="fixed z-50 top-20 transition-all duration-300 hidden lg:block"
+        style={{
+          left: sidebarCollapsed ? '68px' : `${sidebarWidth - 12}px`
+        }}
+      >
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
+          className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-[#1a1a35]"
         >
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
-            className="w-6 h-6 bg-white border-purple-300 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-[#1a1a35]"
-          >
-            {sidebarCollapsed ? (
-              <ChevronRight className="w-4 h-4 text-purple-700" />
-            ) : (
-              <ChevronLeft className="w-4 h-4 text-purple-700" />
-            )}
-          </Button>
-        </div>
-      )}
+          {sidebarCollapsed ? (
+            <ChevronRight className="w-4 h-4 text-purple-700" />
+          ) : (
+            <ChevronLeft className="w-4 h-4 text-purple-700" />
+          )}
+        </Button>
+      </div>
 
       {/* Sidebar - Mobile/Tablet: Hidden with hamburger toggle | Laptop/Desktop: Always visible & Collapsible */}
       <aside
@@ -529,9 +530,9 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         </nav>
 
         {/* Resize Handle - Desktop Only */}
-        {isDesktop && !sidebarCollapsed && (
+        {!sidebarCollapsed && (
           <div
-            className="absolute top-0 right-0 w-1 h-full cursor-col-resize group hover:bg-purple-400 transition-colors z-50"
+            className="absolute top-0 right-0 w-1 h-full cursor-col-resize group hover:bg-purple-400 transition-colors z-50 hidden lg:block"
             onMouseDown={(e) => {
               e.preventDefault()
               setIsResizing(true)
@@ -635,93 +636,75 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               <NotificationPanel />
 
               {/* User Profile Dropdown */}
-              {mounted ? (
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
-                    >
-                      {/* Avatar */}
-                      <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
-                        {avatarLetter}
-                      </div>
-                      {/* User Info */}
-                      <div className="flex-col items-start hidden lg:flex">
-                        <span className="text-sm font-semibold text-white">{displayName}</span>
-                        <span className="text-xs text-white/70">{displayEmail}</span>
-                      </div>
-                      <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
-                      <User className="w-4 h-4 mr-2 text-gray-600" />
-                      <span>Profile</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
-                      <Store className="w-4 h-4 mr-2 text-gray-600" />
-                      <span>My Store</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
-                      <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
-                      <span>Subscription</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
-                      <Settings className="w-4 h-4 mr-2 text-gray-600" />
-                      <span>Settings</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
-                      <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
-                      <span>Help & Support</span>
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
-                      onClick={async () => {
-                        setIsLoggingOut(true)
-                        try {
-                          await authService.pos.logout()
-                          sessionStorage.setItem('showLogout', 'true')
-                          window.location.href = "/pos/auth/login"
-                        } catch (error) {
-                          console.error('Logout error:', error)
-                          sessionStorage.setItem('showLogout', 'true')
-                          window.location.href = "/pos/auth/login"
-                        }
-                      }}
-                    >
-                      <LogOut className="w-4 h-4 mr-2" />
-                      <span>Log out</span>
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              ) : (
-                <Button
-                  variant="ghost"
-                  className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
-                >
-                  {/* Avatar */}
-                  <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
-                    {avatarLetter}
-                  </div>
-                  {/* User Info */}
-                  <div className="flex-col items-start hidden lg:flex">
-                    <span className="text-sm font-semibold text-white">{displayName}</span>
-                    <span className="text-xs text-white/70">{displayEmail}</span>
-                  </div>
-                  <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
-                </Button>
-              )}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    className="flex items-center h-auto gap-3 px-3 py-2 hover:bg-white/10"
+                  >
+                    {/* Avatar */}
+                    <div className="flex items-center justify-center font-semibold text-purple-700 bg-white rounded-full h-9 w-9">
+                      {avatarLetter}
+                    </div>
+                    {/* User Info */}
+                    <div className="flex-col items-start hidden lg:flex">
+                      <span className="text-sm font-semibold text-white">{displayName}</span>
+                      <span className="text-xs text-white/70">{displayEmail}</span>
+                    </div>
+                    <ChevronDown className="hidden w-4 h-4 text-white lg:block" />
+                  </Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <DropdownMenuLabel className="text-gray-900">My Account</DropdownMenuLabel>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
+                    <User className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>Profile</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
+                    <Store className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>My Store</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
+                    <CreditCard className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>Subscription</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
+                    <Settings className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>Settings</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem className="cursor-pointer hover:bg-gray-50 dark:bg-[#1a1a35]">
+                    <HelpCircle className="w-4 h-4 mr-2 text-gray-600" />
+                    <span>Help & Support</span>
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="text-red-600 cursor-pointer hover:bg-red-50 focus:bg-red-50 focus:text-red-700"
+                    onClick={async () => {
+                      setIsLoggingOut(true)
+                      try {
+                        await authService.pos.logout()
+                        sessionStorage.setItem('showLogout', 'true')
+                        window.location.href = "/pos/auth/login"
+                      } catch (error) {
+                        console.error('Logout error:', error)
+                        sessionStorage.setItem('showLogout', 'true')
+                        window.location.href = "/pos/auth/login"
+                      }
+                    }}
+                  >
+                    <LogOut className="w-4 h-4 mr-2" />
+                    <span>Log out</span>
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
             </div>
           </div>
         </header>
 
         {/* Page Content */}
-        <div className={`max-w-full overflow-x-hidden ${isPOSScreen ? '' : 'px-4 pt-6 pb-24 sm:px-6 sm:pt-6 sm:pb-6'}`}>
+        <div className={`max-w-full overflow-x-hidden ${isPOSScreen ? '' : 'px-4 pt-6 pb-6 sm:px-6 sm:pt-6 sm:pb-6'}`}>
           {children}
         </div>
 
@@ -737,91 +720,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           </Button>
         </div>
 
-        {/* Mobile Bottom Navigation - Hidden on tablet and above */}
-        <div className="fixed bottom-0 left-0 right-0 z-30 border-t sm:hidden" style={{ backgroundColor: '#110228', borderColor: '#2e0f5f' }}>
-          <div className="grid grid-cols-5 gap-1 px-2 py-2">
-            {/* First 4 visible items */}
-            {mobileVisibleItems.map((item) => {
-              const Icon = item.icon
-              const isActive = pathname === item.href || (item.href === "/pos/pos-screen" && pathname === "/pos")
-
-              return (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  className={`
-                    relative flex flex-col items-center justify-center gap-1 p-2 rounded-lg
-                    transition-all duration-200
-                    ${isActive ? 'bg-white text-purple-700' : 'text-white/90'}
-                  `}
-                >
-                  <Icon className="flex-shrink-0 w-5 h-5" />
-                  <span className="text-[10px] font-medium truncate max-w-full">
-                    {item.label.split(' ')[0]}
-                  </span>
-                  {item.comingSoon && (
-                    <span className="absolute w-2 h-2 bg-purple-500 rounded-full shadow-sm top-1 right-1"></span>
-                  )}
-                </Link>
-              )
-            })}
-
-            {/* More dropdown */}
-            <div className="relative">
-              <button
-                onClick={() => setMobileMoreOpen(!mobileMoreOpen)}
-                className={`
-                  w-full flex flex-col items-center justify-center gap-1 p-2 rounded-lg
-                  transition-all duration-200
-                  ${mobileMoreOpen ? 'bg-white text-purple-700' : 'text-white/90'}
-                `}
-              >
-                <MoreVertical className="w-5 h-5" />
-                <span className="text-[10px] font-medium">More</span>
-              </button>
-
-              {/* More Items Dropdown - Always rendered, shown/hidden with CSS */}
-              <div
-                className={`fixed inset-0 z-40 transition-opacity duration-200 ${mobileMoreOpen ? 'opacity-100 pointer-events-auto' : 'opacity-0 pointer-events-none'
-                  }`}
-                onClick={() => setMobileMoreOpen(false)}
-              />
-              <div className={`absolute bottom-full right-0 mb-2 w-56 bg-white rounded-lg shadow-2xl border border-gray-200 overflow-hidden z-50 max-h-[60vh] overflow-y-auto transition-all duration-200 ${mobileMoreOpen ? 'opacity-100 scale-100' : 'opacity-0 scale-95 pointer-events-none'
-                }`}>
-                <div className="p-2 border-b bg-gray-50 dark:bg-[#1a1a35]">
-                  <h3 className="text-sm font-semibold text-gray-700">More Options</h3>
-                </div>
-                <div className="p-1">
-                  {mobileMoreItems.map((item) => {
-                    const Icon = item.icon
-                    const isActive = pathname === item.href
-
-                    return (
-                      <Link
-                        key={item.href}
-                        href={item.href}
-                        onClick={() => setMobileMoreOpen(false)}
-                        className={`
-                          relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm
-                          transition-all duration-200
-                          ${isActive ? 'bg-purple-50 text-purple-700 font-medium' : 'text-gray-700 hover:bg-gray-50'}
-                        `}
-                      >
-                        <Icon className="flex-shrink-0 w-5 h-5" />
-                        <span className="flex-1">{item.label}</span>
-                        {item.comingSoon && (
-                          <span className="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-gradient-to-r from-purple-500 to-violet-600 text-white shadow-sm">
-                            Soon
-                          </span>
-                        )}
-                      </Link>
-                    )
-                  })}
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
       </main>
     </div>
   )

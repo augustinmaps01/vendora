@@ -1,6 +1,5 @@
 ﻿"use client"
 
-import { useState, useEffect } from "react"
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -65,32 +64,7 @@ const notifications = [
 ]
 
 export function NotificationPanel() {
-  const [mounted, setMounted] = useState(false)
   const unreadCount = notifications.filter(n => n.unread).length
-
-  useEffect(() => {
-    setMounted(true)
-  }, [])
-
-  if (!mounted) {
-    return (
-      <Button
-        variant="ghost"
-        size="icon"
-        className="relative hover:bg-white/10 text-white"
-        aria-label="Notifications"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <Badge
-            className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center p-0 bg-pink-500 text-white text-xs font-semibold border-2 border-purple-600"
-          >
-            {unreadCount}
-          </Badge>
-        )}
-      </Button>
-    )
-  }
 
   return (
     <DropdownMenu>

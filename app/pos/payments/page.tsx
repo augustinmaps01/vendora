@@ -23,66 +23,73 @@ export default function PaymentsPage() {
     { id: "PAY-005", order: "ORD-005", customer: "Walk-in", date: "2026-01-08 10:05", amount: 450, method: "Card", status: "refunded" },
   ]
 
+  const getStatusBadge = (status: string) => {
+    if (status === "completed") return <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
+    if (status === "pending") return <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
+    if (status === "refunded") return <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Refunded</Badge>
+    return null
+  }
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Payments</h1>
-          <p className="text-gray-600 dark:text-[#b4b4d0] mt-1">Track and manage payment transactions</p>
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Payments</h1>
+          <p className="text-sm sm:text-base text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">Track and manage payment transactions</p>
         </div>
-        <Button variant="outline">
+        <Button variant="outline" className="w-full sm:w-auto">
           <Download className="w-4 h-4 mr-2" />
           Export Report
         </Button>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 md:gap-6">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Total Revenue</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱125,450</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Total Revenue</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱125,450</p>
             </div>
-            <div className="bg-green-100 dark:bg-green-900/30 p-3 rounded-lg">
-              <DollarSign className="h-6 w-6 text-green-600" />
+            <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg">
+              <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-green-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Cash Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱45,200</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Cash Payments</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱45,200</p>
             </div>
-            <div className="bg-blue-100 dark:bg-blue-900/30 p-3 rounded-lg">
-              <DollarSign className="h-6 w-6 text-blue-600" />
+            <div className="bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3 rounded-lg">
+              <DollarSign className="h-4 w-4 sm:h-6 sm:w-6 text-blue-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Card Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱58,750</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Card Payments</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱58,750</p>
             </div>
-            <div className="bg-purple-100 dark:bg-purple-900/30 p-3 rounded-lg">
-              <CreditCard className="h-6 w-6 text-purple-600" />
+            <div className="bg-purple-100 dark:bg-purple-900/30 p-2 sm:p-3 rounded-lg">
+              <CreditCard className="h-4 w-4 sm:h-6 sm:w-6 text-purple-600" />
             </div>
           </div>
         </div>
 
-        <div className="bg-white dark:bg-[#13132a] p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+        <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Online Payments</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-white mt-1">₱21,500</p>
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Online Payments</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱21,500</p>
             </div>
-            <div className="bg-orange-100 dark:bg-orange-900/30 p-3 rounded-lg">
-              <TrendingUp className="h-6 w-6 text-orange-600" />
+            <div className="bg-orange-100 dark:bg-orange-900/30 p-2 sm:p-3 rounded-lg">
+              <TrendingUp className="h-4 w-4 sm:h-6 sm:w-6 text-orange-600" />
             </div>
           </div>
         </div>
@@ -99,8 +106,8 @@ export default function PaymentsPage() {
         />
       </div>
 
-      {/* Payments Table */}
-      <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm overflow-hidden">
+      {/* Payments Table - Desktop */}
+      <div className="hidden md:block bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-200 dark:border-[#2d1b69]">
@@ -150,21 +157,35 @@ export default function PaymentsPage() {
                     <Badge variant="outline">{payment.method}</Badge>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {payment.status === "completed" && (
-                      <Badge className="bg-green-100 text-green-800 hover:bg-green-100 dark:bg-green-900/30 dark:text-green-400">Completed</Badge>
-                    )}
-                    {payment.status === "pending" && (
-                      <Badge className="bg-yellow-100 text-yellow-800 hover:bg-yellow-100 dark:bg-yellow-900/30 dark:text-yellow-400">Pending</Badge>
-                    )}
-                    {payment.status === "refunded" && (
-                      <Badge className="bg-red-100 text-red-800 hover:bg-red-100 dark:bg-red-900/30 dark:text-red-400">Refunded</Badge>
-                    )}
+                    {getStatusBadge(payment.status)}
                   </td>
                 </tr>
               ))}
             </tbody>
           </table>
         </div>
+      </div>
+
+      {/* Payments Cards - Mobile */}
+      <div className="md:hidden space-y-3">
+        {payments.map((payment) => (
+          <div key={payment.id} className="bg-white dark:bg-[#13132a] p-4 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
+            <div className="flex items-start justify-between mb-2">
+              <div>
+                <div className="text-sm font-medium text-gray-900 dark:text-white">{payment.id}</div>
+                <div className="text-xs text-gray-500 dark:text-[#b4b4d0] mt-0.5">{payment.order} • {payment.customer}</div>
+              </div>
+              {getStatusBadge(payment.status)}
+            </div>
+            <div className="flex items-center justify-between pt-2 border-t border-gray-100 dark:border-[#2d1b69]">
+              <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">{payment.date}</div>
+              <div className="flex items-center gap-2">
+                <Badge variant="outline" className="text-xs">{payment.method}</Badge>
+                <span className="text-sm font-bold text-gray-900 dark:text-white">₱{payment.amount.toFixed(2)}</span>
+              </div>
+            </div>
+          </div>
+        ))}
       </div>
     </div>
   )

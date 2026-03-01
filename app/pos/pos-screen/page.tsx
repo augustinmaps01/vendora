@@ -1110,144 +1110,126 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
   );
 }
 
-// Transaction Success Modal - Uses the original receipt design
+// Transaction Success Modal - Thermal receipt style preview
 function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction }: any) {
-  const THEME = {
-    muted: "text-gray-600 dark:text-white/60",
-  };
-
   if (!receiptData) return null;
+
+  const fmt2 = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const Row = ({ label, value, bold, green }: { label: string; value: string; bold?: boolean; green?: boolean }) => (
+    <div className="flex justify-between">
+      <span className={bold ? 'font-bold' : ''}>{label}</span>
+      <span className={`${bold ? 'font-bold' : ''} ${green ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>{value}</span>
+    </div>
+  );
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto bg-transparent border-0 p-0">
-        {/* Visually hidden title for accessibility */}
+      <DialogContent className="max-w-sm max-h-[90vh] overflow-y-auto bg-transparent border-0 p-0 sm:max-w-md">
         <DialogTitle className="sr-only">Transaction Successful</DialogTitle>
 
-        {/* Original Receipt Design */}
-        <div className="rounded-3xl bg-white dark:bg-gradient-to-b dark:from-[#2d1f5e] dark:to-[#3a2570] border border-gray-200 dark:border-white/10 overflow-hidden shadow-2xl">
-          {/* Header - Checkmark + Title */}
-          <div className="pt-10 pb-6 text-center">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-emerald-500/20 ring-4 ring-emerald-500/30">
-              <CheckCircle2 className="h-12 w-12 text-emerald-400" />
-            </div>
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-white">Transaction Successful!</h2>
-            <p className={`text-sm ${THEME.muted} mt-1 tracking-wider uppercase`}>Vendora POS</p>
+        {/* Success Badge */}
+        <div className="flex justify-center -mb-6 relative z-10">
+          <div className="flex h-12 w-12 items-center justify-center rounded-full bg-emerald-500 shadow-lg">
+            <CheckCircle2 className="h-7 w-7 text-white" />
           </div>
+        </div>
 
-          <div className="px-6 pb-8 space-y-0">
-            {/* Transaction Details */}
-            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Transaction #</span>
-                <span className="text-gray-900 dark:text-white font-medium">{receiptData.transactionNumber}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Date</span>
-                <span className="text-gray-900 dark:text-white">{receiptData.date}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Customer</span>
-                <span className="text-gray-900 dark:text-white">{receiptData.customerName}</span>
-              </div>
+        {/* Receipt Paper */}
+        <div className="bg-white dark:bg-[#1a1a2e] rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
+          {/* Receipt Content - Monospace thermal style */}
+          <div className="px-5 pt-8 pb-4 font-mono text-xs text-gray-800 dark:text-gray-200 leading-relaxed">
+
+            {/* Header */}
+            <div className="text-center mb-3">
+              <div className="text-base font-bold tracking-wide">VENDORA POS</div>
+              <div className="text-[11px] text-gray-500 dark:text-gray-400">Point of Sale System</div>
+            </div>
+
+            {/* Transaction Info */}
+            <div className="space-y-0.5 mb-3">
+              <Row label="TXN:" value={receiptData.transactionNumber} />
+              <Row label="Date:" value={receiptData.date} />
+              <Row label="Customer:" value={receiptData.customerName || 'Walk-in Customer'} />
+              <Row label="Cashier:" value="Staff" />
             </div>
 
             {/* Items */}
-            <div className="border-t border-gray-200 dark:border-white/10 py-4">
-              <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Items</h3>
-              <div className="space-y-2">
-                {receiptData.items.map((item: any) => (
-                  <div key={item.id} className="flex items-center justify-between text-sm">
-                    <span className={THEME.muted}>
-                      {item.name} <span className="text-gray-500 dark:text-white/40">x{item.qty}</span>
-                    </span>
-                    <span className="text-gray-900 dark:text-white">₱ {(item.price * item.qty).toFixed(2)}</span>
+            <div className="space-y-1.5 mb-3">
+              {receiptData.items.map((item: any, index: number) => (
+                <div key={index}>
+                  <div className="font-bold break-words">{item.name}</div>
+                  <div className="flex justify-between text-gray-600 dark:text-gray-400">
+                    <span>{item.qty} x ₱{fmt2(item.price)}</span>
+                    <span className="text-gray-800 dark:text-gray-200">₱{fmt2(item.qty * item.price)}</span>
                   </div>
-                ))}
-              </div>
+                </div>
+              ))}
             </div>
 
             {/* Totals */}
-            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Subtotal</span>
-                <span className="text-gray-900 dark:text-white">₱ {receiptData.subtotal.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Vatable Sales</span>
-                <span className="text-blue-500 dark:text-blue-400 font-medium">₱ {receiptData.vatableSales.toFixed(2)}</span>
-              </div>
+            <div className="space-y-0.5 mb-3">
+              <Row label="Subtotal:" value={`₱${fmt2(receiptData.subtotal)}`} />
+              <Row label="Vatable Sales:" value={`₱${fmt2(receiptData.vatableSales)}`} />
               {receiptData.discount > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className={THEME.muted}>{receiptData.discountLabel}</span>
-                  <span className="text-emerald-400">- ₱ {receiptData.discount.toFixed(2)}</span>
-                </div>
+                <Row label={`${receiptData.discountLabel}:`} value={`-₱${fmt2(receiptData.discount)}`} green />
               )}
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>{receiptData.taxLabel}</span>
-                <span className="text-gray-900 dark:text-white">₱ {receiptData.tax.toFixed(2)}</span>
-              </div>
+              <Row label={`${receiptData.taxLabel}:`} value={`₱${fmt2(receiptData.tax)}`} />
               {receiptData.deliveryFee > 0 && (
-                <div className="flex items-center justify-between text-sm">
-                  <span className={THEME.muted}>Delivery Fee</span>
-                  <span className="text-gray-900 dark:text-white">₱ {receiptData.deliveryFee.toFixed(2)}</span>
-                </div>
+                <Row label="Delivery Fee:" value={`₱${fmt2(receiptData.deliveryFee)}`} />
               )}
-              <div className="border-t border-gray-200 dark:border-white/10 pt-2 flex items-center justify-between">
-                <span className="text-gray-900 dark:text-white font-bold">Total</span>
-                <span className="text-emerald-400 font-bold text-lg">₱ {receiptData.total.toFixed(2)}</span>
-              </div>
             </div>
 
-            {/* Payment Info */}
-            <div className="border-t border-gray-200 dark:border-white/10 py-4 space-y-2">
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Payment Method</span>
-                <span className="text-gray-900 dark:text-white font-medium">{receiptData.paymentMethod}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Amount Tendered</span>
-                <span className="text-gray-900 dark:text-white">₱ {receiptData.amountTendered.toFixed(2)}</span>
-              </div>
-              <div className="flex items-center justify-between text-sm">
-                <span className={THEME.muted}>Change</span>
-                <span className="text-emerald-400 font-medium">₱ {receiptData.change.toFixed(2)}</span>
-              </div>
+            {/* Grand Total */}
+            <div className="flex justify-between text-sm font-bold mb-3">
+              <span>TOTAL:</span>
+              <span className="text-emerald-600 dark:text-emerald-400">₱{fmt2(receiptData.total)}</span>
             </div>
 
-            {/* Action Buttons */}
-            <div className="border-t border-gray-200 dark:border-white/10 pt-6 space-y-3">
+            {/* Payment */}
+            <div className="space-y-0.5 mb-3">
+              <Row label={`Payment (${receiptData.paymentMethod}):`} value={`₱${fmt2(receiptData.amountTendered)}`} />
+              <Row label="Change:" value={`₱${fmt2(receiptData.change)}`} bold green />
+            </div>
+
+            {/* Footer */}
+            <div className="text-center text-gray-500 dark:text-gray-400 mt-2 mb-1">
+              <div>Thank you for your purchase!</div>
+              <div>Please come again</div>
+            </div>
+          </div>
+
+          {/* Action Buttons */}
+          <div className="px-5 py-4 bg-gray-50 dark:bg-[#12121f] space-y-3">
+            <Button
+              className="w-full rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold py-5 text-sm"
+              onClick={onNewTransaction}
+            >
+              New Transaction
+            </Button>
+            <div className="grid grid-cols-2 gap-3">
               <Button
-                className="w-full rounded-2xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white font-semibold py-6 text-base"
-                onClick={onNewTransaction}
+                variant="secondary"
+                className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white py-4 text-sm"
+                onClick={() => window.print()}
               >
-                New Transaction
+                <Printer className="h-4 w-4 mr-2" />
+                Print
               </Button>
-              <div className="grid grid-cols-2 gap-3">
-                <Button
-                  variant="secondary"
-                  className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white py-5"
-                  onClick={() => window.print()}
-                >
-                  <Printer className="h-4 w-4 mr-2" />
-                  Print
-                </Button>
-                <Button
-                  variant="secondary"
-                  className="rounded-2xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-gray-200 dark:hover:bg-white/20 dark:text-white py-5"
-                  onClick={() => {
-                    if (navigator.share) {
-                      navigator.share({
-                        title: "Transaction Receipt",
-                        text: `Transaction ${receiptData.transactionNumber} - Total: ₱${receiptData.total.toFixed(2)}`,
-                      }).catch(() => { });
-                    }
-                  }}
-                >
-                  <Share2 className="h-4 w-4 mr-2" />
-                  Share
-                </Button>
-              </div>
+              <Button
+                variant="secondary"
+                className="rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white py-4 text-sm"
+                onClick={() => {
+                  if (navigator.share) {
+                    navigator.share({
+                      title: "Transaction Receipt",
+                      text: `Transaction ${receiptData.transactionNumber} - Total: ₱${receiptData.total.toFixed(2)}`,
+                    }).catch(() => { });
+                  }
+                }}
+              >
+                <Share2 className="h-4 w-4 mr-2" />
+                Share
+              </Button>
             </div>
           </div>
         </div>

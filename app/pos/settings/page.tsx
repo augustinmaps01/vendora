@@ -17,23 +17,23 @@ import {
 
 export default function SettingsPage() {
   return (
-    <div className="space-y-6">
+    <div className="space-y-4 sm:space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
-        <p className="text-gray-600 dark:text-[#b4b4d0] mt-1">Manage your store settings and preferences</p>
+        <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>
+        <p className="text-sm sm:text-base text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">Manage your store settings and preferences</p>
       </div>
 
       {/* Settings Categories */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-6">
         {/* Store Information */}
-        <div className="lg:col-span-2 space-y-6">
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-6">
+        <div className="lg:col-span-2 space-y-4 sm:space-y-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg">
                 <Store className="h-5 w-5 text-purple-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Store Information</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Store Information</h2>
             </div>
             <div className="space-y-4">
               <div>
@@ -52,57 +52,43 @@ export default function SettingsPage() {
                 <Label htmlFor="address">Business Address</Label>
                 <Input id="address" defaultValue="123 Main St, Manila, Philippines" className="mt-1.5" />
               </div>
-              <Button className="bg-purple-600 hover:bg-purple-700">Save Changes</Button>
+              <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">Save Changes</Button>
             </div>
           </div>
 
           {/* Notifications */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
                 <Bell className="h-5 w-5 text-blue-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Notifications</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Notifications</h2>
             </div>
             <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Order Notifications</div>
-                  <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Receive alerts for new orders</p>
+              {[
+                { name: "Order Notifications", desc: "Receive alerts for new orders", checked: true },
+                { name: "Low Stock Alerts", desc: "Get notified when products are running low", checked: true },
+                { name: "Payment Notifications", desc: "Receive payment confirmation alerts", checked: true },
+                { name: "Marketing Updates", desc: "Get updates about promotions and campaigns", checked: false },
+              ].map((item, idx) => (
+                <div key={idx} className="flex items-center justify-between">
+                  <div>
+                    <div className="font-medium text-gray-900 dark:text-white text-sm sm:text-base">{item.name}</div>
+                    <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">{item.desc}</p>
+                  </div>
+                  <Switch defaultChecked={item.checked} />
                 </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Low Stock Alerts</div>
-                  <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Get notified when products are running low</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Payment Notifications</div>
-                  <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Receive payment confirmation alerts</p>
-                </div>
-                <Switch defaultChecked />
-              </div>
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="font-medium text-gray-900 dark:text-white">Marketing Updates</div>
-                  <p className="text-sm text-gray-600 dark:text-[#b4b4d0]">Get updates about promotions and campaigns</p>
-                </div>
-                <Switch />
-              </div>
+              ))}
             </div>
           </div>
 
           {/* Security */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
-            <div className="flex items-center gap-3 mb-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
+            <div className="flex items-center gap-3 mb-4 sm:mb-6">
               <div className="bg-red-100 dark:bg-red-900/30 p-2 rounded-lg">
                 <Lock className="h-5 w-5 text-red-600" />
               </div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-white">Security</h2>
+              <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Security</h2>
             </div>
             <div className="space-y-4">
               <div>
@@ -117,15 +103,15 @@ export default function SettingsPage() {
                 <Label htmlFor="confirmPassword">Confirm New Password</Label>
                 <Input id="confirmPassword" type="password" className="mt-1.5" />
               </div>
-              <Button variant="outline">Update Password</Button>
+              <Button variant="outline" className="w-full sm:w-auto">Update Password</Button>
             </div>
           </div>
         </div>
 
         {/* Right Column - Quick Settings */}
-        <div className="space-y-6">
+        <div className="space-y-4 sm:space-y-6">
           {/* Payment Settings */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-green-100 dark:bg-green-900/30 p-2 rounded-lg">
                 <CreditCard className="h-5 w-5 text-green-600" />
@@ -152,14 +138,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Staff Management */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg">
                 <Users className="h-5 w-5 text-orange-600" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white">Staff & Roles</h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-[#b4b4d0] mb-4">Manage staff members and their permissions</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-4">Manage staff members and their permissions</p>
             <div className="space-y-2 mb-4">
               <div className="flex justify-between text-sm">
                 <span className="text-gray-600 dark:text-[#b4b4d0]">Total Staff</span>
@@ -176,14 +162,14 @@ export default function SettingsPage() {
           </div>
 
           {/* Printer Settings */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-purple-100 dark:bg-purple-900/30 p-2 rounded-lg">
                 <Printer className="h-5 w-5 text-purple-600" />
               </div>
               <h3 className="font-semibold text-gray-900 dark:text-white">Receipt Printer</h3>
             </div>
-            <p className="text-sm text-gray-600 dark:text-[#b4b4d0] mb-4">Configure receipt printing settings</p>
+            <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-4">Configure receipt printing settings</p>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
                 <span className="text-sm text-gray-700 dark:text-[#e0e0f0]">Auto Print</span>
@@ -200,7 +186,7 @@ export default function SettingsPage() {
           </div>
 
           {/* Language & Region */}
-          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-6">
+          <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
             <div className="flex items-center gap-3 mb-4">
               <div className="bg-blue-100 dark:bg-blue-900/30 p-2 rounded-lg">
                 <Globe className="h-5 w-5 text-blue-600" />
