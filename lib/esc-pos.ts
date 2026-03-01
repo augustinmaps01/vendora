@@ -14,6 +14,7 @@ const CMD = {
   BOLD_OFF: ESC + 'E\x00',  // Emphasis off
   CUT: GS + 'V\x00',        // Full cut
   LF: '\x0A',               // Line feed
+  KICK_DRAWER: ESC + 'p\x00\x19\xFA',  // Open cash drawer (pin 2, 50ms on, 500ms off)
 };
 
 // POS-58 normal font fits ~32 chars per line
@@ -44,6 +45,7 @@ export interface ReceiptPrintData {
   paymentMethod: string;
   amountTendered: number;
   change: number;
+  openDrawer?: boolean;
 }
 
 export function formatReceipt(data: ReceiptPrintData): string {
@@ -99,6 +101,11 @@ export function formatReceipt(data: ReceiptPrintData): string {
   t += CMD.CENTER;
   t += 'Thank you for your purchase!' + CMD.LF;
   t += 'Please come again' + CMD.LF;
+
+  // Open cash drawer if requested (must be before cut — printer resets after cut)
+  if (data.openDrawer) {
+    t += CMD.KICK_DRAWER;
+  }
 
   // Feed and cut
   t += CMD.LF + CMD.LF + CMD.LF;

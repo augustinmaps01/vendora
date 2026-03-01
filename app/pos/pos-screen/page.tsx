@@ -703,6 +703,7 @@ export default function VendoraPOS() {
             paymentMethod: receipt.paymentMethod,
             amountTendered: receipt.amountTendered,
             change: receipt.change,
+            openDrawer: true,
           }),
         });
         if (!res.ok) {
