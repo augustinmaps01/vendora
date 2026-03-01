@@ -7,19 +7,17 @@ const ESC = '\x1B';
 const GS = '\x1D';
 
 const CMD = {
-  INIT: ESC + '@',              // Initialize printer
-  CENTER: ESC + 'a\x01',       // Center alignment
-  LEFT: ESC + 'a\x00',         // Left alignment
-  BOLD_ON: ESC + 'E\x01',      // Emphasis on
-  BOLD_OFF: ESC + 'E\x00',     // Emphasis off
-  SMALL: ESC + 'M\x01',        // Small font (Font B) — slightly smaller than normal
-  NORMAL_FONT: ESC + 'M\x00',  // Normal font (Font A)
-  CUT: GS + 'V\x00',           // Full cut
-  LF: '\x0A',                   // Line feed
+  INIT: ESC + '@',           // Initialize printer
+  CENTER: ESC + 'a\x01',    // Center alignment
+  LEFT: ESC + 'a\x00',      // Left alignment
+  BOLD_ON: ESC + 'E\x01',   // Emphasis on
+  BOLD_OFF: ESC + 'E\x00',  // Emphasis off
+  CUT: GS + 'V\x00',        // Full cut
+  LF: '\x0A',               // Line feed
 };
 
-// POS-58 with Font B prints ~42 chars per line (smaller text, more content per line)
-const LINE_WIDTH = 42;
+// POS-58 normal font fits ~32 chars per line
+const LINE_WIDTH = 32;
 
 function pad(left: string, right: string, width = LINE_WIDTH): string {
   const gap = width - left.length - right.length;
@@ -51,9 +49,8 @@ export interface ReceiptPrintData {
 export function formatReceipt(data: ReceiptPrintData): string {
   let t = '';
 
-  // Initialize and set small font throughout for compact, uniform text
+  // Initialize
   t += CMD.INIT;
-  t += CMD.SMALL;
 
   // Header
   t += CMD.CENTER;
