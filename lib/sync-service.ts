@@ -278,21 +278,24 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
     });
 
     const responseData = err?.response?.data;
-    console.error(`❌ Failed to sync transaction ${uuid}:`, {
+    console.error(`❌ Failed to sync transaction ${uuid} — raw error:`, err);
+    console.error(`❌ Sync error details:`, {
+      type: typeof err,
+      isAxiosError: err?.isAxiosError,
       status: err?.response?.status,
+      statusText: err?.response?.statusText,
       message: responseData?.message || err?.message,
       errors: responseData?.errors || null,
-      payload: {
-        order: {
-          customer_id: transaction.customer_id,
-          ordered_at: transaction.ordered_at,
-          status: transaction.status,
-          store_id: transaction.store_id,
-          total: Math.round(transaction.total),
-          items: transaction.items,
-        }
-      }
+      responseData: JSON.stringify(responseData, null, 2),
     });
+    console.error(`❌ Transaction payload that failed:`, JSON.stringify({
+      customer_id: transaction.customer_id,
+      ordered_at: transaction.ordered_at,
+      status: transaction.status,
+      store_id: transaction.store_id,
+      total: Math.round(transaction.total),
+      items: transaction.items,
+    }, null, 2));
     throw err;
   }
 }
