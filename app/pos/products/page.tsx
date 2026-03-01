@@ -848,8 +848,8 @@ function DesktopInventoryLayout() {
   }, [currentPage, totalPages])
 
   const totalItems = inventoryItems.length
-  const lowStockCount = inventoryItems.filter((item) => item.is_low_stock).length
   const outOfStockCount = inventoryItems.filter((item) => item.stock <= 0).length
+  const lowStockCount = inventoryItems.filter((item) => item.stock > 0 && item.is_low_stock).length
 
   // Show loading while checking authentication
   if (isAuthenticated === null) {
