@@ -7,19 +7,19 @@ const ESC = '\x1B';
 const GS = '\x1D';
 
 const CMD = {
-  INIT: ESC + '@',           // Initialize printer
-  CENTER: ESC + 'a\x01',    // Center alignment
-  LEFT: ESC + 'a\x00',      // Left alignment
-  BOLD_ON: ESC + 'E\x01',   // Emphasis on
-  BOLD_OFF: ESC + 'E\x00',  // Emphasis off
-  BIG: GS + '!\x11',        // Double width + double height
-  NORMAL: GS + '!\x00',     // Normal size
-  CUT: GS + 'V\x00',       // Full cut
-  LF: '\x0A',               // Line feed
+  INIT: ESC + '@',              // Initialize printer
+  CENTER: ESC + 'a\x01',       // Center alignment
+  LEFT: ESC + 'a\x00',         // Left alignment
+  BOLD_ON: ESC + 'E\x01',      // Emphasis on
+  BOLD_OFF: ESC + 'E\x00',     // Emphasis off
+  SMALL: ESC + 'M\x01',        // Small font (Font B) — slightly smaller than normal
+  NORMAL_FONT: ESC + 'M\x00',  // Normal font (Font A)
+  CUT: GS + 'V\x00',           // Full cut
+  LF: '\x0A',                   // Line feed
 };
 
-// POS-58 prints ~32 chars per line at normal size
-const LINE_WIDTH = 32;
+// POS-58 with Font B prints ~42 chars per line (smaller text, more content per line)
+const LINE_WIDTH = 42;
 
 function pad(left: string, right: string, width = LINE_WIDTH): string {
   const gap = width - left.length - right.length;
@@ -51,8 +51,9 @@ export interface ReceiptPrintData {
 export function formatReceipt(data: ReceiptPrintData): string {
   let t = '';
 
-  // Initialize
+  // Initialize and set small font throughout for compact, uniform text
   t += CMD.INIT;
+  t += CMD.SMALL;
 
   // Header
   t += CMD.CENTER;
@@ -86,17 +87,15 @@ export function formatReceipt(data: ReceiptPrintData): string {
   t += pad('Tax (12% VAT):', `P${fmt(data.tax)}`) + CMD.LF;
   t += dashes() + CMD.LF;
 
-  // Grand Total (double size)
-  t += CMD.BOLD_ON + CMD.BIG;
-  t += pad('TOTAL:', `P${fmt(data.total)}`, 16) + CMD.LF;
-  t += CMD.NORMAL + CMD.BOLD_OFF;
+  // Grand Total — bold only, same font size as everything else
+  t += CMD.BOLD_ON;
+  t += pad('TOTAL:', `P${fmt(data.total)}`) + CMD.LF;
+  t += CMD.BOLD_OFF;
   t += dashes() + CMD.LF;
 
   // Payment
   t += pad(`Payment (${data.paymentMethod}):`, `P${fmt(data.amountTendered)}`) + CMD.LF;
-  t += CMD.BOLD_ON;
   t += pad('Change:', `P${fmt(data.change)}`) + CMD.LF;
-  t += CMD.BOLD_OFF;
   t += dashes() + CMD.LF;
 
   // Footer
