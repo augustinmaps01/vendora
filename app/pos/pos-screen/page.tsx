@@ -706,13 +706,11 @@ export default function VendoraPOS() {
           }),
         });
         if (!res.ok) {
-          const err = await res.json().catch(() => ({}));
-          console.warn('Silent print failed, falling back to window.print():', err);
-          window.print();
+          const errData = await res.json().catch(() => ({}));
+          console.error('Silent print failed:', errData);
         }
       } catch (printErr) {
-        console.warn('Silent print unavailable, falling back to window.print():', printErr);
-        window.print();
+        console.error('Silent print error:', printErr);
       }
 
       setSuccessModalOpen(true);

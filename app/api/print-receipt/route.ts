@@ -5,6 +5,9 @@ import { writeFile, unlink } from 'fs/promises';
 import { tmpdir } from 'os';
 import { join } from 'path';
 
+// Force Node.js runtime (not Edge) so we can use child_process and fs
+export const runtime = 'nodejs';
+
 // Printer name as configured in CUPS (run `lpstat -p` to check)
 const PRINTER_NAME = process.env.THERMAL_PRINTER_NAME || 'POS58';
 
