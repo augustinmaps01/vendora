@@ -686,15 +686,36 @@ export default function VendoraPOS() {
       setReceiptData(receipt);
       setCart([]);  // Clear cart immediately — receipt snapshot already captured above
 
-      // Auto-print the thermal receipt, then show the success modal after print completes
-      setTimeout(() => {
-        const showModal = () => {
-          window.removeEventListener('afterprint', showModal);
-          setSuccessModalOpen(true);
-        };
-        window.addEventListener('afterprint', showModal);
+      // Silent print: send ESC/POS data directly to thermal printer via API (no dialog)
+      try {
+        const res = await fetch('/api/print-receipt', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactionNumber: receipt.transactionNumber,
+            date: receipt.date,
+            customerName: receipt.customerName,
+            items: receipt.items.map(i => ({ name: i.name, qty: i.qty, price: i.price })),
+            subtotal: receipt.subtotal,
+            vatableSales: receipt.vatableSales,
+            tax: receipt.tax,
+            total: receipt.total,
+            paymentMethod: receipt.paymentMethod,
+            amountTendered: receipt.amountTendered,
+            change: receipt.change,
+          }),
+        });
+        if (!res.ok) {
+          const err = await res.json().catch(() => ({}));
+          console.warn('Silent print failed, falling back to window.print():', err);
+          window.print();
+        }
+      } catch (printErr) {
+        console.warn('Silent print unavailable, falling back to window.print():', printErr);
         window.print();
-      }, 400); // Wait for the ThermalReceipt portal to render in DOM
+      }
+
+      setSuccessModalOpen(true);
 
     } catch (err: any) {
       // Extract full error details for debugging
