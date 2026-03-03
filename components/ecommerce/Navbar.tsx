@@ -3,7 +3,7 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, Sun, Moon } from "lucide-react"
+import { ShoppingBag, Sun, Moon, UtensilsCrossed } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useCartStore } from "@/store/useCartStore"
 import { useTheme } from "next-themes"
@@ -47,7 +47,7 @@ export function Navbar() {
                 <div className="flex items-center justify-between h-16 lg:h-20">
                     {/* Left: Logo + Shop */}
                     <div className="flex items-center gap-10 sm:gap-14">
-                        <Link href="/ecommerce/products" className="flex items-center">
+                        <Link href="/ecommerce/rbtesa/products" className="flex items-center">
                             <Image
                                 src="/new-logo/website logo white.png"
                                 alt="Vendora"
@@ -59,7 +59,7 @@ export function Navbar() {
                         </Link>
 
                         <Link
-                            href="/ecommerce/products"
+                            href="/ecommerce/rbtesa/products"
                             className="text-sm font-medium relative py-1 transition-all text-white hover:text-white/80"
                         >
                             Shop
@@ -67,7 +67,22 @@ export function Navbar() {
                                 className="absolute left-0 bottom-0 h-0.5 rounded-full transition-all duration-300"
                                 style={{
                                     backgroundColor: '#7C3AED',
-                                    width: pathname === "/ecommerce/products" ? '100%' : '0',
+                                    width: pathname === "/ecommerce/rbtesa/products" ? '100%' : '0',
+                                }}
+                            />
+                        </Link>
+
+                        <Link
+                            href="/ecommerce/rbtesa/food-menu"
+                            className="flex items-center gap-1.5 text-sm font-medium relative py-1 transition-all text-white hover:text-white/80"
+                        >
+                            <UtensilsCrossed className="w-4 h-4" />
+                            Food Menu
+                            <span
+                                className="absolute left-0 bottom-0 h-0.5 rounded-full transition-all duration-300"
+                                style={{
+                                    backgroundColor: '#7C3AED',
+                                    width: pathname === "/ecommerce/rbtesa/food-menu" ? '100%' : '0',
                                 }}
                             />
                         </Link>

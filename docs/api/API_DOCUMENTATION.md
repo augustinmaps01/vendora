@@ -3,6 +3,7 @@
 > **Base URL:** `https://vendora-api.abedubas.dev`
 > **Documentation:** https://vendora-api.abedubas.dev/api/documentation
 > **API Version:** 1.0.0
+> **Last Updated:** 2026-03-03
 
 ---
 
@@ -18,12 +19,106 @@ Authorization: Bearer <your_token>
 
 ## Endpoints
 
-### Admin
+### Admin - Users
+
+#### List Users (Admin only)
+```
+GET /api/admin/users
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| search | string | Search by name/email |
+| user_type | string | Filter by user type (admin, vendor, buyer) |
+| status | string | Filter by status (active, inactive, suspended) |
+| per_page | integer | Items per page (default: 20) |
+
+**Response (`200`):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "user_type": "vendor",
+      "phone": "+63 912 345 6789",
+      "status": "active",
+      "created_at": "2026-01-10T10:00:00Z",
+      "updated_at": "2026-01-10T10:00:00Z"
+    }
+  ]
+}
+```
+
+#### Create User (Admin only)
+```
+POST /api/admin/users
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ✅ | "John Doe" |
+| email | string (email) | ✅ | "john@example.com" |
+| password | string | ✅ | "password" |
+| user_type | string | ✅ | "vendor" \| "admin" \| "buyer" |
+| phone | string | ❌ | "+63 912 345 6789" |
+| status | string | ❌ | "active" \| "inactive" \| "suspended" |
+
+**Response:** `201` - User created successfully
+
+#### Get User (Admin only)
+```
+GET /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+#### Update User (Admin only)
+```
+PUT /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ❌ | "John Doe" |
+| email | string (email) | ❌ | "john@example.com" |
+| password | string | ❌ | "newpassword" |
+| user_type | string | ❌ | "vendor" |
+| phone | string | ❌ | "+63 912 345 6789" |
+| status | string | ❌ | "active" |
+
+#### Delete User (Admin only)
+```
+DELETE /api/admin/users/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+#### Change User Status (Admin only)
+```
+PATCH /api/admin/users/{id}/status
+```
+🔒 **Requires Authentication (Admin)**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| status | string (enum) | ✅ | "active" \| "inactive" \| "suspended" |
+
+---
+
+### Admin - Vendors
 
 #### Create Vendor (Admin only)
 ```
 POST /api/admin/vendors
 ```
+🔒 **Requires Authentication (Admin)**
 
 **Request Body:**
 | Field | Type | Required | Example |
@@ -320,15 +415,21 @@ GET /api/dashboard/sales-trend
 ```
 🔒 **Requires Authentication**
 
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| start_date | string | Start date (YYYY-MM-DD) |
+| end_date | string | End date (YYYY-MM-DD) |
+
 **Response (`200`):**
 ```json
 {
   "start_date": "2026-01-05",
   "end_date": "2026-01-11",
-  "labels": ["2026-01-05", "2026-01-06", ...],
+  "labels": ["2026-01-05", "2026-01-06"],
   "series": [
-    { "name": "pos", "data": [12000, 15000, ...] },
-    { "name": "online", "data": [8000, 9500, ...] }
+    { "name": "pos", "data": [12000, 15000] },
+    { "name": "online", "data": [8000, 9500] }
   ],
   "channel_definition": {
     "pos": "Cash or card payments.",
@@ -342,6 +443,12 @@ GET /api/dashboard/sales-trend
 GET /api/dashboard/orders-by-channel
 ```
 🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| start_date | string | Start date (YYYY-MM-DD) |
+| end_date | string | End date (YYYY-MM-DD) |
 
 **Response (`200`):**
 ```json
@@ -365,6 +472,12 @@ GET /api/dashboard/orders-by-channel
 GET /api/dashboard/payment-methods
 ```
 🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| start_date | string | Start date (YYYY-MM-DD) |
+| end_date | string | End date (YYYY-MM-DD) |
 
 **Response (`200`):**
 ```json
@@ -434,6 +547,11 @@ GET /api/dashboard/recent-activity
 ```
 🔒 **Requires Authentication**
 
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| limit | integer | Number of items to return |
+
 **Response (`200`):**
 ```json
 {
@@ -448,9 +566,21 @@ GET /api/dashboard/recent-activity
     }
   ]
 }
+```
 
-Low stock alerts
+#### Low Stock Alerts
+```
 GET /api/dashboard/low-stock-alerts
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| limit | integer | Number of items to return |
+
+**Response (`200`):**
+```json
 {
   "items": [
     {
@@ -462,9 +592,21 @@ GET /api/dashboard/low-stock-alerts
     }
   ]
 }
+```
 
+#### Pending Orders
+```
 GET /api/dashboard/pending-orders
-example value
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| limit | integer | Number of items to return |
+
+**Response (`200`):**
+```json
 {
   "items": [
     {
@@ -569,6 +711,85 @@ POST /api/inventory/adjustments
 
 ---
 
+### Ledger
+
+#### List Ledger Entries
+```
+GET /api/ledger
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Description |
+|-------|------|-------------|
+| type | string | Filter by entry type (e.g., stock_in, stock_out, sale, expense) |
+| category | string | Filter by category |
+| product_id | integer | Filter by product ID |
+| date_from | string | Start date filter (YYYY-MM-DD) |
+| date_to | string | End date filter (YYYY-MM-DD) |
+| search | string | Search term |
+| page | integer | Page number |
+| per_page | integer | Items per page |
+
+**Response (`200`):**
+```json
+{
+  "data": [
+    {
+      "id": 1,
+      "type": "stock_in",
+      "product_id": 1,
+      "quantity": 10,
+      "amount": 5000,
+      "description": "Purchased new stock",
+      "reference": "PO-001",
+      "created_at": "2026-01-10T10:00:00Z"
+    }
+  ],
+  "meta": {
+    "current_page": 1,
+    "per_page": 15,
+    "total": 50
+  }
+}
+```
+
+#### Create Ledger Entry
+```
+POST /api/ledger
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| type | string | ✅ | "stock_in" |
+| product_id | integer | ❌ | 1 |
+| quantity | integer | ❌ | 10 |
+| amount | integer | ❌ | 5000 |
+| description | string | ✅ | "Purchased new stock" |
+| reference | string | ❌ | "PO-001" |
+
+**Response:** `201` - Ledger entry created
+
+#### Ledger Summary
+```
+GET /api/ledger/summary
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "total_entries": 150,
+  "total_income": 500000,
+  "total_expenses": 200000,
+  "net_balance": 300000
+}
+```
+
+---
+
 ### Orders
 
 #### List Orders
@@ -629,9 +850,9 @@ POST /api/orders
 **Request Body:**
 | Field | Type | Required | Example |
 |-------|------|----------|---------|
-| customer_id | integer | ✅ | 1 |
-| ordered_at | string | ❌ | "2026-01-10" |
-| status | string | ❌ | "pending" |
+| customer_id | integer | ❌ | 1 |
+| ordered_at | string | ✅ | "2026-01-10" |
+| status | string | ✅ | "pending" |
 | items | array | ✅ | See below |
 
 **Items Array:**
@@ -642,11 +863,20 @@ POST /api/orders
 ]
 ```
 
-#### Update Order
+> **Note:** `customer_id` is now optional. `ordered_at` and `status` are required.
+
+#### Update Order Status
 ```
 PATCH /api/orders/{order}
 ```
 🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| status | string | ❌ | "completed" \| "cancelled" \| "pending" |
+
+> **Note:** This endpoint is specifically for updating order status. Other order fields cannot be modified after creation.
 
 #### Delete Order
 ```
@@ -724,10 +954,12 @@ POST /api/payments
 | Field | Type | Required | Example |
 |-------|------|----------|---------|
 | order_id | integer | ✅ | 1 |
+| paid_at | string | ✅ | "2026-01-10 14:30" |
 | amount | integer | ✅ | 2450 |
 | method | string | ✅ | "cash" \| "card" \| "online" |
-| paid_at | string | ❌ | "2026-01-10 14:30" |
-| status | string | ❌ | "completed" |
+| status | string | ✅ | "completed" |
+
+> **Important:** All fields are now required. `paid_at` must be datetime format "YYYY-MM-DD HH:mm". `amount` must be a rounded integer.
 
 #### Update Payment
 ```
@@ -735,25 +967,41 @@ PATCH /api/payments/{payment}
 ```
 🔒 **Requires Authentication**
 
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| paid_at | string | ❌ | "2026-01-10 15:00" |
+| amount | integer | ❌ | 2500 |
+| method | string | ❌ | "card" |
+| status | string | ❌ | "refunded" |
+
+#### Delete Payment
+```
+DELETE /api/payments/{payment}
+```
+🔒 **Requires Authentication**
+
+**Response:** `204` - Deleted
+
 ---
 
 ### Products
 
-#### List Products (Public)
+#### List Authenticated User's Products (for POS)
 ```
-GET /api/products
+GET /api/products/my
 ```
+🔒 **Requires Authentication**
 
 **Query Parameters:**
 | Param | Type | Description |
 |-------|------|-------------|
 | search | string | Search term |
 | category_id | integer | Filter by category |
-| store_id | integer | Filter by store (for POS) |
-| user_id | integer | Filter by vendor/owner ID |
 | min_price | integer | Minimum price filter |
 | max_price | integer | Maximum price filter |
 | in_stock | boolean | Filter in-stock items only |
+| is_active | boolean | Filter by active status |
 | sort | string | Sort field |
 | direction | string | Sort direction (asc/desc) |
 | page | integer | Page number |
@@ -767,16 +1015,8 @@ GET /api/products
       "id": 1,
       "name": "Premium Rice 5kg",
       "sku": "GR-1001",
-      "category": { "id": 3, "name": "Grocery" },
       "price": 1250,
-      "currency": "PHP",
-      "stock": 18,
-      "is_low_stock": true,
-      "is_active": true,
-      "is_ecommerce": true,
-      "image_url": "https://...",
-      "created_at": "2026-01-10T10:00:00Z",
-      "updated_at": "2026-01-10T10:00:00Z"
+      "stock": 18
     }
   ],
   "meta": {
@@ -787,10 +1027,7 @@ GET /api/products
 }
 ```
 
-#### Get Product (Public)
-```
-GET /api/products/{product}
-```
+> **Note:** `GET /api/products` (public product listing) and `GET /api/products/{product}` (public product detail) are not documented in the Swagger spec but may still be available. The frontend e-commerce pages use these endpoints.
 
 #### Create Product
 ```
@@ -805,17 +1042,45 @@ POST /api/products
 | sku | string | ✅ | "GR-1001" |
 | category_id | integer | ✅ | 3 |
 | price | integer | ✅ | 1250 |
-| currency | string | ❌ | "PHP" |
-| stock | integer | ❌ | 18 |
+| currency | string | ✅ | "PHP" |
+| stock | integer | ✅ | 18 |
 | is_active | boolean | ❌ | true |
 | is_ecommerce | boolean | ❌ | true |
 | image | file | ❌ | (binary) |
+
+> **Updated:** `currency` and `stock` are now required fields.
 
 #### Update Product
 ```
 PATCH /api/products/{product}
 ```
 🔒 **Requires Authentication**
+
+**Request Body (multipart/form-data):**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ❌ | "Premium Rice 10kg" |
+| sku | string | ❌ | "GR-1002" |
+| category_id | integer | ❌ | 3 |
+| price | integer | ❌ | 2500 |
+| currency | string | ❌ | "PHP" |
+| stock | integer | ❌ | 25 |
+| is_active | boolean | ❌ | true |
+| is_ecommerce | boolean | ❌ | true |
+| image | file | ❌ | (binary) |
+
+#### Update Product Stock
+```
+PATCH /api/products/{product}/stock
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| stock | integer | ✅ | 50 |
+
+**Response (`200`):** Updated product with new stock value
 
 #### Delete Product
 ```
@@ -857,7 +1122,10 @@ GET /api/stores
     {
       "id": 1,
       "name": "Main Store",
+      "code": "MAIN-001",
       "address": "123 Main St",
+      "phone": "+63 912 345 6789",
+      "email": "store@example.com",
       "is_active": true
     }
   ]
@@ -876,11 +1144,33 @@ POST /api/stores
 ```
 🔒 **Requires Authentication**
 
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ✅ | "Main Store" |
+| code | string | ✅ | "MAIN-001" |
+| address | string | ❌ | "123 Main St" |
+| phone | string | ❌ | "+63 912 345 6789" |
+| email | string | ❌ | "store@example.com" |
+| is_active | boolean | ❌ | true |
+| settings | object | ❌ | `{}` |
+
 #### Update Store
 ```
 PATCH /api/stores/{store}
 ```
 🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| name | string | ❌ | "Main Store Updated" |
+| code | string | ❌ | "MAIN-002" |
+| address | string | ❌ | "456 New St" |
+| phone | string | ❌ | "+63 912 345 6789" |
+| email | string | ❌ | "newstore@example.com" |
+| is_active | boolean | ❌ | true |
+| settings | object | ❌ | `{}` |
 
 #### Delete Store
 ```
@@ -902,6 +1192,10 @@ GET /api/stores/{store}/products
 | Param | Type | Description |
 |-------|------|-------------|
 | search | string | Search term |
+| is_available | boolean | Filter by availability |
+| low_stock | boolean | Filter low stock items |
+| sort | string | Sort field |
+| direction | string | Sort direction (asc/desc) |
 | per_page | integer | Items per page |
 
 **Response (`200`):**
@@ -928,17 +1222,56 @@ GET /api/stores/{store}/products
 }
 ```
 
+#### Get Store Product
+```
+GET /api/stores/{store}/products/{product}
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "id": 1,
+  "product_id": 5,
+  "store_id": 1,
+  "stock": 50,
+  "min_stock": 10,
+  "max_stock": 100,
+  "price_override": 1500,
+  "is_available": true
+}
+```
+
 #### Add Product to Store
 ```
 POST /api/stores/{store}/products
 ```
 🔒 **Requires Authentication**
 
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| product_id | integer | ✅ | 5 |
+| stock | integer | ❌ | 50 |
+| min_stock | integer | ❌ | 10 |
+| max_stock | integer | ❌ | 100 |
+| price_override | integer | ❌ | 1500 |
+| is_available | boolean | ❌ | true |
+
 #### Update Store Product
 ```
 PATCH /api/stores/{store}/products/{product}
 ```
 🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| stock | integer | ❌ | 60 |
+| min_stock | integer | ❌ | 15 |
+| max_stock | integer | ❌ | 120 |
+| price_override | integer | ❌ | 1600 |
+| is_available | boolean | ❌ | true |
 
 #### Remove Product from Store
 ```
@@ -949,6 +1282,30 @@ DELETE /api/stores/{store}/products/{product}
 ---
 
 ### Store Staff
+
+#### Get Available Store Roles
+```
+GET /api/store-roles
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "data": [
+    {
+      "value": "cashier",
+      "label": "Cashier",
+      "permissions": ["view_orders", "create_orders"]
+    },
+    {
+      "value": "manager",
+      "label": "Store Manager",
+      "permissions": ["view_orders", "create_orders", "manage_inventory"]
+    }
+  ]
+}
+```
 
 #### List Store Staff
 ```
@@ -989,11 +1346,47 @@ PATCH /api/stores/{store}/staff/{user}
 ```
 🔒 **Requires Authentication**
 
+**Request Body:**
+| Field | Type | Required | Example |
+|-------|------|----------|---------|
+| role | string | ❌ | "manager" |
+| permissions | array | ❌ | ["view_orders", "create_orders", "manage_inventory"] |
+
 #### Remove Staff Member
 ```
 DELETE /api/stores/{store}/staff/{user}
 ```
 🔒 **Requires Authentication**
+
+---
+
+### User
+
+#### Get Authenticated User
+```
+GET /api/user
+```
+🔒 **Requires Authentication**
+
+**Response (`200`):**
+```json
+{
+  "id": 1,
+  "name": "Vendor Corp",
+  "business_name": "Vendor Corp",
+  "email": "vendor@example.com",
+  "subscription_plan": "basic",
+  "user_type": "vendor",
+  "stores": [
+    { "id": 1, "name": "Main Store", "code": "MAIN-001" }
+  ],
+  "assigned_stores": [
+    { "id": 2, "name": "Branch Store", "role": "cashier" }
+  ],
+  "created_at": "2026-01-10T10:00:00Z",
+  "updated_at": "2026-01-10T10:00:00Z"
+}
+```
 
 ---
 
@@ -1022,16 +1415,18 @@ DELETE /api/stores/{store}/staff/{user}
 
 | Category | Description |
 |----------|-------------|
-| Admin | Admin-only endpoints |
+| Admin - Users | Admin user management (CRUD + status) |
+| Admin - Vendors | Vendor creation (admin only) |
 | Auth | Authentication endpoints |
-| User | User endpoints |
-| Product | Product endpoints |
 | Category | Category endpoints |
-| Inventory | Inventory endpoints |
 | Customer | Customer endpoints |
+| Dashboard | Dashboard KPIs, charts, and alerts |
+| Inventory | Inventory management and adjustments |
+| Ledger | Financial ledger entries and summaries |
 | Order | Order endpoints |
 | Payment | Payment endpoints |
-| Dashboard | Dashboard endpoints |
-| Store | Store endpoints |
-| Store Product | Store product endpoints |
-| Store Staff | Store staff endpoints |
+| Product | Product endpoints (including vendor-specific) |
+| Store | Store management endpoints |
+| Store Product | Store-specific product management |
+| Store Staff | Store staff and role management |
+| User | Authenticated user profile |

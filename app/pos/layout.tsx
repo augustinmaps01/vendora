@@ -33,7 +33,8 @@ import {
   ChevronLeft,
   ChevronRight,
   MoreVertical,
-  Loader2
+  Loader2,
+  UtensilsCrossed
 } from "lucide-react"
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
 import { ThemeToggle } from "@/components/pos/ThemeToggle"
@@ -51,6 +52,7 @@ const sidebarSections = [
     items: [
       { icon: LayoutDashboard, label: "Dashboard", href: "/pos/dashboard", comingSoon: false },
       { icon: ShoppingCart, label: "POS", href: "/pos/pos-screen", comingSoon: false },
+      { icon: UtensilsCrossed, label: "Food Menu", href: "/pos/food-menu", comingSoon: false },
       { icon: Package, label: "Products", href: "/pos/products", comingSoon: false },
       { icon: CreditCard, label: "Credit Accounts", href: "/pos/credit-accounts", comingSoon: false },
       { icon: ClipboardList, label: "Orders", href: "/pos/orders", comingSoon: false },
