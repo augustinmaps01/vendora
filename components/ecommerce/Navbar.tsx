@@ -3,11 +3,29 @@
 import Link from "next/link"
 import Image from "next/image"
 import { usePathname } from "next/navigation"
-import { ShoppingBag, Sun, Moon, UtensilsCrossed } from "lucide-react"
+import { ShoppingBag, Sun, Moon, UtensilsCrossed, User2, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+    DropdownMenu,
+    DropdownMenuContent,
+    DropdownMenuItem,
+    DropdownMenuLabel,
+    DropdownMenuSeparator,
+    DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import { useCartStore } from "@/store/useCartStore"
 import { useTheme } from "next-themes"
 import { useState, useEffect } from "react"
+
+const BUYER_TOKEN_KEY = "rbtesa_buyer_token"
+const BUYER_USER_KEY = "rbtesa_buyer_user"
+
+type BuyerUser = {
+    id: number
+    name: string
+    email: string
+    user_type: string
+}
 
 export function Navbar() {
     const pathname = usePathname()
@@ -15,11 +33,40 @@ export function Navbar() {
     const { setTheme, resolvedTheme } = useTheme()
     const [isScrolled, setIsScrolled] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+    const [buyer, setBuyer] = useState<BuyerUser | null>(null)
     const cartCount = items.length
 
     useEffect(() => {
         setIsMounted(true)
+        try {
+            const stored = localStorage.getItem(BUYER_USER_KEY)
+            if (stored) setBuyer(JSON.parse(stored))
+        } catch { /* ignore */ }
     }, [])
+
+    // Listen for storage changes (login/logout from the food-menu page)
+    useEffect(() => {
+        const onStorage = () => {
+            try {
+                const stored = localStorage.getItem(BUYER_USER_KEY)
+                setBuyer(stored ? JSON.parse(stored) : null)
+            } catch { setBuyer(null) }
+        }
+        window.addEventListener("storage", onStorage)
+        // Also poll for same-tab changes
+        const interval = setInterval(onStorage, 1000)
+        return () => {
+            window.removeEventListener("storage", onStorage)
+            clearInterval(interval)
+        }
+    }, [])
+
+    const handleLogout = () => {
+        localStorage.removeItem(BUYER_TOKEN_KEY)
+        localStorage.removeItem(BUYER_USER_KEY)
+        setBuyer(null)
+        window.dispatchEvent(new Event("storage"))
+    }
 
     useEffect(() => {
         const handleScroll = () => {
@@ -88,8 +135,51 @@ export function Navbar() {
                         </Link>
                     </div>
 
-                    {/* Right: Theme Toggle + Cart */}
+                    {/* Right: User + Theme Toggle + Cart */}
                     <div className="flex items-center gap-2">
+                        {/* User Icon / Authenticated User Dropdown */}
+                        {isMounted && (
+                            buyer ? (
+                                <DropdownMenu>
+                                    <DropdownMenuTrigger asChild>
+                                        <button className="flex items-center gap-2 px-2.5 py-1.5 rounded-full bg-white/[0.08] border border-white/[0.12] hover:bg-white/[0.14] transition-colors outline-none">
+                                            <div
+                                                className="w-7 h-7 rounded-full flex items-center justify-center text-white text-[11px] font-black shrink-0"
+                                                style={{ backgroundColor: '#7C3AED' }}
+                                            >
+                                                {buyer.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+                                            </div>
+                                            <span className="text-xs font-semibold text-white/90 max-w-[100px] truncate hidden sm:block">
+                                                {buyer.name}
+                                            </span>
+                                        </button>
+                                    </DropdownMenuTrigger>
+                                    <DropdownMenuContent align="end" className="w-56">
+                                        <DropdownMenuLabel>
+                                            <p className="text-sm font-semibold">{buyer.name}</p>
+                                            <p className="text-xs text-muted-foreground">{buyer.email}</p>
+                                        </DropdownMenuLabel>
+                                        <DropdownMenuSeparator />
+                                        <DropdownMenuItem onClick={handleLogout} className="text-red-600 focus:text-red-600 cursor-pointer">
+                                            <LogOut className="w-4 h-4 mr-2" />
+                                            Sign out
+                                        </DropdownMenuItem>
+                                    </DropdownMenuContent>
+                                </DropdownMenu>
+                            ) : (
+                                <Link href="/ecommerce/rbtesa/food-menu">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="relative h-10 w-10 rounded-full text-white hover:bg-white/10"
+                                        title="Sign in"
+                                    >
+                                        <User2 className="h-5 w-5" />
+                                    </Button>
+                                </Link>
+                            )
+                        )}
+
                         {/* Theme Toggle */}
                         {isMounted && (
                             <Button

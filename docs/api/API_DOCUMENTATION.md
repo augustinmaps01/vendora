@@ -31,7 +31,7 @@ GET /api/admin/users
 | Param | Type | Description |
 |-------|------|-------------|
 | search | string | Search by name/email |
-| user_type | string | Filter by user type (admin, vendor, buyer) |
+| user_type | string | Filter by user type (admin, vendor, manager, cashier, buyer) |
 | status | string | Filter by status (active, inactive, suspended) |
 | per_page | integer | Items per page (default: 20) |
 
@@ -65,7 +65,7 @@ POST /api/admin/users
 | name | string | ✅ | "John Doe" |
 | email | string (email) | ✅ | "john@example.com" |
 | password | string | ✅ | "password" |
-| user_type | string | ✅ | "vendor" \| "admin" \| "buyer" |
+| user_type | string | ✅ | "admin" \| "vendor" \| "manager" \| "cashier" \| "buyer" |
 | phone | string | ❌ | "+63 912 345 6789" |
 | status | string | ❌ | "active" \| "inactive" \| "suspended" |
 
@@ -130,7 +130,23 @@ POST /api/admin/vendors
 | business_name | string | ✅ | "Vendor Corp" |
 | subscription_plan | enum | ✅ | "free" \| "basic" \| "premium" |
 
-**Response:** `201` - Vendor created successfully
+**Response (`201`):**
+```json
+{
+  "message": "Vendor created successfully",
+  "user": {
+    "id": 1,
+    "name": "John Vendor",
+    "email": "vendor@example.com",
+    "user_type": "vendor",
+    "vendor_profile": {
+      "id": 1,
+      "business_name": "Vendor Corp",
+      "subscription_plan": "basic"
+    }
+  }
+}
+```
 
 ---
 
@@ -206,8 +222,10 @@ POST /api/auth/login
 }
 ```
 
+> **Note:** `vendor_profile` is nullable — it will be `null` for non-vendor users (admin, manager, cashier, buyer).
+
 **Error Responses:**
-- `401` - Invalid credentials
+- `401` - Invalid credentials: `{ "success": false, "error": "Unauthorized", "message": "Invalid credentials" }`
 - `422` - Validation error
 
 #### Logout
@@ -534,9 +552,9 @@ GET /api/dashboard/inventory-health
 {
   "total_items": 156,
   "breakdown": [
-    { "status": "in_stock", "count": 120 },
-    { "status": "low_stock", "count": 28 },
-    { "status": "out_of_stock", "count": 8 }
+    { "status": "in_stock", "count": 120, "percentage": 76.92 },
+    { "status": "low_stock", "count": 28, "percentage": 17.95 },
+    { "status": "out_of_stock", "count": 8, "percentage": 5.13 }
   ]
 }
 ```

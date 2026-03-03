@@ -7,10 +7,11 @@ import {
     UtensilsCrossed, Coffee, Sandwich, Soup,
     Flame, Leaf, Search, ShoppingBag,
     Plus, Minus, Check, Clock, Users, X, CalendarDays,
-    AlertTriangle, Star,
+    AlertTriangle, Star, User2, LogOut, Eye, EyeOff, Lock,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
+import axiosClient from "@/lib/axios-client"
 
 
 // ---------------------------------------------------------------------------
@@ -38,6 +39,19 @@ type ReservationItem = {
     food: FoodItem
     qty: number
 }
+
+// ---------------------------------------------------------------------------
+// Buyer Auth
+// ---------------------------------------------------------------------------
+type BuyerUser = {
+    id: number
+    name: string
+    email: string
+    user_type: string
+}
+
+const BUYER_TOKEN_KEY = "rbtesa_buyer_token"
+const BUYER_USER_KEY = "rbtesa_buyer_user"
 
 
 // ---------------------------------------------------------------------------
@@ -332,6 +346,240 @@ function useScrollReveal() {
 
 
 // ---------------------------------------------------------------------------
+// Auth Modal (Login / Register)
+// ---------------------------------------------------------------------------
+type AuthMode = "login" | "register"
+
+function AuthModal({ onSuccess, onClose }: { onSuccess: (user: BuyerUser) => void; onClose: () => void }) {
+    const [mode, setMode] = useState<AuthMode>("login")
+    const [loginForm, setLoginForm] = useState({ email: "", password: "" })
+    const [regForm, setRegForm] = useState({ name: "", email: "", password: "", password_confirmation: "" })
+    const [showPass, setShowPass] = useState(false)
+    const [isLoading, setIsLoading] = useState(false)
+    const [error, setError] = useState("")
+
+    const extractAuthData = (raw: unknown): { token?: string; user?: BuyerUser; message?: string } => {
+        if (!raw || typeof raw !== "object") return {}
+        const r = raw as Record<string, unknown>
+        const nested = r.data && typeof r.data === "object" ? r.data as Record<string, unknown> : null
+        return {
+            token: (r.token ?? nested?.token) as string | undefined,
+            user: (r.user ?? nested?.user) as BuyerUser | undefined,
+            message: (r.message ?? nested?.message) as string | undefined,
+        }
+    }
+
+    const extractErrorMsg = (err: unknown, fallback: string): string => {
+        if (!err || typeof err !== "object") return fallback
+        const e = err as Record<string, unknown>
+        const resp = e.response && typeof e.response === "object" ? e.response as Record<string, unknown> : null
+        const respData = resp?.data && typeof resp.data === "object" ? resp.data as Record<string, unknown> : null
+        if (respData?.errors && typeof respData.errors === "object") {
+            return Object.values(respData.errors as Record<string, unknown[]>).flat().join(" ")
+        }
+        return (respData?.message as string) || fallback
+    }
+
+    const handleLogin = async () => {
+        if (!loginForm.email || !loginForm.password) { setError("Please fill in all fields."); return }
+        setIsLoading(true)
+        setError("")
+        try {
+            const res = await axiosClient.post("/auth/login", loginForm)
+            const { token, user, message } = extractAuthData(res.data)
+            if (token && user) {
+                localStorage.setItem(BUYER_TOKEN_KEY, token)
+                localStorage.setItem(BUYER_USER_KEY, JSON.stringify(user))
+                window.dispatchEvent(new Event("storage"))
+                onSuccess(user)
+            } else {
+                setError(message || "Login failed. Please check your credentials.")
+            }
+        } catch (err: unknown) {
+            setError(extractErrorMsg(err, "Invalid email or password."))
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const handleRegister = async () => {
+        if (!regForm.name || !regForm.email || !regForm.password || !regForm.password_confirmation) {
+            setError("Please fill in all fields."); return
+        }
+        if (regForm.password !== regForm.password_confirmation) {
+            setError("Passwords do not match."); return
+        }
+        setIsLoading(true)
+        setError("")
+        try {
+            const res = await axiosClient.post("/auth/register", regForm)
+            const { token, user, message } = extractAuthData(res.data)
+            if (token && user) {
+                localStorage.setItem(BUYER_TOKEN_KEY, token)
+                localStorage.setItem(BUYER_USER_KEY, JSON.stringify(user))
+                window.dispatchEvent(new Event("storage"))
+                onSuccess(user)
+            } else {
+                setError(message || "Registration failed. Please try again.")
+            }
+        } catch (err: unknown) {
+            setError(extractErrorMsg(err, "Registration failed. Please try again."))
+        } finally {
+            setIsLoading(false)
+        }
+    }
+
+    const submit = mode === "login" ? handleLogin : handleRegister
+
+    return (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
+            <div className="w-full max-w-md bg-white dark:bg-[#110228] rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-white/[0.08] animate-in fade-in zoom-in-95 duration-300">
+
+                {/* Header */}
+                <div className="px-6 pt-8 pb-6 text-center relative" style={{ background: "linear-gradient(135deg,#110228,#2E0F5F,#7C3AED)" }}>
+                    <button
+                        onClick={onClose}
+                        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
+                    >
+                        <X className="w-4 h-4 text-white" />
+                    </button>
+                    <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
+                        <Lock className="w-7 h-7 text-white" />
+                    </div>
+                    <h2 className="text-xl font-black text-white mb-1">
+                        {mode === "login" ? "Sign in to Reserve" : "Create an Account"}
+                    </h2>
+                    <p className="text-sm text-purple-200/70">
+                        {mode === "login"
+                            ? "Log in to reserve food from today's menu."
+                            : "Register to start reserving from today's menu."}
+                    </p>
+                </div>
+
+                {/* Tab switcher */}
+                <div className="flex border-b border-gray-100 dark:border-white/[0.06]">
+                    {(["login", "register"] as AuthMode[]).map(m => (
+                        <button
+                            key={m}
+                            onClick={() => { setMode(m); setError("") }}
+                            className={`flex-1 py-3 text-sm font-bold capitalize transition-colors ${
+                                mode === m
+                                    ? "text-[#7C3AED] border-b-2 border-[#7C3AED]"
+                                    : "text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60"
+                            }`}
+                        >
+                            {m === "login" ? "Login" : "Register"}
+                        </button>
+                    ))}
+                </div>
+
+                {/* Form */}
+                <div className="px-6 py-6 space-y-4">
+                    {error && (
+                        <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
+                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+                        </div>
+                    )}
+
+                    {mode === "register" && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                Full Name <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                                placeholder="e.g. Juan Dela Cruz"
+                                value={regForm.name}
+                                onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
+                                className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
+                            />
+                        </div>
+                    )}
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            Email <span className="text-red-500">*</span>
+                        </label>
+                        <Input
+                            type="email"
+                            placeholder="your@email.com"
+                            value={mode === "login" ? loginForm.email : regForm.email}
+                            onChange={e => mode === "login"
+                                ? setLoginForm(f => ({ ...f, email: e.target.value }))
+                                : setRegForm(f => ({ ...f, email: e.target.value }))
+                            }
+                            className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
+                        />
+                    </div>
+
+                    <div className="space-y-1.5">
+                        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                            Password <span className="text-red-500">*</span>
+                        </label>
+                        <div className="relative">
+                            <Input
+                                type={showPass ? "text" : "password"}
+                                placeholder="••••••••"
+                                value={mode === "login" ? loginForm.password : regForm.password}
+                                onChange={e => mode === "login"
+                                    ? setLoginForm(f => ({ ...f, password: e.target.value }))
+                                    : setRegForm(f => ({ ...f, password: e.target.value }))
+                                }
+                                onKeyDown={e => e.key === "Enter" && mode === "login" && submit()}
+                                className="h-11 pr-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
+                            />
+                            <button
+                                type="button"
+                                onClick={() => setShowPass(s => !s)}
+                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white/60 transition-colors"
+                            >
+                                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                        </div>
+                    </div>
+
+                    {mode === "register" && (
+                        <div className="space-y-1.5">
+                            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
+                                Confirm Password <span className="text-red-500">*</span>
+                            </label>
+                            <Input
+                                type="password"
+                                placeholder="Re-enter your password"
+                                value={regForm.password_confirmation}
+                                onChange={e => setRegForm(f => ({ ...f, password_confirmation: e.target.value }))}
+                                onKeyDown={e => e.key === "Enter" && submit()}
+                                className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
+                            />
+                        </div>
+                    )}
+
+                    <Button
+                        onClick={submit}
+                        disabled={isLoading}
+                        className="w-full h-11 rounded-xl font-bold text-white mt-1"
+                        style={{ backgroundColor: "#7C3AED" }}
+                    >
+                        {isLoading ? (
+                            <span className="flex items-center gap-2">
+                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
+                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                {mode === "login" ? "Signing in..." : "Creating account..."}
+                            </span>
+                        ) : (
+                            mode === "login" ? "Sign In" : "Create Account"
+                        )}
+                    </Button>
+                </div>
+            </div>
+        </div>
+    )
+}
+
+
+// ---------------------------------------------------------------------------
 // Food Card
 // ---------------------------------------------------------------------------
 function FoodCard({
@@ -574,10 +822,11 @@ function ReservationPanel({
 // ---------------------------------------------------------------------------
 // Confirmation modal
 // ---------------------------------------------------------------------------
-function ConfirmationModal({ items, onClose }: { items: ReservationItem[]; onClose: () => void }) {
+function ConfirmationModal({ items, buyer, onClose }: { items: ReservationItem[]; buyer: BuyerUser | null; onClose: () => void }) {
     const total = items.reduce((sum, r) => sum + r.food.price * r.qty, 0)
     const now = new Date()
     const refNo = `RSV-${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}-${Math.floor(Math.random() * 9000 + 1000)}`
+    const initials = buyer ? buyer.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase() : "?"
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-sm">
@@ -595,8 +844,21 @@ function ConfirmationModal({ items, onClose }: { items: ReservationItem[]; onClo
                     </div>
                 </div>
 
+                {/* Buyer info card */}
+                {buyer && (
+                    <div className="mx-6 mt-5 flex items-center gap-3 p-3 rounded-xl bg-[#7C3AED]/5 border border-[#7C3AED]/15">
+                        <div className="w-10 h-10 rounded-xl bg-[#7C3AED] flex items-center justify-center text-white font-black text-sm shrink-0">
+                            {initials}
+                        </div>
+                        <div className="min-w-0">
+                            <p className="text-sm font-bold text-gray-900 dark:text-white truncate">{buyer.name}</p>
+                            <p className="text-xs text-gray-500 dark:text-white/40">{buyer.email}</p>
+                        </div>
+                    </div>
+                )}
+
                 {/* Items list */}
-                <div className="px-6 py-5 space-y-2.5 max-h-60 overflow-y-auto">
+                <div className="px-6 py-5 space-y-2.5 max-h-48 overflow-y-auto">
                     {items.map((r) => (
                         <div key={r.food.id} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
@@ -639,11 +901,19 @@ export default function FoodMenuPage() {
     const [showPanel, setShowPanel] = useState(false)
     const [confirmed, setConfirmed] = useState(false)
     const [isMounted, setIsMounted] = useState(false)
+    const [buyer, setBuyer] = useState<BuyerUser | null>(null)
+    const [showAuthModal, setShowAuthModal] = useState(false)
 
     const heroReveal = useScrollReveal()
     const menuReveal = useScrollReveal()
 
-    useEffect(() => { setIsMounted(true) }, [])
+    useEffect(() => {
+        setIsMounted(true)
+        try {
+            const stored = localStorage.getItem(BUYER_USER_KEY)
+            if (stored) setBuyer(JSON.parse(stored))
+        } catch { /* ignore */ }
+    }, [])
 
     const today = new Date()
     const dateStr = today.toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
@@ -657,6 +927,10 @@ export default function FoodMenuPage() {
     })
 
     const handleReserve = (item: FoodItem) => {
+        if (!buyer) {
+            setShowAuthModal(true)
+            return
+        }
         setReservations((prev) => {
             const exists = prev.find((r) => r.food.id === item.id)
             if (exists) return prev
@@ -680,6 +954,19 @@ export default function FoodMenuPage() {
     const handleConfirmClose = () => {
         setConfirmed(false)
         setReservations([])
+    }
+
+    const handleAuthSuccess = (user: BuyerUser) => {
+        setBuyer(user)
+        setShowAuthModal(false)
+    }
+
+    const handleLogout = () => {
+        localStorage.removeItem(BUYER_TOKEN_KEY)
+        localStorage.removeItem(BUYER_USER_KEY)
+        setBuyer(null)
+        setReservations([])
+        window.dispatchEvent(new Event("storage"))
     }
 
     const reservedCount = reservations.reduce((s, r) => s + r.qty, 0)
@@ -711,9 +998,36 @@ export default function FoodMenuPage() {
 
                             {/* Left: Title block */}
                             <div className="space-y-4">
-                                <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#7C3AED]/20 border border-[#7C3AED]/30 text-xs font-bold text-purple-300 uppercase tracking-wider">
-                                    <Users className="w-3.5 h-3.5" />
-                                    Employee Reservation Portal
+                                <div className="flex flex-wrap items-center gap-3">
+                                    <div className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#7C3AED]/20 border border-[#7C3AED]/30 text-xs font-bold text-purple-300 uppercase tracking-wider">
+                                        <Users className="w-3.5 h-3.5" />
+                                        Reservation Portal
+                                    </div>
+
+                                    {/* Logged-in user chip */}
+                                    {isMounted && buyer ? (
+                                        <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-white/[0.08] border border-white/[0.12]">
+                                            <div className="w-6 h-6 rounded-md bg-[#7C3AED] flex items-center justify-center text-white text-[10px] font-black shrink-0">
+                                                {buyer.name.split(" ").map(w => w[0]).slice(0, 2).join("").toUpperCase()}
+                                            </div>
+                                            <span className="text-xs font-semibold text-white/80 max-w-[120px] truncate">{buyer.name}</span>
+                                            <button
+                                                onClick={handleLogout}
+                                                className="ml-1 text-white/40 hover:text-white/80 transition-colors"
+                                                title="Sign out"
+                                            >
+                                                <LogOut className="w-3.5 h-3.5" />
+                                            </button>
+                                        </div>
+                                    ) : isMounted ? (
+                                        <button
+                                            onClick={() => setShowAuthModal(true)}
+                                            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-white/[0.06] border border-white/[0.10] text-xs font-semibold text-white/60 hover:text-white/90 hover:bg-white/[0.10] transition-colors"
+                                        >
+                                            <User2 className="w-3.5 h-3.5" />
+                                            Sign in to reserve
+                                        </button>
+                                    ) : null}
                                 </div>
 
                                 <div>
@@ -892,7 +1206,12 @@ export default function FoodMenuPage() {
 
             {/* ── Confirmation modal ────────────────────────────────── */}
             {confirmed && (
-                <ConfirmationModal items={reservations} onClose={handleConfirmClose} />
+                <ConfirmationModal items={reservations} buyer={buyer} onClose={handleConfirmClose} />
+            )}
+
+            {/* ── Auth modal ────────────────────────────────────────── */}
+            {showAuthModal && (
+                <AuthModal onSuccess={handleAuthSuccess} onClose={() => setShowAuthModal(false)} />
             )}
         </div>
     )
