@@ -82,9 +82,9 @@ export function ProductCard({ product }: ProductCardProps) {
 
                 {/* Badge */}
                 {product.badge && (
-                    <div className="absolute top-2.5 left-2.5 sm:top-3 sm:left-3 z-10">
+                    <div className="absolute top-2 left-2 sm:top-3 sm:left-3 z-10">
                         <div className={cn(
-                            "px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg",
+                            "px-2 py-0.5 sm:px-3 sm:py-1.5 rounded-full text-[10px] sm:text-xs font-bold shadow-lg",
                             getBadgeStyles(product.badgeType)
                         )}>
                             {product.badge}
@@ -94,15 +94,15 @@ export function ProductCard({ product }: ProductCardProps) {
             </Link>
 
             {/* Product Info */}
-            <div className="p-2 sm:p-2.5 flex flex-col gap-0.5">
+            <div className="p-2.5 sm:p-3 flex flex-col gap-0.5 sm:gap-1">
                 {/* Category */}
-                <p className="text-[9px] uppercase tracking-wider font-semibold text-[#7C3AED]/80 dark:text-[#7C3AED]/80">
+                <p className="text-[10px] sm:text-xs uppercase tracking-wider font-semibold text-[#7C3AED]/80 dark:text-[#7C3AED]/80">
                     {product.category}
                 </p>
 
                 {/* Product Name */}
                 <Link href={`/ecommerce/products/${product.id}`}>
-                    <h3 className="font-medium text-[11px] sm:text-xs line-clamp-2 leading-tight text-gray-800 dark:text-white/85 hover:text-[#7C3AED] dark:hover:text-[#7C3AED] transition-colors cursor-pointer" style={{ minHeight: "2.5em" }}>
+                    <h3 className="font-medium text-xs sm:text-sm line-clamp-2 leading-tight text-gray-800 dark:text-white/85 hover:text-[#7C3AED] dark:hover:text-[#7C3AED] transition-colors cursor-pointer" style={{ minHeight: "2.5em" }}>
                         {product.name}
                     </h3>
                 </Link>
@@ -114,7 +114,7 @@ export function ProductCard({ product }: ProductCardProps) {
                             <Star
                                 key={i}
                                 className={cn(
-                                    "w-2.5 h-2.5",
+                                    "w-3 h-3 sm:w-3.5 sm:h-3.5",
                                     i < Math.floor(rating)
                                         ? "fill-yellow-400 text-yellow-400"
                                         : "fill-gray-200 dark:fill-white/10 text-gray-200 dark:text-white/10"
@@ -122,18 +122,18 @@ export function ProductCard({ product }: ProductCardProps) {
                             />
                         ))}
                     </div>
-                    <span className="text-[9px] font-medium text-gray-400 dark:text-white/35">
+                    <span className="text-[10px] sm:text-xs font-medium text-gray-400 dark:text-white/35">
                         ({reviewCount})
                     </span>
                 </div>
 
                 {/* Price */}
                 <div className="flex items-baseline gap-1.5 mt-1 pt-1.5 border-t border-gray-100 dark:border-white/[0.06]">
-                    <span className="text-sm sm:text-sm font-black text-[#7C3AED] dark:text-[#7C3AED]">
+                    <span className="text-sm sm:text-base font-black text-[#7C3AED] dark:text-[#7C3AED]">
                         ${product.price.toFixed(2)}
                     </span>
                     {product.originalPrice && (
-                        <span className="text-[10px] text-gray-400 dark:text-white/30 line-through">
+                        <span className="text-[10px] sm:text-xs text-gray-400 dark:text-white/30 line-through">
                             ${product.originalPrice.toFixed(2)}
                         </span>
                     )}
@@ -142,9 +142,9 @@ export function ProductCard({ product }: ProductCardProps) {
                 {/* Add to Cart */}
                 <button
                     onClick={() => handleAddToCart()}
-                    className="w-full h-8 rounded-lg text-[11px] font-bold mt-1.5 transition-all active:scale-95 bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white dark:text-[#110228] flex items-center justify-center gap-1"
+                    className="w-full h-10 sm:h-11 rounded-lg text-xs sm:text-sm font-bold mt-1.5 transition-all active:scale-95 bg-[#7C3AED] hover:bg-[#6D28D9] dark:bg-[#7C3AED] dark:hover:bg-[#6D28D9] text-white dark:text-[#110228] flex items-center justify-center gap-1.5"
                 >
-                    <ShoppingCart className="w-3 h-3" />
+                    <ShoppingCart className="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                     Add to Cart
                 </button>
             </div>

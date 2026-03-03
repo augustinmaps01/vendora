@@ -6,12 +6,12 @@ import Link from "next/link"
 import {
     UtensilsCrossed, Coffee, Sandwich, Soup,
     Flame, Leaf, Search, ShoppingBag,
-    Plus, Minus, Check, Clock, Users, X, CalendarDays,
-    AlertTriangle, Star, User2, LogOut, Eye, EyeOff, Lock,
+    Plus, Minus, Check, Users, X, CalendarDays,
+    AlertTriangle, User2, LogOut,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
-import axiosClient from "@/lib/axios-client"
+import { BuyerAuthModal, BUYER_TOKEN_KEY, BUYER_USER_KEY, type BuyerUser } from "@/components/ecommerce/BuyerAuthModal"
 
 
 // ---------------------------------------------------------------------------
@@ -40,18 +40,7 @@ type ReservationItem = {
     qty: number
 }
 
-// ---------------------------------------------------------------------------
-// Buyer Auth
-// ---------------------------------------------------------------------------
-type BuyerUser = {
-    id: number
-    name: string
-    email: string
-    user_type: string
-}
-
-const BUYER_TOKEN_KEY = "rbtesa_buyer_token"
-const BUYER_USER_KEY = "rbtesa_buyer_user"
+// BuyerUser, BUYER_TOKEN_KEY, BUYER_USER_KEY imported from @/components/ecommerce/BuyerAuthModal
 
 
 // ---------------------------------------------------------------------------
@@ -346,240 +335,6 @@ function useScrollReveal() {
 
 
 // ---------------------------------------------------------------------------
-// Auth Modal (Login / Register)
-// ---------------------------------------------------------------------------
-type AuthMode = "login" | "register"
-
-function AuthModal({ onSuccess, onClose }: { onSuccess: (user: BuyerUser) => void; onClose: () => void }) {
-    const [mode, setMode] = useState<AuthMode>("login")
-    const [loginForm, setLoginForm] = useState({ email: "", password: "" })
-    const [regForm, setRegForm] = useState({ name: "", email: "", password: "", password_confirmation: "" })
-    const [showPass, setShowPass] = useState(false)
-    const [isLoading, setIsLoading] = useState(false)
-    const [error, setError] = useState("")
-
-    const extractAuthData = (raw: unknown): { token?: string; user?: BuyerUser; message?: string } => {
-        if (!raw || typeof raw !== "object") return {}
-        const r = raw as Record<string, unknown>
-        const nested = r.data && typeof r.data === "object" ? r.data as Record<string, unknown> : null
-        return {
-            token: (r.token ?? nested?.token) as string | undefined,
-            user: (r.user ?? nested?.user) as BuyerUser | undefined,
-            message: (r.message ?? nested?.message) as string | undefined,
-        }
-    }
-
-    const extractErrorMsg = (err: unknown, fallback: string): string => {
-        if (!err || typeof err !== "object") return fallback
-        const e = err as Record<string, unknown>
-        const resp = e.response && typeof e.response === "object" ? e.response as Record<string, unknown> : null
-        const respData = resp?.data && typeof resp.data === "object" ? resp.data as Record<string, unknown> : null
-        if (respData?.errors && typeof respData.errors === "object") {
-            return Object.values(respData.errors as Record<string, unknown[]>).flat().join(" ")
-        }
-        return (respData?.message as string) || fallback
-    }
-
-    const handleLogin = async () => {
-        if (!loginForm.email || !loginForm.password) { setError("Please fill in all fields."); return }
-        setIsLoading(true)
-        setError("")
-        try {
-            const res = await axiosClient.post("/auth/login", loginForm)
-            const { token, user, message } = extractAuthData(res.data)
-            if (token && user) {
-                localStorage.setItem(BUYER_TOKEN_KEY, token)
-                localStorage.setItem(BUYER_USER_KEY, JSON.stringify(user))
-                window.dispatchEvent(new Event("storage"))
-                onSuccess(user)
-            } else {
-                setError(message || "Login failed. Please check your credentials.")
-            }
-        } catch (err: unknown) {
-            setError(extractErrorMsg(err, "Invalid email or password."))
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const handleRegister = async () => {
-        if (!regForm.name || !regForm.email || !regForm.password || !regForm.password_confirmation) {
-            setError("Please fill in all fields."); return
-        }
-        if (regForm.password !== regForm.password_confirmation) {
-            setError("Passwords do not match."); return
-        }
-        setIsLoading(true)
-        setError("")
-        try {
-            const res = await axiosClient.post("/auth/register", regForm)
-            const { token, user, message } = extractAuthData(res.data)
-            if (token && user) {
-                localStorage.setItem(BUYER_TOKEN_KEY, token)
-                localStorage.setItem(BUYER_USER_KEY, JSON.stringify(user))
-                window.dispatchEvent(new Event("storage"))
-                onSuccess(user)
-            } else {
-                setError(message || "Registration failed. Please try again.")
-            }
-        } catch (err: unknown) {
-            setError(extractErrorMsg(err, "Registration failed. Please try again."))
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
-    const submit = mode === "login" ? handleLogin : handleRegister
-
-    return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70">
-            <div className="w-full max-w-md bg-white dark:bg-[#110228] rounded-3xl overflow-hidden shadow-2xl border border-gray-100 dark:border-white/[0.08] animate-in fade-in zoom-in-95 duration-300">
-
-                {/* Header */}
-                <div className="px-6 pt-8 pb-6 text-center relative" style={{ background: "linear-gradient(135deg,#110228,#2E0F5F,#7C3AED)" }}>
-                    <button
-                        onClick={onClose}
-                        className="absolute top-4 right-4 w-8 h-8 rounded-full bg-white/10 hover:bg-white/20 flex items-center justify-center transition-colors"
-                    >
-                        <X className="w-4 h-4 text-white" />
-                    </button>
-                    <div className="w-14 h-14 rounded-2xl bg-white/10 border border-white/20 flex items-center justify-center mx-auto mb-4">
-                        <Lock className="w-7 h-7 text-white" />
-                    </div>
-                    <h2 className="text-xl font-black text-white mb-1">
-                        {mode === "login" ? "Sign in to Reserve" : "Create an Account"}
-                    </h2>
-                    <p className="text-sm text-purple-200/70">
-                        {mode === "login"
-                            ? "Log in to reserve food from today's menu."
-                            : "Register to start reserving from today's menu."}
-                    </p>
-                </div>
-
-                {/* Tab switcher */}
-                <div className="flex border-b border-gray-100 dark:border-white/[0.06]">
-                    {(["login", "register"] as AuthMode[]).map(m => (
-                        <button
-                            key={m}
-                            onClick={() => { setMode(m); setError("") }}
-                            className={`flex-1 py-3 text-sm font-bold capitalize transition-colors ${
-                                mode === m
-                                    ? "text-[#7C3AED] border-b-2 border-[#7C3AED]"
-                                    : "text-gray-500 dark:text-white/40 hover:text-gray-700 dark:hover:text-white/60"
-                            }`}
-                        >
-                            {m === "login" ? "Login" : "Register"}
-                        </button>
-                    ))}
-                </div>
-
-                {/* Form */}
-                <div className="px-6 py-6 space-y-4">
-                    {error && (
-                        <div className="flex items-start gap-2 p-3 rounded-xl bg-red-50 dark:bg-red-500/10 border border-red-200 dark:border-red-500/20">
-                            <AlertTriangle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
-                            <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
-                        </div>
-                    )}
-
-                    {mode === "register" && (
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                                Full Name <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                                placeholder="e.g. Juan Dela Cruz"
-                                value={regForm.name}
-                                onChange={e => setRegForm(f => ({ ...f, name: e.target.value }))}
-                                className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
-                            />
-                        </div>
-                    )}
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                            Email <span className="text-red-500">*</span>
-                        </label>
-                        <Input
-                            type="email"
-                            placeholder="your@email.com"
-                            value={mode === "login" ? loginForm.email : regForm.email}
-                            onChange={e => mode === "login"
-                                ? setLoginForm(f => ({ ...f, email: e.target.value }))
-                                : setRegForm(f => ({ ...f, email: e.target.value }))
-                            }
-                            className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
-                        />
-                    </div>
-
-                    <div className="space-y-1.5">
-                        <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                            Password <span className="text-red-500">*</span>
-                        </label>
-                        <div className="relative">
-                            <Input
-                                type={showPass ? "text" : "password"}
-                                placeholder="••••••••"
-                                value={mode === "login" ? loginForm.password : regForm.password}
-                                onChange={e => mode === "login"
-                                    ? setLoginForm(f => ({ ...f, password: e.target.value }))
-                                    : setRegForm(f => ({ ...f, password: e.target.value }))
-                                }
-                                onKeyDown={e => e.key === "Enter" && mode === "login" && submit()}
-                                className="h-11 pr-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPass(s => !s)}
-                                className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-white/60 transition-colors"
-                            >
-                                {showPass ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                            </button>
-                        </div>
-                    </div>
-
-                    {mode === "register" && (
-                        <div className="space-y-1.5">
-                            <label className="text-sm font-semibold text-gray-800 dark:text-gray-200">
-                                Confirm Password <span className="text-red-500">*</span>
-                            </label>
-                            <Input
-                                type="password"
-                                placeholder="Re-enter your password"
-                                value={regForm.password_confirmation}
-                                onChange={e => setRegForm(f => ({ ...f, password_confirmation: e.target.value }))}
-                                onKeyDown={e => e.key === "Enter" && submit()}
-                                className="h-11 rounded-xl bg-gray-50 dark:bg-white/[0.05] border border-gray-200 dark:border-white/10 dark:text-white dark:placeholder:text-white/30 focus-visible:ring-[#7C3AED]/50"
-                            />
-                        </div>
-                    )}
-
-                    <Button
-                        onClick={submit}
-                        disabled={isLoading}
-                        className="w-full h-11 rounded-xl font-bold text-white mt-1"
-                        style={{ backgroundColor: "#7C3AED" }}
-                    >
-                        {isLoading ? (
-                            <span className="flex items-center gap-2">
-                                <svg className="animate-spin w-4 h-4" viewBox="0 0 24 24" fill="none">
-                                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                                </svg>
-                                {mode === "login" ? "Signing in..." : "Creating account..."}
-                            </span>
-                        ) : (
-                            mode === "login" ? "Sign In" : "Create Account"
-                        )}
-                    </Button>
-                </div>
-            </div>
-        </div>
-    )
-}
-
-
-// ---------------------------------------------------------------------------
 // Food Card
 // ---------------------------------------------------------------------------
 function FoodCard({
@@ -594,7 +349,7 @@ function FoodCard({
     onRemove: (id: string) => void
 }) {
     const status = getAvailabilityStatus(item)
-    const pct = Math.round((item.availableQty / item.totalQty) * 100)
+    const pct = Math.round(((item.totalQty - item.availableQty) / item.totalQty) * 100)
     const isReserved = !!reserved
 
     return (
@@ -623,13 +378,13 @@ function FoodCard({
                 {/* Tags */}
                 <div className="absolute top-2.5 left-2.5 flex flex-col gap-1">
                     {item.isSpicy && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-red-500/90 text-white">
-                            <Flame className="w-2.5 h-2.5" /> Spicy
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold bg-red-500/90 text-white">
+                            <Flame className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Spicy
                         </span>
                     )}
                     {item.isVegan && (
-                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-500/90 text-white">
-                            <Leaf className="w-2.5 h-2.5" /> Vegan
+                        <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] sm:text-xs font-bold bg-emerald-500/90 text-white">
+                            <Leaf className="w-2.5 h-2.5 sm:w-3 sm:h-3" /> Vegan
                         </span>
                     )}
                 </div>
@@ -637,41 +392,27 @@ function FoodCard({
             </div>
 
             {/* Content */}
-            <div className="p-4 flex flex-col gap-2 flex-1">
+            <div className="p-3 sm:p-4 flex flex-col gap-1.5 sm:gap-2 flex-1">
                 <div>
-                    <h3 className="font-bold text-gray-900 dark:text-white text-sm leading-snug">{item.name}</h3>
-                    <p className="text-xs text-gray-500 dark:text-white/40 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
-                </div>
-
-                {/* Meta */}
-                <div className="flex items-center gap-2.5 text-[11px] text-gray-400 dark:text-white/30">
-                    {item.prepTime && <><Clock className="w-3 h-3" />{item.prepTime}</>}
-                    {item.calories && <><span className="w-0.5 h-3 bg-gray-200 dark:bg-white/10 rounded" />{item.calories} kcal</>}
-                </div>
-
-                {/* Rating */}
-                <div className="flex items-center gap-1">
-                    {[...Array(5)].map((_, i) => (
-                        <Star key={i} className={`w-3 h-3 ${i < Math.floor(item.rating) ? "fill-yellow-400 text-yellow-400" : "fill-gray-100 dark:fill-white/10 text-gray-100 dark:text-white/10"}`} />
-                    ))}
-                    <span className="text-[10px] text-gray-400 dark:text-white/30 ml-0.5">{item.rating}</span>
+                    <h3 className="font-bold text-gray-900 dark:text-white text-sm sm:text-base leading-snug">{item.name}</h3>
+                    <p className="text-xs sm:text-sm text-gray-500 dark:text-white/40 mt-0.5 line-clamp-2 leading-relaxed">{item.description}</p>
                 </div>
 
                 {/* Availability */}
                 <div className="space-y-1.5">
                     <div className="flex items-center justify-between">
-                        <span className={`inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
+                        <span className={`inline-flex items-center gap-1.5 text-xs font-semibold px-2 py-0.5 rounded-full ${status.color}`}>
                             <span className={`w-1.5 h-1.5 rounded-full ${status.dot}`} />
                             {status.label}
                         </span>
-                        <span className="text-[11px] text-gray-400 dark:text-white/30">{item.availableQty}/{item.totalQty}</span>
+                        <span className="text-xs text-gray-400 dark:text-white/30">{item.availableQty}/{item.totalQty}</span>
                     </div>
                     <div className="h-1.5 bg-gray-100 dark:bg-white/[0.06] rounded-full overflow-hidden">
                         <div
                             className="h-full rounded-full transition-all duration-500"
                             style={{
                                 width: `${pct}%`,
-                                background: pct === 0 ? "#ef4444" : pct <= 25 ? "linear-gradient(90deg,#f97316,#ef4444)" : "linear-gradient(90deg,#7C3AED,#a855f7)",
+                                background: "linear-gradient(90deg,#7C3AED,#a855f7)",
                             }}
                         />
                     </div>
@@ -681,28 +422,28 @@ function FoodCard({
 
                 {/* Price + CTA */}
                 <div className="flex items-center justify-between pt-1 gap-2">
-                    <span className="text-lg font-black text-[#7C3AED] dark:text-[#a78bfa]">
+                    <span className="text-lg sm:text-xl font-black text-[#7C3AED] dark:text-[#a78bfa]">
                         ₱{item.price.toFixed(0)}
                     </span>
 
                     {item.availableQty === 0 ? (
-                        <span className="text-xs font-semibold text-red-400 px-3 py-1.5 rounded-xl bg-red-50 dark:bg-red-500/10">
+                        <span className="text-xs sm:text-sm font-semibold text-red-400 px-3 py-2 rounded-xl bg-red-50 dark:bg-red-500/10">
                             Unavailable
                         </span>
                     ) : isReserved ? (
                         <button
                             onClick={() => onRemove(item.id)}
-                            className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold border-2 border-[#7C3AED]/30 text-[#7C3AED] dark:text-[#a78bfa] hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 hover:text-red-600 dark:hover:text-red-400 active:scale-95 transition-all"
+                            className="flex items-center gap-1.5 h-10 sm:h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-bold border-2 border-[#7C3AED]/30 text-[#7C3AED] dark:text-[#a78bfa] hover:bg-red-50 dark:hover:bg-red-500/10 hover:border-red-300 dark:hover:border-red-500/30 hover:text-red-600 dark:hover:text-red-400 active:scale-95 transition-all"
                         >
-                            <X className="w-3.5 h-3.5" />
+                            <X className="w-4 h-4" />
                             Remove
                         </button>
                     ) : (
                         <button
                             onClick={() => onReserve(item)}
-                            className="flex items-center gap-1.5 h-9 px-4 rounded-xl text-xs font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white active:scale-95 transition-all shadow-sm shadow-[#7C3AED]/20"
+                            className="flex items-center gap-1.5 h-10 sm:h-11 px-4 sm:px-5 rounded-xl text-xs sm:text-sm font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white active:scale-95 transition-all shadow-sm shadow-[#7C3AED]/20"
                         >
-                            <Plus className="w-3.5 h-3.5" />
+                            <Plus className="w-4 h-4" />
                             Reserve
                         </button>
                     )}
@@ -1211,7 +952,7 @@ export default function FoodMenuPage() {
 
             {/* ── Auth modal ────────────────────────────────────────── */}
             {showAuthModal && (
-                <AuthModal onSuccess={handleAuthSuccess} onClose={() => setShowAuthModal(false)} />
+                <BuyerAuthModal onSuccess={handleAuthSuccess} onClose={() => setShowAuthModal(false)} />
             )}
         </div>
     )

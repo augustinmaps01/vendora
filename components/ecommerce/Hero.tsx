@@ -208,7 +208,7 @@ export function Hero() {
                             <div className="lg:hidden relative overflow-hidden pb-5 bg-gradient-to-br from-purple-50 via-white to-blue-50 dark:from-[#110228] dark:via-[#1a0440] dark:to-[#2E0F5F]">
                                 <div className="container mx-auto px-4 sm:px-6">
                                     {/* Product Image */}
-                                    <div className="relative w-full aspect-[4/3] max-w-xs mx-auto mb-4 pt-4">
+                                    <div className="relative w-full aspect-[4/3] max-w-[85vw] sm:max-w-xs mx-auto mb-4 pt-4">
                                         <div className="absolute top-8 right-2 z-10">
                                             <div className="bg-gradient-to-r from-red-500 to-pink-500 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg">
                                                 {slide.discount}
@@ -235,14 +235,14 @@ export function Hero() {
                                             </span>
                                         </div>
 
-                                        <h1 className="text-2xl sm:text-3xl font-bold leading-tight px-2 text-gray-900 dark:text-white">
+                                        <h1 className="text-xl sm:text-2xl md:text-3xl font-bold leading-tight px-2 text-gray-900 dark:text-white">
                                             {slide.title}{" "}
                                             <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#7C3AED] to-[#7C3AED] dark:from-[#7C3AED] dark:to-[#7C3AED]">
                                                 {slide.titleAccent}
                                             </span>
                                         </h1>
 
-                                        <p className="text-sm leading-relaxed max-w-md mx-auto text-gray-500 dark:text-white/50">
+                                        <p className="text-sm sm:text-base leading-relaxed max-w-md mx-auto text-gray-500 dark:text-white/50">
                                             {slide.subtitle}
                                         </p>
 

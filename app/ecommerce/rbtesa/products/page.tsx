@@ -2,13 +2,12 @@
 
 import { useState, useEffect, useMemo, useRef, useCallback } from "react"
 import { ProductCard } from "@/components/ecommerce/ProductCard"
-import { Hero } from "@/components/ecommerce/Hero"
 import { StoreBanner } from "@/components/ecommerce/StoreBanner"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
     SlidersHorizontal, LayoutGrid, X, Search, Star, ShoppingCart,
-    Zap, TrendingUp, Laptop, Shirt, Home, Sparkles, Dumbbell, UtensilsCrossed, ChevronRight
+    Zap, Laptop, Shirt, Home, Sparkles, Dumbbell, UtensilsCrossed
 } from "lucide-react"
 import Image from "next/image"
 import Link from "next/link"
@@ -438,7 +437,6 @@ export default function RbtesaProductsPage() {
     // Scroll reveal refs
     const categoryReveal = useScrollReveal()
     const flashSaleReveal = useScrollReveal()
-    const trendingReveal = useScrollReveal()
     const gridReveal = useScrollReveal()
 
     useEffect(() => {
@@ -446,7 +444,6 @@ export default function RbtesaProductsPage() {
     }, [])
 
     const flashSaleProducts = ALL_PRODUCTS.filter((p) => p.isFlashSale)
-    const trendingProducts = ALL_PRODUCTS.filter((p) => (p as any).isTrending)
 
     // Category chip click — sets sidebar filter + active category
     const handleCategoryChipClick = useCallback((cat: string) => {
@@ -511,8 +508,8 @@ export default function RbtesaProductsPage() {
             {/* ── Store Identity Banner ──────────────────────────────── */}
             <StoreBanner />
 
-            {/* ── Hero Banner ─────────────────────────────────────────── */}
-            <Hero />
+            {/* ── Hero Banner (hidden) ────────────────────────────────── */}
+            {/* <Hero /> */}
 
             {/* ── Main Content ────────────────────────────────────────── */}
             <div className="container mx-auto px-4 sm:px-6 lg:px-8 py-8 sm:py-12 space-y-10 sm:space-y-14">
@@ -713,37 +710,7 @@ export default function RbtesaProductsPage() {
                 </div>}
 
 
-                {/* ── Trending Now ─────────────────────────────────────── */}
-                <div
-                    ref={trendingReveal.ref}
-                    className={`transition-all duration-700 delay-150 ${trendingReveal.isVisible ? "opacity-100 translate-y-0" : "opacity-0 translate-y-6"}`}
-                >
-                    <div className="flex items-center justify-between mb-5 sm:mb-6">
-                        <div className="flex items-center gap-3">
-                            <div className="w-9 h-9 rounded-xl flex items-center justify-center bg-gradient-to-br from-[#7C3AED]/20 dark:from-[#7C3AED]/20 to-[#7C3AED]/20 dark:to-[#7C3AED]/20 border border-gray-200 dark:border-white/10">
-                                <TrendingUp className="w-4.5 h-4.5 text-[#7C3AED] dark:text-[#7C3AED]" />
-                            </div>
-                            <div>
-                                <h2 className="text-lg sm:text-xl font-bold text-gray-900 dark:text-white">
-                                    Trending Now
-                                </h2>
-                                <p className="text-xs text-gray-400 dark:text-white/30 mt-0.5">Most popular this week</p>
-                            </div>
-                        </div>
-                        <button className="flex items-center gap-1 text-sm font-semibold text-[#7C3AED] dark:text-[#7C3AED] hover:text-[#6D28D9] dark:hover:text-[#6D28D9] transition-colors">
-                            View All
-                            <ChevronRight className="w-4 h-4" />
-                        </button>
-                    </div>
-
-                    <div className="flex gap-3 sm:gap-4 overflow-x-auto scrollbar-hide pb-2 -mx-4 px-4 sm:-mx-6 sm:px-6 lg:mx-0 lg:px-0 snap-x snap-mandatory scroll-smooth">
-                        {trendingProducts.map((product) => (
-                            <div key={product.id} className="shrink-0 w-[72vw] sm:w-60 lg:w-72 snap-start">
-                                <ProductCard product={product} />
-                            </div>
-                        ))}
-                    </div>
-                </div>
+                {/* ── Trending Now (hidden) ────────────────────────────── */}
 
 
                 {/* ── All Products — Grid + Filters ───────────────────── */}
@@ -831,7 +798,7 @@ export default function RbtesaProductsPage() {
                                                     )}
                                                 </Button>
                                             </SheetTrigger>
-                                            <SheetContent side="right" className="w-80 border-l border-gray-200 dark:border-white/10 bg-white dark:bg-[#13132a]">
+                                            <SheetContent side="right" className="w-full sm:w-80 max-w-[90vw] border-l border-gray-200 dark:border-white/10 bg-white dark:bg-[#13132a]">
                                                 <SheetHeader className="mb-6">
                                                     <SheetTitle className="text-gray-900 dark:text-white text-lg font-bold">Filters</SheetTitle>
                                                 </SheetHeader>
