@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, use } from "react"
+import { useState, useEffect, useCallback, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -29,37 +29,17 @@ import {
     Calendar,
     MapPin,
     History,
-    ShoppingBag,
     AlertCircle,
     Banknote,
     Plus,
     CheckCircle2,
-    Clock,
+    Loader2,
 } from "lucide-react"
+import { creditService } from "@/services"
+import type { ApiCredit } from "@/services"
+import Swal from "sweetalert2"
 
-// Types
-interface Payment {
-    id: number
-    amount: number
-    paymentDate: string
-    method: 'cash' | 'card' | 'bank'
-    notes?: string
-    receivedBy?: string
-    referenceNo?: string
-}
-
-interface PurchasedItem {
-    id: number
-    name: string
-    quantity: number
-    unitPrice: number
-    total: number
-    date: string
-    status: 'pending' | 'partial' | 'paid'
-    invoiceNo?: string
-    paidAmount?: number
-}
-
+// Types for UI display
 interface CreditAccount {
     id: number
     customer: {
@@ -75,114 +55,127 @@ interface CreditAccount {
     remainingBalance: number
     creditLimit?: number
     dueDate?: string
-    payments: Payment[]
-    items: PurchasedItem[]
     status: 'active' | 'overdue' | 'paid' | 'defaulted'
     createdAt: string
-    lastPaymentDate?: string
+    notes?: string
 }
 
-// Mock data
-const mockAccounts: Record<string, CreditAccount> = {
-    "1": {
-        id: 1,
+function mapApiCredit(c: ApiCredit): CreditAccount {
+    const status: CreditAccount["status"] =
+        c.status === "active" || c.status === "overdue" || c.status === "paid" || c.status === "defaulted"
+            ? c.status
+            : "active"
+
+    return {
+        id: c.id,
         customer: {
-            id: 1,
-            name: "Juan Dela Cruz",
-            phone: "+63 912 345 6789",
-            email: "juan@email.com",
-            address: "123 Main St, Barangay San Antonio, Quezon City",
-            memberSince: "2025-06-15"
+            id: c.customer?.id ?? c.customer_id,
+            name: c.customer?.name ?? `Customer #${c.customer_id}`,
+            phone: c.customer?.phone ?? undefined,
+            email: c.customer?.email ?? undefined,
+            address: c.customer?.address ?? undefined,
         },
-        totalAmount: 15000,
-        paidAmount: 5000,
-        remainingBalance: 10000,
-        creditLimit: 20000,
-        dueDate: "2026-02-15",
-        payments: [
-            { id: 1, amount: 3000, paymentDate: "2026-01-05", method: 'cash', notes: "Initial payment", receivedBy: "Maria Santos", referenceNo: "PAY-2026-0001" },
-            { id: 2, amount: 2000, paymentDate: "2026-01-20", method: 'bank', notes: "Partial payment via BDO", receivedBy: "Pedro Reyes", referenceNo: "PAY-2026-0015" },
-        ],
-        items: [
-            { id: 1, name: "Premium Rice 25kg", quantity: 2, unitPrice: 1500, total: 3000, date: "2026-01-01", status: 'paid', invoiceNo: "INV-0001", paidAmount: 3000 },
-            { id: 2, name: "Cooking Oil 5L", quantity: 3, unitPrice: 450, total: 1350, date: "2026-01-01", status: 'paid', invoiceNo: "INV-0001", paidAmount: 1350 },
-            { id: 3, name: "Sugar 1kg (x10)", quantity: 10, unitPrice: 75, total: 750, date: "2026-01-05", status: 'partial', invoiceNo: "INV-0008", paidAmount: 650 },
-            { id: 4, name: "Canned Goods Bundle", quantity: 1, unitPrice: 2400, total: 2400, date: "2026-01-10", status: 'pending', invoiceNo: "INV-0012", paidAmount: 0 },
-            { id: 5, name: "Household Items", quantity: 1, unitPrice: 7500, total: 7500, date: "2026-01-15", status: 'pending', invoiceNo: "INV-0018", paidAmount: 0 },
-        ],
-        status: 'active',
-        createdAt: "2026-01-01",
-        lastPaymentDate: "2026-01-20"
-    },
-    "2": {
-        id: 2,
-        customer: {
-            id: 2,
-            name: "Maria Santos",
-            phone: "+63 923 456 7890",
-            address: "456 Oak Avenue, Makati City",
-            memberSince: "2025-08-20"
-        },
-        totalAmount: 8500,
-        paidAmount: 8500,
-        remainingBalance: 0,
-        dueDate: "2026-01-25",
-        payments: [
-            { id: 3, amount: 8500, paymentDate: "2026-01-25", method: 'cash', receivedBy: "Staff A", referenceNo: "PAY-2026-0022" },
-        ],
-        items: [
-            { id: 6, name: "Grocery Bundle", quantity: 1, unitPrice: 5000, total: 5000, date: "2026-01-15", status: 'paid', invoiceNo: "INV-0015", paidAmount: 5000 },
-            { id: 7, name: "Personal Care Items", quantity: 1, unitPrice: 3500, total: 3500, date: "2026-01-15", status: 'paid', invoiceNo: "INV-0015", paidAmount: 3500 },
-        ],
-        status: 'paid',
-        createdAt: "2026-01-15",
-        lastPaymentDate: "2026-01-25"
-    },
-    "3": {
-        id: 3,
-        customer: {
-            id: 3,
-            name: "Pedro Reyes",
-            phone: "+63 934 567 8901",
-            address: "789 Pine Road, Pasig City",
-            memberSince: "2025-03-10"
-        },
-        totalAmount: 12000,
-        paidAmount: 3000,
-        remainingBalance: 9000,
-        creditLimit: 15000,
-        dueDate: "2026-01-20",
-        payments: [
-            { id: 4, amount: 3000, paymentDate: "2026-01-10", method: 'card', receivedBy: "Staff C", referenceNo: "PAY-2026-0010" },
-        ],
-        items: [
-            { id: 8, name: "Electronics Bundle", quantity: 1, unitPrice: 8000, total: 8000, date: "2026-01-05", status: 'partial', invoiceNo: "INV-0005", paidAmount: 3000 },
-            { id: 9, name: "Accessories", quantity: 1, unitPrice: 4000, total: 4000, date: "2026-01-05", status: 'pending', invoiceNo: "INV-0005", paidAmount: 0 },
-        ],
-        status: 'overdue',
-        createdAt: "2026-01-05",
-        lastPaymentDate: "2026-01-10"
-    },
+        totalAmount: Number(c.amount) || 0,
+        paidAmount: Number(c.paid_amount) || 0,
+        remainingBalance: Number(c.balance) || 0,
+        creditLimit: c.credit_limit ? Number(c.credit_limit) : undefined,
+        dueDate: c.due_date ?? undefined,
+        status,
+        createdAt: c.created_at,
+        notes: c.notes ?? undefined,
+    }
 }
 
 export default function CreditAccountDetailsPage({ params }: { params: Promise<{ id: string }> }) {
     const router = useRouter()
     const resolvedParams = use(params)
     const accountId = resolvedParams.id
-    const account = mockAccounts[accountId]
+
+    const [account, setAccount] = useState<CreditAccount | null>(null)
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
 
     const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
     const [paymentAmount, setPaymentAmount] = useState("")
     const [paymentMethod, setPaymentMethod] = useState("")
     const [paymentNotes, setPaymentNotes] = useState("")
-    const [activeTab, setActiveTab] = useState<'overview' | 'transactions' | 'payments'>('transactions')
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
+    const [activeTab, setActiveTab] = useState<'overview' | 'payments'>('overview')
 
-    if (!account) {
+    const fetchAccount = useCallback(async () => {
+        setIsLoading(true)
+        setError(null)
+        try {
+            const data = await creditService.getById(accountId)
+            setAccount(mapApiCredit(data))
+        } catch (err: any) {
+            console.error("Failed to load credit account:", err)
+            setError(err?.response?.data?.message || err?.message || "Failed to load credit account.")
+        } finally {
+            setIsLoading(false)
+        }
+    }, [accountId])
+
+    useEffect(() => {
+        fetchAccount()
+    }, [fetchAccount])
+
+    const handleSubmitPayment = async () => {
+        if (!account || !paymentAmount || !paymentMethod) return
+
+        const amount = Math.round(parseFloat(paymentAmount))
+        if (isNaN(amount) || amount <= 0) {
+            Swal.fire({ icon: "error", title: "Invalid Amount", text: "Please enter a valid payment amount." })
+            return
+        }
+        if (amount > account.remainingBalance) {
+            Swal.fire({ icon: "error", title: "Amount Too High", text: `Payment cannot exceed remaining balance of ₱${account.remainingBalance.toLocaleString()}.` })
+            return
+        }
+
+        setIsSubmittingPayment(true)
+        try {
+            const method = paymentMethod === "bank" ? "online" : paymentMethod as "cash" | "card" | "online"
+            await creditService.recordPayment(account.id, { amount, method })
+
+            Swal.fire({
+                icon: "success",
+                title: "Payment Recorded",
+                text: `₱${amount.toLocaleString()} payment recorded for ${account.customer.name}.`,
+                timer: 2000,
+                showConfirmButton: false,
+            })
+
+            setIsAddPaymentOpen(false)
+            fetchAccount() // Refresh data
+        } catch (err: any) {
+            console.error("Failed to record payment:", err)
+            const message = err?.response?.data?.message || err?.message || "Failed to record payment."
+            Swal.fire({ icon: "error", title: "Payment Failed", text: message })
+        } finally {
+            setIsSubmittingPayment(false)
+        }
+    }
+
+    if (isLoading) {
+        return (
+            <div className="flex items-center justify-center min-h-[50vh] gap-3 text-gray-500 dark:text-[#b4b4d0]">
+                <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                <span className="text-sm font-medium">Loading credit account...</span>
+            </div>
+        )
+    }
+
+    if (error || !account) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <AlertCircle className="w-12 h-12 text-gray-300 dark:text-[#9898b8] mb-3" />
-                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-1">Account Not Found</h2>
-                <p className="text-sm text-gray-500 dark:text-[#b4b4d0] mb-4">This credit account doesn't exist.</p>
+                <h2 className="text-lg font-medium text-gray-900 dark:text-white mb-1">
+                    {error ? "Error Loading Account" : "Account Not Found"}
+                </h2>
+                <p className="text-sm text-gray-500 dark:text-[#b4b4d0] mb-4">
+                    {error || "This credit account doesn't exist."}
+                </p>
                 <Button asChild size="sm">
                     <Link href="/pos/credit-accounts">
                         <ArrowLeft className="w-4 h-4 mr-1.5" />
@@ -206,16 +199,6 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                 {config.text}
             </span>
         )
-    }
-
-    const getItemStatusBadge = (status: PurchasedItem['status'], paidAmount?: number, total?: number) => {
-        if (status === 'paid') {
-            return <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-emerald-50 text-emerald-700"><CheckCircle2 className="w-3 h-3" />Paid</span>
-        }
-        if (status === 'partial') {
-            return <span className="px-2 py-0.5 text-xs font-medium rounded-full bg-blue-50 text-blue-700">₱{paidAmount?.toLocaleString()}/{total?.toLocaleString()}</span>
-        }
-        return <span className="inline-flex items-center gap-1 px-2 py-0.5 text-xs font-medium rounded-full bg-amber-50 text-amber-700"><Clock className="w-3 h-3" />Pending</span>
     }
 
     const formatDate = (dateStr: string) => {
@@ -280,7 +263,6 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                 <nav className="flex gap-4">
                     {[
                         { id: 'overview', label: 'Overview', icon: User },
-                        { id: 'transactions', label: 'Transactions', icon: ShoppingBag },
                         { id: 'payments', label: 'Payment History', icon: History },
                     ].map((tab) => {
                         const Icon = tab.icon
@@ -306,113 +288,95 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             <div>
                 {/* Overview Tab */}
                 {activeTab === 'overview' && (
-                    <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-4">
-                        <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Customer Information</h3>
-                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
-                            <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
-                                <User className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
-                                <span>{account.customer.name}</span>
+                    <div className="space-y-4">
+                        <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-4">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Customer Information</h3>
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-sm">
+                                <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
+                                    <User className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
+                                    <span>{account.customer.name}</span>
+                                </div>
+                                {account.customer.phone && (
+                                    <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
+                                        <Phone className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
+                                        <span>{account.customer.phone}</span>
+                                    </div>
+                                )}
+                                {account.customer.email && (
+                                    <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
+                                        <Mail className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
+                                        <span>{account.customer.email}</span>
+                                    </div>
+                                )}
+                                {account.customer.address && (
+                                    <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0] sm:col-span-2">
+                                        <MapPin className="w-4 h-4 text-gray-400 dark:text-[#9898b8] flex-shrink-0" />
+                                        <span>{account.customer.address}</span>
+                                    </div>
+                                )}
+                                {account.customer.memberSince && (
+                                    <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
+                                        <Calendar className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
+                                        <span>Member since {formatDate(account.customer.memberSince)}</span>
+                                    </div>
+                                )}
                             </div>
-                            {account.customer.phone && (
-                                <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
-                                    <Phone className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
-                                    <span>{account.customer.phone}</span>
-                                </div>
-                            )}
-                            {account.customer.email && (
-                                <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
-                                    <Mail className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
-                                    <span>{account.customer.email}</span>
-                                </div>
-                            )}
-                            {account.customer.address && (
-                                <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0] sm:col-span-2">
-                                    <MapPin className="w-4 h-4 text-gray-400 dark:text-[#9898b8] flex-shrink-0" />
-                                    <span>{account.customer.address}</span>
-                                </div>
-                            )}
-                            {account.customer.memberSince && (
-                                <div className="flex items-center gap-2 text-gray-600 dark:text-[#b4b4d0]">
-                                    <Calendar className="w-4 h-4 text-gray-400 dark:text-[#9898b8]" />
-                                    <span>Member since {formatDate(account.customer.memberSince)}</span>
-                                </div>
-                            )}
                         </div>
-                    </div>
-                )}
 
-                {/* Transactions Tab */}
-                {activeTab === 'transactions' && (
-                    <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] overflow-hidden">
-                        <div className="overflow-x-auto">
-                            <table className="w-full text-sm">
-                                <thead>
-                                    <tr className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-100 dark:border-[#2d1b69]">
-                                        <th className="px-4 py-2.5 text-left text-xs font-semibold text-gray-600 dark:text-[#b4b4d0]">Item</th>
-                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 dark:text-[#b4b4d0]">Qty</th>
-                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 dark:text-[#b4b4d0]">Price</th>
-                                        <th className="px-4 py-2.5 text-right text-xs font-semibold text-gray-600 dark:text-[#b4b4d0]">Total</th>
-                                        <th className="px-4 py-2.5 text-center text-xs font-semibold text-gray-600 dark:text-[#b4b4d0]">Status</th>
-                                    </tr>
-                                </thead>
-                                <tbody className="divide-y divide-gray-50 dark:divide-[#2d1b69]">
-                                    {account.items.map((item, index) => (
-                                        <tr
-                                            key={item.id}
-                                            className={`${index % 2 === 0 ? 'bg-white dark:bg-[#13132a]' : 'bg-gray-50/30 dark:bg-[#1a1a35]/50'} hover:bg-purple-50/30 dark:hover:bg-purple-900/20`}
-                                        >
-                                            <td className="px-4 py-3">
-                                                <div className="font-medium text-gray-900 dark:text-white">{item.name}</div>
-                                                <div className="text-xs text-gray-400 dark:text-[#9898b8]">{item.invoiceNo} • {formatDate(item.date)}</div>
-                                            </td>
-                                            <td className="px-4 py-3 text-center text-gray-600 dark:text-[#b4b4d0]">{item.quantity}</td>
-                                            <td className="px-4 py-3 text-right text-gray-600 dark:text-[#b4b4d0]">₱{item.unitPrice.toLocaleString()}</td>
-                                            <td className="px-4 py-3 text-right font-semibold text-gray-900 dark:text-white">₱{item.total.toLocaleString()}</td>
-                                            <td className="px-4 py-3 text-center">
-                                                {getItemStatusBadge(item.status, item.paidAmount, item.total)}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                                <tfoot>
-                                    <tr className="bg-gray-50 dark:bg-[#1a1a35] border-t border-gray-200 dark:border-[#2d1b69]">
-                                        <td colSpan={3} className="px-4 py-2.5 text-right text-sm font-medium text-gray-600 dark:text-[#b4b4d0]">Total:</td>
-                                        <td className="px-4 py-2.5 text-right text-base font-bold text-gray-900 dark:text-white">₱{account.totalAmount.toLocaleString()}</td>
-                                        <td></td>
-                                    </tr>
-                                </tfoot>
-                            </table>
+                        <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-4">
+                            <h3 className="text-sm font-semibold text-gray-900 dark:text-white mb-3">Credit Details</h3>
+                            <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 text-sm">
+                                <div>
+                                    <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Total Credit</span>
+                                    <div className="text-lg font-bold text-gray-900 dark:text-white">₱{account.totalAmount.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Total Paid</span>
+                                    <div className="text-lg font-bold text-emerald-600">₱{account.paidAmount.toLocaleString()}</div>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Remaining</span>
+                                    <div className={`text-lg font-bold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                        ₱{account.remainingBalance.toLocaleString()}
+                                    </div>
+                                </div>
+                                {account.creditLimit && (
+                                    <div>
+                                        <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Credit Limit</span>
+                                        <div className="text-lg font-bold text-gray-900 dark:text-white">₱{account.creditLimit.toLocaleString()}</div>
+                                    </div>
+                                )}
+                                {account.dueDate && (
+                                    <div>
+                                        <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Due Date</span>
+                                        <div className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(account.dueDate)}</div>
+                                    </div>
+                                )}
+                                <div>
+                                    <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Created</span>
+                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{formatDate(account.createdAt)}</div>
+                                </div>
+                            </div>
+                            {account.notes && (
+                                <div className="mt-3 pt-3 border-t border-gray-100 dark:border-[#2d1b69]">
+                                    <span className="text-gray-500 dark:text-[#b4b4d0] text-xs">Notes</span>
+                                    <p className="text-sm text-gray-700 dark:text-[#e0e0f0] mt-1">{account.notes}</p>
+                                </div>
+                            )}
                         </div>
                     </div>
                 )}
 
                 {/* Payments Tab */}
                 {activeTab === 'payments' && (
-                    <div className="space-y-2">
-                        {account.payments.length === 0 ? (
-                            <div className="bg-white dark:bg-[#13132a] p-8 text-center rounded-lg border border-dashed border-gray-200 dark:border-[#2d1b69]">
-                                <Banknote className="w-10 h-10 text-gray-300 dark:text-[#9898b8] mx-auto mb-2" />
-                                <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">No payments recorded yet</p>
-                            </div>
-                        ) : (
-                            account.payments.map((payment) => (
-                                <div key={payment.id} className="bg-white dark:bg-[#13132a] p-3 rounded-lg border border-gray-100 dark:border-[#2d1b69] flex items-center justify-between gap-3">
-                                    <div className="flex items-center gap-3">
-                                        <div className="w-9 h-9 rounded-lg bg-emerald-50 flex items-center justify-center">
-                                            <Banknote className="w-4 h-4 text-emerald-600" />
-                                        </div>
-                                        <div>
-                                            <div className="text-sm font-semibold text-emerald-600">+₱{payment.amount.toLocaleString()}</div>
-                                            <div className="text-xs text-gray-500 dark:text-[#b4b4d0]">{formatDate(payment.paymentDate)} • {payment.method}</div>
-                                        </div>
-                                    </div>
-                                    <div className="text-right text-xs text-gray-400 dark:text-[#9898b8]">
-                                        <div>{payment.referenceNo}</div>
-                                        {payment.receivedBy && <div>by {payment.receivedBy}</div>}
-                                    </div>
-                                </div>
-                            ))
-                        )}
+                    <div className="bg-white dark:bg-[#13132a] p-8 text-center rounded-lg border border-dashed border-gray-200 dark:border-[#2d1b69]">
+                        <Banknote className="w-10 h-10 text-gray-300 dark:text-[#9898b8] mx-auto mb-2" />
+                        <p className="text-sm text-gray-500 dark:text-[#b4b4d0]">
+                            Payment history is tracked in the credit balance above.
+                        </p>
+                        <p className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">
+                            Paid: ₱{account.paidAmount.toLocaleString()} of ₱{account.totalAmount.toLocaleString()}
+                        </p>
                     </div>
                 )}
             </div>
@@ -472,10 +436,16 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                         </Button>
                         <Button
                             className="bg-purple-600 hover:bg-purple-700"
-                            disabled={!paymentAmount || !paymentMethod}
+                            disabled={!paymentAmount || !paymentMethod || isSubmittingPayment}
+                            onClick={handleSubmitPayment}
                             size="sm"
                         >
-                            Record Payment
+                            {isSubmittingPayment ? (
+                                <Loader2 className="w-4 h-4 mr-1 animate-spin" />
+                            ) : (
+                                <CheckCircle2 className="w-4 h-4 mr-1" />
+                            )}
+                            {isSubmittingPayment ? "Processing..." : "Record Payment"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

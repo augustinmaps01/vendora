@@ -9,11 +9,13 @@ import { Badge } from "@/components/ui/badge"
 import { Textarea } from "@/components/ui/textarea"
 import { Switch } from "@/components/ui/switch"
 import { Checkbox } from "@/components/ui/checkbox"
-import { productService, categoryService } from "@/services"
-import type { ApiProduct, ProductPayload, ApiCategory } from "@/services"
+import { categoryService } from "@/services"
+import type { ApiProduct, ApiCategory } from "@/services"
 import { tokenManager } from "@/lib/axios-client"
 import { db } from "@/lib/db"
 import { syncService } from "@/lib/sync-service"
+import { localDb } from "@/lib/local-first-service"
+import { useLocalProducts } from "@/hooks/use-local-data"
 import {
   Dialog,
   DialogContent,
@@ -53,7 +55,7 @@ import {
   Loader2,
   ArrowUpDown,
   ArrowUp,
-  ArrowDown
+  ArrowDown,
 } from "lucide-react"
 import Swal from "sweetalert2"
 
@@ -157,69 +159,6 @@ const fallbackCategories: ApiCategory[] = [
   { id: 7, name: "Personal Care" },
 ]
 
-const fallbackInventory: ApiProduct[] = [
-  {
-    id: 1,
-    name: "Rice (5kg)",
-    sku: "GROC-0001",
-    category: { id: 1, name: "Groceries" },
-    price: 320,
-    currency: "PHP",
-    stock: 24,
-    is_low_stock: false,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: 2,
-    name: "Dishwashing Liquid",
-    sku: "HOU-0002",
-    category: { id: 6, name: "Household" },
-    price: 85,
-    currency: "PHP",
-    stock: 8,
-    is_low_stock: true,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: 3,
-    name: "LED Bulb 9W",
-    sku: "ELEC-0003",
-    category: { id: 3, name: "Electronics" },
-    price: 140,
-    currency: "PHP",
-    stock: 0,
-    is_low_stock: true,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: 4,
-    name: "Multi-Purpose Cleaner",
-    sku: "HOU-0004",
-    category: { id: 6, name: "Household" },
-    price: 115,
-    currency: "PHP",
-    stock: 14,
-    is_low_stock: false,
-    created_at: "",
-    updated_at: "",
-  },
-  {
-    id: 5,
-    name: "Bottled Water (500ml)",
-    sku: "BEV-0005",
-    category: { id: 5, name: "Beverages" },
-    price: 20,
-    currency: "PHP",
-    stock: 52,
-    is_low_stock: false,
-    created_at: "",
-    updated_at: "",
-  },
-]
-
 const getErrorMessage = (error: unknown): { message: string; isAuthError: boolean } => {
   if (error && typeof error === "object") {
     const err = error as { message?: string; status?: number }
@@ -272,25 +211,6 @@ const normalizeProduct = (raw: Partial<ApiProduct>): ApiProduct => {
 /**
  * Build product payload for API
  */
-const buildProductPayload = (data: ProductForm, imageFile?: File | null): ProductPayload => ({
-  name: data.name,
-  sku: data.sku,
-  category_id: data.category_id ?? 0,
-  price: data.price,
-  currency: data.currency,
-  stock: Number(data.stock) || 0,
-  // Optional fields
-  description: data.description || undefined,
-  barcode: data.barcode || undefined,
-  cost: Number(data.cost) || undefined,
-  unit: data.unit || undefined,
-  min_stock: data.min_stock !== "" ? Number(data.min_stock) : undefined,
-  max_stock: data.max_stock !== "" ? Number(data.max_stock) : undefined,
-  image: imageFile || undefined,
-  is_active: data.is_active,
-  is_ecommerce: data.is_ecommerce,
-})
-
 function DesktopInventoryLayout() {
   const router = useRouter()
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null)
@@ -309,11 +229,25 @@ function DesktopInventoryLayout() {
   const [hasCamera, setHasCamera] = useState(false)
   const [cameraNotice, setCameraNotice] = useState("")
   const [isCameraOpen, setIsCameraOpen] = useState(false)
-  const [inventoryItems, setInventoryItems] = useState<ApiProduct[]>([])
+  // Local-first data: products come from IndexedDB via liveQuery
+  const { data: localProducts, isLoading: isLocalLoading } = useLocalProducts()
+  const inventoryItems = useMemo(() =>
+    localProducts.map(p => normalizeProduct({
+      id: p.id, name: p.name, sku: p.sku, barcode: p.barcode || '',
+      price: p.price, stock: p.stock, unit: p.unit,
+      category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
+      image_url: p.image_url, is_active: p.is_active,
+      description: p.description, cost: p.cost, min_stock: p.min_stock,
+      is_ecommerce: p.is_ecommerce,
+      _status: (p as any)._status, _syncError: (p as any)._syncError,
+    } as any)),
+    [localProducts]
+  )
+
   const [categories, setCategories] = useState<ApiCategory[]>([])
-  const [isLoading, setIsLoading] = useState(true)
+  const isLoading = isLocalLoading
   const [isCategoriesLoading, setIsCategoriesLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const [loadError] = useState<string | null>(null)
   const [actionError, setActionError] = useState<string | null>(null)
   const [isSaving, setIsSaving] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
@@ -392,62 +326,8 @@ function DesktopInventoryLayout() {
     return []
   }
 
-  /**
-   * Load products from API
-   * GET /api/products/my - Get current vendor's products
-   */
-  const loadProducts = async () => {
-    setIsLoading(true)
-    setLoadError(null)
-
-    // Load from IndexedDB cache first (instant)
-    try {
-      const cachedProducts = await db.products.toArray()
-      if (cachedProducts.length > 0) {
-        const normalized = cachedProducts
-          .filter(p => p.is_active)
-          .map(p => normalizeProduct({
-            id: p.id, name: p.name, sku: p.sku, barcode: p.barcode || '',
-            price: p.price, stock: p.stock, unit: p.unit,
-            category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
-            image_url: p.image_url, is_active: p.is_active
-          } as any))
-        setInventoryItems(normalized)
-        setIsLoading(false)
-      }
-    } catch {
-      // IndexedDB may not be available
-    }
-
-    // Fetch fresh data from API if online
-    try {
-      const response = await productService.getMy({ per_page: 1000 })
-      const items = extractDataArray(response)
-      const normalized = items.map((item) => normalizeProduct(item))
-      setInventoryItems(normalized)
-
-      // Cache to IndexedDB for offline use
-      syncService.cacheProducts(items).catch(() => { })
-    } catch (error: any) {
-      const { message, isAuthError } = getErrorMessage(error)
-      if (isAuthError) {
-        setLoadError(message)
-        router.push("/pos/auth/login")
-        return
-      }
-      // Only show error if we have no cached data
-      if (inventoryItems.length === 0) {
-        if (message === "Network Error" || error?.isOffline) {
-          setInventoryItems(fallbackInventory)
-          setLoadError(null)
-        } else {
-          setLoadError(message)
-        }
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Products are now loaded reactively via useLocalProducts() hook
+  // No loadProducts() needed — liveQuery auto-updates when IndexedDB changes
 
   /**
    * Load categories from API
@@ -515,7 +395,6 @@ function DesktopInventoryLayout() {
 
   useEffect(() => {
     if (isAuthenticated) {
-      loadProducts()
       loadCategories()
     }
   }, [isAuthenticated])
@@ -684,27 +563,40 @@ function DesktopInventoryLayout() {
     setIsSaving(true)
     setActionError(null)
     try {
-      const payload = buildProductPayload({
-        ...formData,
-        is_active: isActiveProduct,
-        is_ecommerce: isEcommerceProduct,
-      }, imageFile)
-
       if (isEditing && selectedProduct) {
-        const updatedProduct = await productService.patch(selectedProduct.id, payload)
-        console.log('✅ Product updated:', updatedProduct)
+        await localDb.products.update(selectedProduct.id, {
+          name: formData.name,
+          sku: formData.sku,
+          barcode: formData.barcode || null,
+          category_id: formData.category_id,
+          category_name: categories.find(c => c.id === formData.category_id)?.name,
+          price: formData.price,
+          cost: formData.cost || undefined,
+          stock: Number(formData.stock) || 0,
+          min_stock: Number(formData.min_stock),
+          unit: formData.unit,
+          description: formData.description || undefined,
+          is_active: isActiveProduct,
+          is_ecommerce: isEcommerceProduct,
+        }, imageFile || undefined)
         showSuccessToast("Product Updated!", "Your changes have been saved")
-        await loadProducts()
       } else {
-        const createdProduct = await productService.create(payload)
-        console.log('✅ Product created:', createdProduct)
+        await localDb.products.create({
+          name: formData.name,
+          sku: formData.sku,
+          barcode: formData.barcode || null,
+          category_id: formData.category_id,
+          category_name: categories.find(c => c.id === formData.category_id)?.name,
+          price: formData.price,
+          cost: formData.cost || undefined,
+          stock: Number(formData.stock) || 0,
+          min_stock: Number(formData.min_stock),
+          unit: formData.unit,
+          description: formData.description || undefined,
+          is_active: isActiveProduct,
+          is_ecommerce: isEcommerceProduct,
+        }, imageFile || undefined)
         showSuccessToast("Product Created!", "New product added to inventory")
-
-        // Force immediate reload - no delay needed
-        console.log('🔄 Reloading products after creation...')
-        setIsLoading(true) // Show loading state
-        await loadProducts()
-        console.log('✅ Products reloaded, new count:', inventoryItems.length + 1)
       }
 
       setIsAddProductOpen(false)
@@ -754,8 +646,7 @@ function DesktopInventoryLayout() {
     setIsDeleting(true)
     setActionError(null)
     try {
-      await productService.delete(product.id)
-      await loadProducts()
+      await localDb.products.delete(product.id)
       showSuccessToast("Product Deleted!", "Item removed from inventory")
     } catch (error) {
       const { message, isAuthError } = getErrorMessage(error)
@@ -854,7 +745,7 @@ function DesktopInventoryLayout() {
   // Show loading while checking authentication
   if (isAuthenticated === null) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           <p className="text-gray-600 dark:text-[#b4b4d0]">Checking authentication...</p>
@@ -866,7 +757,7 @@ function DesktopInventoryLayout() {
   // Show message if not authenticated (will redirect)
   if (isAuthenticated === false) {
     return (
-      <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
         <div className="flex flex-col items-center gap-3">
           <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
           <p className="text-gray-600 dark:text-[#b4b4d0]">Redirecting to login...</p>

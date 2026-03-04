@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/admin/layout/DashboardLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -41,95 +41,77 @@ import {
     XCircle,
     Truck,
     Package,
-    DollarSign
+    DollarSign,
+    Loader2,
+    AlertCircle,
+    RefreshCw,
 } from "lucide-react"
+import { orderService } from "@/services"
 
-// Mock data - Replace with actual API call
-const orders = [
-    {
-        id: 1,
-        orderNumber: "ORD-2024-001",
-        customer: "John Dela Cruz",
-        vendor: "Tech Store",
-        orderedAt: "2024-01-15 10:30",
-        itemsCount: 3,
-        total: 5999,
-        status: "pending",
-        paymentStatus: "paid",
-    },
-    {
-        id: 2,
-        orderNumber: "ORD-2024-002",
-        customer: "Maria Santos",
-        vendor: "Fashion Hub",
-        orderedAt: "2024-01-15 11:45",
-        itemsCount: 5,
-        total: 2450,
-        status: "processing",
-        paymentStatus: "paid",
-    },
-    {
-        id: 3,
-        orderNumber: "ORD-2024-003",
-        customer: "Pedro Garcia",
-        vendor: "Food Market",
-        orderedAt: "2024-01-15 14:20",
-        itemsCount: 8,
-        total: 1850,
-        status: "shipped",
-        paymentStatus: "paid",
-    },
-    {
-        id: 4,
-        orderNumber: "ORD-2024-004",
-        customer: "Ana Reyes",
-        vendor: "Electronics Plus",
-        orderedAt: "2024-01-14 09:15",
-        itemsCount: 1,
-        total: 12999,
-        status: "delivered",
-        paymentStatus: "paid",
-    },
-    {
-        id: 5,
-        orderNumber: "ORD-2024-005",
-        customer: "Jose Cruz",
-        vendor: "Book Shop",
-        orderedAt: "2024-01-14 16:00",
-        itemsCount: 2,
-        total: 1599,
-        status: "cancelled",
-        paymentStatus: "refunded",
-    },
-    {
-        id: 6,
-        orderNumber: "ORD-2024-006",
-        customer: "Rosa Mendoza",
-        vendor: "Tech Store",
-        orderedAt: "2024-01-13 13:30",
-        itemsCount: 4,
-        total: 8750,
-        status: "delivered",
-        paymentStatus: "paid",
-    },
-]
+interface Order {
+    id: number
+    order_number?: string
+    customer?: { name?: string; id: number }
+    customer_id?: number
+    vendor?: { name?: string }
+    store?: { name?: string }
+    ordered_at: string
+    items?: any[]
+    total?: number
+    status: string
+    payment_status?: string
+}
 
-const vendors = ["All", "Tech Store", "Food Market", "Fashion Hub", "Electronics Plus", "Book Shop"]
+const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(price)
 
 export default function OrdersPage() {
+    const [orders, setOrders] = useState<Order[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
-    const [vendorFilter, setVendorFilter] = useState("All")
     const [statusFilter, setStatusFilter] = useState("all")
+    const [cancellingId, setCancellingId] = useState<number | null>(null)
+
+    const fetchOrders = useCallback(async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await orderService.getAll()
+            const data = Array.isArray(res) ? res : (res as any).data || []
+            setOrders(data)
+        } catch (err: any) {
+            console.error("Failed to load orders:", err)
+            setError(err?.message || "Failed to load orders")
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchOrders()
+    }, [fetchOrders])
+
+    const handleCancel = async (id: number) => {
+        setCancellingId(id)
+        try {
+            await orderService.cancel(id)
+            setOrders(prev => prev.map(o => o.id === id ? { ...o, status: "cancelled" } : o))
+        } catch (err: any) {
+            console.error("Failed to cancel order:", err)
+        } finally {
+            setCancellingId(null)
+        }
+    }
 
     const filteredOrders = orders.filter((order) => {
+        const orderNum = order.order_number || `#${order.id}`
+        const customer = order.customer?.name || ""
         const matchesSearch =
-            order.orderNumber.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            order.customer.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchesVendor = vendorFilter === "All" || order.vendor === vendorFilter
+            orderNum.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            customer.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesStatus = statusFilter === "all" || order.status === statusFilter
-
-        return matchesSearch && matchesVendor && matchesStatus
+        return matchesSearch && matchesStatus
     })
 
     const getStatusBadge = (status: string) => {
@@ -137,66 +119,74 @@ export default function OrdersPage() {
             case "pending":
                 return (
                     <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Pending
+                        <Clock className="w-3 h-3 mr-1" />Pending
                     </Badge>
                 )
             case "processing":
                 return (
                     <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">
-                        <Package className="w-3 h-3 mr-1" />
-                        Processing
+                        <Package className="w-3 h-3 mr-1" />Processing
                     </Badge>
                 )
             case "shipped":
                 return (
                     <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
-                        <Truck className="w-3 h-3 mr-1" />
-                        Shipped
+                        <Truck className="w-3 h-3 mr-1" />Shipped
                     </Badge>
                 )
             case "delivered":
                 return (
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Delivered
+                        <CheckCircle className="w-3 h-3 mr-1" />Delivered
                     </Badge>
                 )
             case "cancelled":
                 return (
                     <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Cancelled
+                        <XCircle className="w-3 h-3 mr-1" />Cancelled
                     </Badge>
                 )
             default:
-                return <Badge variant="secondary">{status}</Badge>
+                return <Badge variant="secondary" className="capitalize">{status}</Badge>
         }
     }
 
-    const getPaymentBadge = (status: string) => {
+    const getPaymentBadge = (status?: string) => {
         switch (status) {
-            case "paid":
-                return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Paid</Badge>
-            case "pending":
-                return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Pending</Badge>
-            case "refunded":
-                return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Refunded</Badge>
-            default:
-                return <Badge variant="secondary">{status}</Badge>
+            case "paid": return <Badge className="bg-green-100 text-green-700 hover:bg-green-100">Paid</Badge>
+            case "pending": return <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">Pending</Badge>
+            case "refunded": return <Badge className="bg-gray-100 text-gray-700 hover:bg-gray-100">Refunded</Badge>
+            default: return <Badge variant="outline">{status || "—"}</Badge>
         }
-    }
-
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat("en-PH", {
-            style: "currency",
-            currency: "PHP",
-        }).format(price)
     }
 
     const totalRevenue = orders
-        .filter(o => o.paymentStatus === "paid")
-        .reduce((sum, o) => sum + o.total, 0)
+        .filter(o => o.payment_status === "paid")
+        .reduce((sum, o) => sum + (o.total || 0), 0)
+
+    if (loading) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                </div>
+            </DashboardLayout>
+        )
+    }
+
+    if (error) {
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                    <p className="text-muted-foreground">{error}</p>
+                    <Button onClick={fetchOrders} variant="outline">
+                        <RefreshCw className="w-4 h-4 mr-2" />Retry
+                    </Button>
+                </div>
+            </DashboardLayout>
+        )
+    }
 
     return (
         <DashboardLayout>
@@ -275,13 +265,11 @@ export default function OrdersPage() {
             {/* Main Content Card */}
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>All Orders</CardTitle>
-                            <CardDescription>
-                                Browse and manage orders from all vendors on the platform
-                            </CardDescription>
-                        </div>
+                    <div>
+                        <CardTitle>All Orders</CardTitle>
+                        <CardDescription>
+                            Browse and manage orders from all vendors on the platform
+                        </CardDescription>
                     </div>
 
                     {/* Filters and Search */}
@@ -295,17 +283,6 @@ export default function OrdersPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <Select value={vendorFilter} onValueChange={setVendorFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <Store className="mr-2 h-4 w-4" />
-                                <SelectValue placeholder="Vendor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {vendors.map((vendor) => (
-                                    <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[150px]">
                                 <Filter className="mr-2 h-4 w-4" />
@@ -345,68 +322,79 @@ export default function OrdersPage() {
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredOrders.map((order) => (
-                                    <TableRow key={order.id}>
-                                        <TableCell className="font-medium">
-                                            <code className="text-sm bg-purple-100 text-purple-700 px-2 py-1 rounded">
-                                                {order.orderNumber}
-                                            </code>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-8 w-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-semibold">
-                                                    {order.customer.substring(0, 2).toUpperCase()}
+                                filteredOrders.map((order) => {
+                                    const orderNum = order.order_number || `#${order.id}`
+                                    const customerName = order.customer?.name || `Customer #${order.customer_id || order.id}`
+                                    const vendorName = order.store?.name || order.vendor?.name || "—"
+                                    return (
+                                        <TableRow key={order.id}>
+                                            <TableCell className="font-medium">
+                                                <code className="text-sm bg-purple-100 text-purple-700 px-2 py-1 rounded">
+                                                    {orderNum}
+                                                </code>
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-8 w-8 rounded-full bg-purple-100 text-purple-700 flex items-center justify-center text-xs font-semibold">
+                                                        {customerName.substring(0, 2).toUpperCase()}
+                                                    </div>
+                                                    <span>{customerName}</span>
                                                 </div>
-                                                <span>{order.customer}</span>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Store className="h-4 w-4 text-muted-foreground" />
-                                                {order.vendor}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                            {order.orderedAt}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">{order.itemsCount} items</Badge>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{formatPrice(order.total)}</TableCell>
-                                        <TableCell>{getStatusBadge(order.status)}</TableCell>
-                                        <TableCell>{getPaymentBadge(order.paymentStatus)}</TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View Details
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Store className="mr-2 h-4 w-4" />
-                                                        View Vendor
-                                                    </DropdownMenuItem>
-                                                    {order.status === "pending" && (
-                                                        <>
-                                                            <DropdownMenuSeparator />
-                                                            <DropdownMenuItem className="text-red-600">
-                                                                <XCircle className="mr-2 h-4 w-4" />
-                                                                Cancel Order
-                                                            </DropdownMenuItem>
-                                                        </>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                            </TableCell>
+                                            <TableCell>
+                                                <div className="flex items-center gap-2">
+                                                    <Store className="h-4 w-4 text-muted-foreground" />
+                                                    {vendorName}
+                                                </div>
+                                            </TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                                {order.ordered_at}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">
+                                                    {order.items?.length ?? "—"} items
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {order.total != null ? formatPrice(order.total) : "—"}
+                                            </TableCell>
+                                            <TableCell>{getStatusBadge(order.status)}</TableCell>
+                                            <TableCell>{getPaymentBadge(order.payment_status)}</TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon" disabled={cancellingId === order.id}>
+                                                            {cancellingId === order.id
+                                                                ? <Loader2 className="h-4 w-4 animate-spin" />
+                                                                : <MoreVertical className="h-4 w-4" />
+                                                            }
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem>
+                                                            <Eye className="mr-2 h-4 w-4" />
+                                                            View Details
+                                                        </DropdownMenuItem>
+                                                        {order.status === "pending" && (
+                                                            <>
+                                                                <DropdownMenuSeparator />
+                                                                <DropdownMenuItem
+                                                                    className="text-red-600"
+                                                                    onClick={() => handleCancel(order.id)}
+                                                                >
+                                                                    <XCircle className="mr-2 h-4 w-4" />
+                                                                    Cancel Order
+                                                                </DropdownMenuItem>
+                                                            </>
+                                                        )}
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             )}
                         </TableBody>
                     </Table>

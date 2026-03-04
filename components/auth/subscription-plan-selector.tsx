@@ -29,9 +29,10 @@ export interface SubscriptionPlan {
 const plans: SubscriptionPlan[] = [
   {
     id: "free",
-    name: "Free Plan",
+    name: "14-Day Free Trial",
     price: "0",
-    description: "Perfect for getting started",
+    trialDays: 14,
+    description: "No credit card required",
     features: [
       "Up to 10 products",
       "1 POS terminal",
@@ -126,11 +127,11 @@ export function SubscriptionPlanSelector({
   return (
     <div className={cn("w-full max-w-[1400px] mx-auto px-4", className)}>
       <div className="text-center mb-8">
-        <h2 className="text-3xl font-bold mb-2" style={{ color: '#110228' }}>
+        <h2 className="text-3xl font-bold mb-2 text-purple-700 dark:text-purple-400">
           Choose Your Plan
         </h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Start with a 14-day free trial. No credit card required.
+          Start free for 14 days — no credit card required. Upgrade anytime.
         </p>
 
         {/* Billing Interval Toggle */}
@@ -141,10 +142,9 @@ export function SubscriptionPlanSelector({
               className={cn(
                 "px-4 py-2 rounded-lg font-medium transition-all",
                 billingInterval === "monthly"
-                  ? "text-white shadow-md"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400"
               )}
-              style={billingInterval === "monthly" ? { backgroundColor: '#110228' } : {}}
               disabled={disabled}
               aria-pressed={billingInterval === "monthly"}
             >
@@ -155,15 +155,14 @@ export function SubscriptionPlanSelector({
               className={cn(
                 "px-4 py-2 rounded-lg font-medium transition-all flex items-center gap-2",
                 billingInterval === "yearly"
-                  ? "text-white shadow-md"
-                  : "text-gray-600 hover:text-gray-900 dark:text-gray-400 dark:hover:text-gray-200"
+                  ? "bg-purple-600 text-white shadow-md"
+                  : "text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400"
               )}
-              style={billingInterval === "yearly" ? { backgroundColor: '#110228' } : {}}
               disabled={disabled}
               aria-pressed={billingInterval === "yearly"}
             >
               Yearly
-              <Badge variant="secondary" className="text-xs" style={{ backgroundColor: '#e8dff5', color: '#110228' }}>
+              <Badge variant="secondary" className="text-xs bg-purple-100 text-purple-700 dark:bg-purple-900/40 dark:text-purple-300">
                 Save up to 17%
               </Badge>
             </button>
@@ -177,129 +176,152 @@ export function SubscriptionPlanSelector({
           const displayPrice = getDisplayPrice(plan)
           const savings = getSavingsPercentage(plan)
           const isSelected = selectedPlan === plan.id
+          const isFree = plan.price === "0"
 
           return (
             <div key={plan.id} className="flex">
               <Card
                 role="button"
                 tabIndex={disabled ? -1 : 0}
-                aria-label={`Select ${plan.name} plan, $${displayPrice} per ${billingInterval === "yearly" ? "year" : "month"}`}
+                aria-label={`Select ${plan.name} plan`}
                 aria-pressed={isSelected}
                 aria-disabled={disabled}
                 className={cn(
                   "relative cursor-pointer transition-all duration-300 hover:shadow-xl hover:-translate-y-1 flex flex-col w-full",
-                  isSelected && "border-2 shadow-xl ring-2",
-                  !isSelected && "border-gray-200 dark:border-gray-700",
+                  isSelected
+                    ? "border-2 border-purple-600 shadow-xl ring-2 ring-purple-200 dark:ring-purple-800"
+                    : isFree
+                    ? "border-2 border-purple-300 dark:border-purple-700 bg-purple-50/50 dark:bg-purple-950/20"
+                    : "border border-gray-200 dark:border-gray-700",
                   disabled && "opacity-60 cursor-not-allowed hover:shadow-none hover:translate-y-0"
                 )}
-                style={isSelected ? { borderColor: '#110228', '--tw-ring-color': '#e8dff5' } as React.CSSProperties : {}}
                 onClick={() => handlePlanSelect(plan.id)}
                 onKeyDown={(e) => handleKeyDown(e, plan.id)}
               >
-              {plan.popular && (
-                <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
-                  <Badge className="text-white px-3 py-1 shadow-md" style={{ backgroundColor: '#110228' }}>
-                    Most Popular
-                  </Badge>
-                </div>
-              )}
-
-              {billingInterval === "yearly" && savings > 0 && (
-                <div className="absolute -top-3 right-4 z-10">
-                  <Badge variant="secondary" className="bg-orange-100 text-orange-700 px-2 py-1 text-xs shadow-sm">
-                    Save {savings}%
-                  </Badge>
-                </div>
-              )}
-
-              <CardHeader className="text-center pb-4">
-                <CardTitle className="text-2xl font-bold">{plan.name}</CardTitle>
-
-                {plan.description && (
-                  <CardDescription className="mt-1 text-sm">
-                    {plan.description}
-                  </CardDescription>
-                )}
-
-                <div className="mt-4 mb-2">
-                  {displayPrice === "0" ? (
-                    <span className="text-4xl font-bold" style={{ color: '#110228' }}>Free</span>
-                  ) : (
-                    <div className="flex flex-col items-center">
-                      <div>
-                        <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
-                          ${displayPrice}
-                        </span>
-                        <span className="text-gray-600 dark:text-gray-400 ml-2">
-                          /{billingInterval === "yearly" ? "year" : "month"}
-                        </span>
-                      </div>
-                      {billingInterval === "yearly" && (
-                        <span className="text-sm text-gray-500 mt-1">
-                          ${(Number(displayPrice) / 12).toFixed(2)}/month billed annually
-                        </span>
-                      )}
-                    </div>
-                  )}
-                </div>
-
-                {plan.trialDays && displayPrice !== "0" && (
-                  <CardDescription className="mt-2 text-sm font-medium" style={{ color: '#110228' }}>
-                    {plan.trialDays}-day free trial included
-                  </CardDescription>
-                )}
-              </CardHeader>
-
-              <CardContent className="space-y-3 pb-6 grow">
-                {plan.features.map((feature, index) => (
-                  <div
-                    key={index}
-                    className="flex items-start gap-3 animate-in fade-in-50"
-                    style={{ animationDelay: `${index * 50}ms` }}
-                  >
-                    <Check className="h-5 w-5 shrink-0 mt-0.5" style={{ color: '#110228' }} />
-                    <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                {/* Free Trial badge */}
+                {isFree && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                    <Badge className="bg-purple-600 hover:bg-purple-600 text-white px-3 py-1 shadow-md font-semibold">
+                      🎉 No Credit Card
+                    </Badge>
                   </div>
-                ))}
-              </CardContent>
+                )}
 
-              <CardFooter className="pt-0 mt-auto">
-                <Button
-                  className={cn(
-                    "w-full transition-all duration-300 font-semibold",
-                    isSelected
-                      ? "text-white shadow-md hover:opacity-90"
-                      : "bg-gray-100 hover:bg-gray-200 text-gray-800 dark:bg-gray-800 dark:hover:bg-gray-700 dark:text-gray-100",
-                    loading && "opacity-70"
+                {/* Most Popular badge */}
+                {plan.popular && (
+                  <div className="absolute -top-3 left-1/2 transform -translate-x-1/2 z-10">
+                    <Badge className="bg-purple-600 hover:bg-purple-600 text-white px-3 py-1 shadow-md">
+                      Most Popular
+                    </Badge>
+                  </div>
+                )}
+
+                {/* Yearly savings badge */}
+                {billingInterval === "yearly" && savings > 0 && (
+                  <div className="absolute -top-3 right-4 z-10">
+                    <Badge className="bg-orange-500 hover:bg-orange-500 text-white px-2 py-1 text-xs shadow-sm">
+                      Save {savings}%
+                    </Badge>
+                  </div>
+                )}
+
+                <CardHeader className="text-center pb-4">
+                  <CardTitle className={cn(
+                    "text-2xl font-bold",
+                    isSelected ? "text-purple-700 dark:text-purple-400" : "text-gray-900 dark:text-gray-100"
+                  )}>
+                    {plan.name}
+                  </CardTitle>
+
+                  {plan.description && (
+                    <CardDescription className="mt-1 text-sm">
+                      {plan.description}
+                    </CardDescription>
                   )}
-                  style={isSelected ? { backgroundColor: '#110228' } : {}}
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    handlePlanSelect(plan.id)
-                  }}
-                  disabled={disabled || loading}
-                  aria-busy={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                      Loading...
-                    </>
-                  ) : (
-                    <>
-                      {isSelected ? (
-                        <>
-                          <Check className="mr-2 h-4 w-4" />
-                          Selected
-                        </>
-                      ) : (
-                        "Select Plan"
-                      )}
-                    </>
+
+                  <div className="mt-4 mb-2">
+                    {displayPrice === "0" ? (
+                      <div className="flex flex-col items-center gap-2">
+                        <span className="text-4xl font-bold text-purple-600 dark:text-purple-400">Free</span>
+                        <Badge className="text-xs font-semibold px-3 py-1 bg-purple-100 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/40 dark:text-purple-300">
+                          14-Day Trial
+                        </Badge>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col items-center">
+                        <div>
+                          <span className="text-4xl font-bold text-gray-900 dark:text-gray-100">
+                            ${displayPrice}
+                          </span>
+                          <span className="text-gray-500 dark:text-gray-400 ml-2">
+                            /{billingInterval === "yearly" ? "year" : "month"}
+                          </span>
+                        </div>
+                        {billingInterval === "yearly" && (
+                          <span className="text-sm text-gray-500 mt-1">
+                            ${(Number(displayPrice) / 12).toFixed(2)}/month billed annually
+                          </span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+
+                  {plan.trialDays && displayPrice !== "0" && (
+                    <CardDescription className="mt-2 text-sm font-medium text-purple-600 dark:text-purple-400">
+                      {plan.trialDays}-day free trial included
+                    </CardDescription>
                   )}
-                </Button>
-              </CardFooter>
-            </Card>
+                </CardHeader>
+
+                <CardContent className="space-y-3 pb-6 grow">
+                  {plan.features.map((feature, index) => (
+                    <div
+                      key={index}
+                      className="flex items-start gap-3 animate-in fade-in-50"
+                      style={{ animationDelay: `${index * 50}ms` }}
+                    >
+                      <Check className="h-5 w-5 shrink-0 mt-0.5 text-purple-600 dark:text-purple-400" />
+                      <span className="text-sm text-gray-700 dark:text-gray-300">{feature}</span>
+                    </div>
+                  ))}
+                </CardContent>
+
+                <CardFooter className="pt-0 mt-auto">
+                  <Button
+                    className={cn(
+                      "w-full transition-all duration-300 font-semibold",
+                      isSelected
+                        ? "bg-purple-600 hover:bg-purple-700 text-white shadow-md"
+                        : isFree
+                        ? "bg-purple-100 hover:bg-purple-600 text-purple-700 hover:text-white dark:bg-purple-900/40 dark:text-purple-300 dark:hover:bg-purple-600 dark:hover:text-white"
+                        : "bg-gray-100 hover:bg-purple-600 text-gray-800 hover:text-white dark:bg-gray-800 dark:hover:bg-purple-600 dark:text-gray-100",
+                      loading && "opacity-70"
+                    )}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      handlePlanSelect(plan.id)
+                    }}
+                    disabled={disabled || loading}
+                    aria-busy={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Loading...
+                      </>
+                    ) : isSelected ? (
+                      <>
+                        <Check className="mr-2 h-4 w-4" />
+                        Selected
+                      </>
+                    ) : isFree ? (
+                      "Start Free Trial"
+                    ) : (
+                      "Select Plan"
+                    )}
+                  </Button>
+                </CardFooter>
+              </Card>
             </div>
           )
         })}

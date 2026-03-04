@@ -4,13 +4,14 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { registerServiceWorker } from '@/lib/register-sw';
 import { networkMonitor, type NetworkQuality } from '@/lib/network-quality-monitor';
 import { syncService } from '@/lib/sync-service';
-import { requestPersistentStorage, getPendingTransactionsCount } from '@/lib/db';
+import { requestPersistentStorage, getPendingTransactionsCount, getDirtyRecordsCount } from '@/lib/db';
 
 export interface OfflineState {
   isOnline: boolean;
   networkQuality: NetworkQuality;
   latency: number;
   pendingCount: number;
+  dirtyCount: number;
   isSyncing: boolean;
   lastSyncedAt: Date | null;
 }
@@ -21,15 +22,19 @@ export function useOfflineInit() {
     networkQuality: 'good',
     latency: 0,
     pendingCount: 0,
+    dirtyCount: 0,
     isSyncing: false,
     lastSyncedAt: null,
   });
   const initialized = useRef(false);
 
-  const updatePendingCount = useCallback(async () => {
+  const updateCounts = useCallback(async () => {
     try {
-      const count = await getPendingTransactionsCount();
-      setState(prev => ({ ...prev, pendingCount: count }));
+      const [pendingCount, dirtyCount] = await Promise.all([
+        getPendingTransactionsCount(),
+        getDirtyRecordsCount(),
+      ]);
+      setState(prev => ({ ...prev, pendingCount, dirtyCount }));
     } catch {
       // IndexedDB may not be available
     }
@@ -40,15 +45,15 @@ export function useOfflineInit() {
 
     setState(prev => ({ ...prev, isSyncing: true }));
     try {
-      await syncService.syncPendingTransactions();
-      await updatePendingCount();
+      await syncService.fullSync();
+      await updateCounts();
       setState(prev => ({ ...prev, lastSyncedAt: new Date() }));
     } catch (err) {
       console.error('Manual sync failed:', err);
     } finally {
       setState(prev => ({ ...prev, isSyncing: false }));
     }
-  }, [state.isOnline, state.isSyncing, updatePendingCount]);
+  }, [state.isOnline, state.isSyncing, updateCounts]);
 
   useEffect(() => {
     if (typeof window === 'undefined' || initialized.current) return;
@@ -90,24 +95,24 @@ export function useOfflineInit() {
     const unsubOnline = syncService.onOnlineStatusChange((online) => {
       setState(prev => ({ ...prev, isOnline: online }));
       if (online) {
-        updatePendingCount();
+        updateCounts();
       }
     });
 
-    // Initial pending count
-    updatePendingCount();
+    // Initial counts
+    updateCounts();
 
-    // Periodically check pending count
-    const pendingInterval = setInterval(updatePendingCount, 30000);
+    // Periodically check counts (pending transactions + dirty records)
+    const countsInterval = setInterval(updateCounts, 30000);
 
     return () => {
       syncService.stopBackgroundSync();
       networkMonitor.stop();
       unsubscribe();
       unsubOnline();
-      clearInterval(pendingInterval);
+      clearInterval(countsInterval);
     };
-  }, [updatePendingCount]);
+  }, [updateCounts]);
 
-  return { ...state, triggerSync, updatePendingCount };
+  return { ...state, triggerSync, updateCounts };
 }

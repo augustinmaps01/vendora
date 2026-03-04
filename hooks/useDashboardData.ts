@@ -12,6 +12,7 @@ import type {
     TopProducts,
     InventoryHealth,
     RecentActivity,
+    CashVsCredit,
     DateRangeParams,
 } from '@/types/dashboard'
 
@@ -28,6 +29,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
     const [topProducts, setTopProducts] = useState<TopProducts | null>(null)
     const [inventoryHealth, setInventoryHealth] = useState<InventoryHealth | null>(null)
     const [recentActivity, setRecentActivity] = useState<RecentActivity | null>(null)
+    const [cashVsCredit, setCashVsCredit] = useState<CashVsCredit | null>(null)
 
     const [loading, setLoading] = useState(true)
     const [error, setError] = useState<string | null>(null)
@@ -56,6 +58,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                         if (data.topProducts) setTopProducts(data.topProducts)
                         if (data.inventoryHealth) setInventoryHealth(data.inventoryHealth)
                         if (data.recentActivity) setRecentActivity(data.recentActivity)
+                        if (data.cashVsCredit) setCashVsCredit(data.cashVsCredit)
                         setLastSyncedAt(cached.lastSyncedAt)
                         setLoading(false)
 
@@ -77,6 +80,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                     inventoryData,
                     activityData,
                     recentOrdersData,
+                    cashVsCreditData,
                 ] = await Promise.all([
                     dashboardService.getKPIs(dateParams),
                     dashboardService.getSalesTrend(dateParams),
@@ -85,7 +89,8 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                     dashboardService.getTopProducts({ ...dateParams, limit: 5 }),
                     dashboardService.getInventoryHealth(),
                     dashboardService.getRecentActivity({ limit: 4 }),
-                    orderService.getAll({ sort: 'desc', limit: 10 } as any), // Fetch latest orders
+                    orderService.getAll({ sort: 'desc', limit: 10 } as any),
+                    dashboardService.getCashVsCredit(dateParams),
                 ])
 
                 // Map orders to ActivityItem format
@@ -117,6 +122,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                 setTopProducts(productsData)
                 setInventoryHealth(inventoryData)
                 setRecentActivity(mergedActivityData)
+                setCashVsCredit(cashVsCreditData)
                 setIsStale(false)
                 setLastSyncedAt(new Date())
 
@@ -132,6 +138,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
                             topProducts: productsData,
                             inventoryHealth: inventoryData,
                             recentActivity: mergedActivityData,
+                            cashVsCredit: cashVsCreditData,
                         }),
                         lastSyncedAt: new Date(),
                     })
@@ -172,6 +179,7 @@ export function useDashboardData(dateParams?: DateRangeParams) {
         topProducts,
         inventoryHealth,
         recentActivity,
+        cashVsCredit,
         loading,
         error,
         isStale,

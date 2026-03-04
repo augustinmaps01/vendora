@@ -3,6 +3,8 @@
 import { useState } from "react"
 import { useRouter } from "next/navigation"
 import { useCartStore } from "@/store/useCartStore"
+import { orderService } from "@/services"
+import { paymentService } from "@/services"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -14,9 +16,9 @@ import Image from "next/image"
 
 // Helper for currency
 const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-PH', {
         style: 'currency',
-        currency: 'USD',
+        currency: 'PHP',
     }).format(price)
 }
 
@@ -24,15 +26,13 @@ export default function CheckoutPage() {
     const router = useRouter()
     const { items, clearCart } = useCartStore()
     const [isProcessing, setIsProcessing] = useState(false)
+    const [orderError, setOrderError] = useState<string | null>(null)
     const [paymentMethod, setPaymentMethod] = useState("card")
 
     // Form state
     const [formData, setFormData] = useState({
-        // Contact Information
         email: "",
         phone: "",
-
-        // Shipping Address
         firstName: "",
         lastName: "",
         address: "",
@@ -40,24 +40,16 @@ export default function CheckoutPage() {
         city: "",
         state: "",
         zipCode: "",
-        country: "United States",
-
-        // Payment Information
+        country: "Philippines",
         cardNumber: "",
         cardName: "",
         expiryDate: "",
         cvv: "",
-
-        // Billing Address (if different)
-        billingAddress: "",
-        billingCity: "",
-        billingState: "",
-        billingZipCode: "",
     })
 
     const subtotal = items.reduce((acc, item) => acc + item.price * item.quantity, 0)
-    const shipping = subtotal > 50 ? 0 : 9.99
-    const tax = subtotal * 0.08 // 8% tax
+    const shipping = subtotal > 500 ? 0 : 99
+    const tax = subtotal * 0.12 // 12% VAT
     const total = subtotal + shipping + tax
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -70,13 +62,75 @@ export default function CheckoutPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         setIsProcessing(true)
+        setOrderError(null)
 
-        // Simulate payment processing
-        await new Promise(resolve => setTimeout(resolve, 2000))
+        try {
+            // Build order payload
+            const now = new Date()
+            const orderedAt = now.toISOString().split("T")[0] // YYYY-MM-DD
+            const paidAt = `${orderedAt} ${String(now.getHours()).padStart(2, "0")}:${String(now.getMinutes()).padStart(2, "0")}` // YYYY-MM-DD HH:mm
 
-        // Clear cart and redirect to success page
-        clearCart()
-        router.push("/ecommerce/order-success")
+            const orderPayload = {
+                ordered_at: orderedAt,
+                status: "pending" as const,
+                total: Math.round(total),
+                items: items.map(item => ({
+                    product_id: Number(item.id),
+                    quantity: item.quantity,
+                    price: Math.round(item.price),
+                })),
+                // Customer info as notes (no customer account required for ecommerce guest checkout)
+                notes: `Guest: ${formData.firstName} ${formData.lastName}, ${formData.email}, ${formData.phone}, ${formData.address} ${formData.apartment}, ${formData.city} ${formData.state} ${formData.zipCode}`,
+            }
+
+            // Create order
+            const order = await orderService.create(orderPayload as any)
+            const orderId = (order as any).id
+
+            if (orderId) {
+                // Create payment
+                const paymentPayload = {
+                    order_id: orderId,
+                    amount: Math.round(total),
+                    method: (paymentMethod === "card" ? "card" : "online") as "cash" | "card" | "online",
+                    status: "completed" as const,
+                    paid_at: paidAt,
+                }
+
+                try {
+                    await paymentService.create(paymentPayload)
+                } catch (payErr) {
+                    console.error("Payment creation failed (order was created):", payErr)
+                    // Order was still created, proceed to success
+                }
+            }
+
+            // Clear cart and redirect to success page with order info
+            clearCart()
+            const params = new URLSearchParams({
+                orderId: orderId ? String(orderId) : "",
+                total: total.toFixed(2),
+                items: String(items.length),
+            })
+            router.push(`/ecommerce/order-success?${params.toString()}`)
+        } catch (err: any) {
+            console.error("=== ORDER CREATION ERROR ===")
+            console.error("Status:", err?.response?.status)
+            console.error("Response:", JSON.stringify(err?.response?.data, null, 2))
+
+            const validationErrors = err?.response?.data?.errors
+                ? Object.values(err.response.data.errors).flat().join(", ")
+                : ""
+
+            setOrderError(
+                validationErrors ||
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to place order. Please try again."
+            )
+        } finally {
+            setIsProcessing(false)
+        }
     }
 
     // Redirect if cart is empty
@@ -123,6 +177,14 @@ export default function CheckoutPage() {
                     Continue Shopping
                 </Link>
 
+                {/* Order Error */}
+                {orderError && (
+                    <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-xl text-red-700 text-sm">
+                        <p className="font-semibold mb-1">Order Failed</p>
+                        <p>{orderError}</p>
+                    </div>
+                )}
+
                 <div className="grid lg:grid-cols-5 gap-6 sm:gap-8 lg:gap-10">
                     {/* Left Column - Forms */}
                     <div className="lg:col-span-3 space-y-6 sm:space-y-8">
@@ -157,7 +219,7 @@ export default function CheckoutPage() {
                                             id="phone"
                                             name="phone"
                                             type="tel"
-                                            placeholder="+1 (555) 123-4567"
+                                            placeholder="+63 912 345 6789"
                                             value={formData.phone}
                                             onChange={handleInputChange}
                                             required
@@ -181,7 +243,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="firstName"
                                             name="firstName"
-                                            placeholder="John"
+                                            placeholder="Juan"
                                             value={formData.firstName}
                                             onChange={handleInputChange}
                                             required
@@ -193,7 +255,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="lastName"
                                             name="lastName"
-                                            placeholder="Doe"
+                                            placeholder="Dela Cruz"
                                             value={formData.lastName}
                                             onChange={handleInputChange}
                                             required
@@ -205,7 +267,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="address"
                                             name="address"
-                                            placeholder="123 Main Street"
+                                            placeholder="123 Rizal Street"
                                             value={formData.address}
                                             onChange={handleInputChange}
                                             required
@@ -217,7 +279,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="apartment"
                                             name="apartment"
-                                            placeholder="Apt 4B"
+                                            placeholder="Unit 4B"
                                             value={formData.apartment}
                                             onChange={handleInputChange}
                                             className="h-12 rounded-lg border-gray-300 focus:border-gray-900 focus:ring-gray-900"
@@ -228,7 +290,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="city"
                                             name="city"
-                                            placeholder="New York"
+                                            placeholder="Makati"
                                             value={formData.city}
                                             onChange={handleInputChange}
                                             required
@@ -236,11 +298,11 @@ export default function CheckoutPage() {
                                         />
                                     </div>
                                     <div>
-                                        <Label htmlFor="state" className="text-sm font-semibold text-gray-700 mb-2 block">State *</Label>
+                                        <Label htmlFor="state" className="text-sm font-semibold text-gray-700 mb-2 block">Province / Region *</Label>
                                         <Input
                                             id="state"
                                             name="state"
-                                            placeholder="NY"
+                                            placeholder="Metro Manila"
                                             value={formData.state}
                                             onChange={handleInputChange}
                                             required
@@ -252,7 +314,7 @@ export default function CheckoutPage() {
                                         <Input
                                             id="zipCode"
                                             name="zipCode"
-                                            placeholder="10001"
+                                            placeholder="1200"
                                             value={formData.zipCode}
                                             onChange={handleInputChange}
                                             required
@@ -276,15 +338,19 @@ export default function CheckoutPage() {
                                         <RadioGroupItem value="card" id="card" />
                                         <Label htmlFor="card" className="flex-1 flex items-center justify-between cursor-pointer">
                                             <span className="font-semibold text-gray-900">Credit / Debit Card</span>
-                                            <div className="flex items-center gap-2">
-                                                <span className="text-xs text-gray-500">💳 Visa, Mastercard, Amex</span>
-                                            </div>
+                                            <span className="text-xs text-gray-500">Visa, Mastercard, Amex</span>
                                         </Label>
                                     </div>
                                     <div className="flex items-center space-x-3 border-2 border-gray-200 rounded-lg p-4 hover:border-gray-900 cursor-pointer transition-colors">
-                                        <RadioGroupItem value="paypal" id="paypal" />
-                                        <Label htmlFor="paypal" className="flex-1 cursor-pointer font-semibold text-gray-900">
-                                            PayPal
+                                        <RadioGroupItem value="online" id="online" />
+                                        <Label htmlFor="online" className="flex-1 cursor-pointer font-semibold text-gray-900">
+                                            Online Payment (GCash, PayMaya)
+                                        </Label>
+                                    </div>
+                                    <div className="flex items-center space-x-3 border-2 border-gray-200 rounded-lg p-4 hover:border-gray-900 cursor-pointer transition-colors">
+                                        <RadioGroupItem value="cod" id="cod" />
+                                        <Label htmlFor="cod" className="flex-1 cursor-pointer font-semibold text-gray-900">
+                                            Cash on Delivery
                                         </Label>
                                     </div>
                                 </RadioGroup>
@@ -308,7 +374,7 @@ export default function CheckoutPage() {
                                             <Input
                                                 id="cardName"
                                                 name="cardName"
-                                                placeholder="John Doe"
+                                                placeholder="Juan Dela Cruz"
                                                 value={formData.cardName}
                                                 onChange={handleInputChange}
                                                 required={paymentMethod === "card"}
@@ -357,7 +423,7 @@ export default function CheckoutPage() {
                                             Processing...
                                         </span>
                                     ) : (
-                                        `Place Order • ${formatPrice(total)}`
+                                        `Place Order \u2022 ${formatPrice(total)}`
                                     )}
                                 </Button>
                             </div>
@@ -379,6 +445,7 @@ export default function CheckoutPage() {
                                                 alt={item.name}
                                                 fill
                                                 className="object-cover"
+                                                unoptimized
                                             />
                                             <div className="absolute -top-2 -right-2 w-6 h-6 bg-gray-900 text-white text-xs font-bold rounded-full flex items-center justify-center">
                                                 {item.quantity}
@@ -406,7 +473,7 @@ export default function CheckoutPage() {
                                     <span className="font-semibold text-green-600">{shipping === 0 ? "Free" : formatPrice(shipping)}</span>
                                 </div>
                                 <div className="flex justify-between">
-                                    <span className="text-gray-600">Tax (8%)</span>
+                                    <span className="text-gray-600">VAT (12%)</span>
                                     <span className="font-semibold text-gray-900">{formatPrice(tax)}</span>
                                 </div>
                                 <Separator className="my-3" />
@@ -424,7 +491,7 @@ export default function CheckoutPage() {
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                     <Truck className="w-5 h-5 text-blue-600 flex-shrink-0" />
-                                    <span>Free shipping on orders over $50</span>
+                                    <span>Free shipping on orders over {"\u20B1"}500</span>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
                                     <Home className="w-5 h-5 text-purple-600 flex-shrink-0" />
@@ -446,7 +513,7 @@ export default function CheckoutPage() {
                                             Processing...
                                         </span>
                                     ) : (
-                                        `Place Order • ${formatPrice(total)}`
+                                        `Place Order \u2022 ${formatPrice(total)}`
                                     )}
                                 </Button>
                             </div>

@@ -137,6 +137,9 @@ export const orderEndpoints = {
   // DELETE /orders/:id
   delete: (id: string | number) => buildUrl("/orders/:id", { id }),
 
+  // GET /orders/summary
+  summary: () => "/orders/summary",
+
   // PUT /orders/:id/status
   updateStatus: (id: string | number) => buildUrl("/orders/:id/status", { id }),
 
@@ -239,6 +242,12 @@ export const inventoryEndpoints = {
   // GET /inventory/low-stock
   lowStock: () => "/inventory/low-stock",
 
+  // GET /inventory/summary
+  summary: () => "/inventory/summary",
+
+  // POST /inventory/adjustments
+  adjustments: () => "/inventory/adjustments",
+
   // POST /inventory/:productId/adjust
   adjust: (productId: string | number) =>
     buildUrl("/inventory/:productId/adjust", { productId }),
@@ -280,6 +289,9 @@ export const paymentEndpoints = {
 
   // POST /payments/stripe
   stripe: () => "/payments/stripe",
+
+  // DELETE /payments/:id
+  delete: (id: string | number) => buildUrl("/payments/:id", { id }),
 }
 
 /**
@@ -414,6 +426,56 @@ export const storeEndpoints = {
 
   // GET /stores/:id/products
   products: (id: string | number) => buildUrl("/stores/:id/products", { id }),
+
+  // GET /stores/:id/staff
+  staff: (id: string | number) => buildUrl("/stores/:id/staff", { id }),
+
+  // PATCH/DELETE /stores/:storeId/staff/:userId
+  staffMember: (storeId: string | number, userId: string | number) =>
+    buildUrl("/stores/:storeId/staff/:userId", { storeId, userId }),
+}
+
+/**
+ * Ledger Endpoints
+ */
+export const ledgerEndpoints = {
+  // GET /ledger
+  list: () => "/ledger",
+
+  // POST /ledger
+  create: () => "/ledger",
+
+  // GET /ledger/summary
+  summary: () => "/ledger/summary",
+}
+
+/**
+ * Store Role Endpoints
+ */
+export const storeRoleEndpoints = {
+  // GET /store-roles
+  list: () => "/store-roles",
+}
+
+/**
+ * Credit Endpoints
+ */
+export const creditEndpoints = {
+  // GET /credits
+  list: () => "/credits",
+
+  // POST /credits
+  create: () => "/credits",
+
+  // GET /credits/:id
+  get: (id: string | number) => buildUrl("/credits/:id", { id }),
+
+  // POST /credits/:id/payment
+  recordPayment: (id: string | number) => buildUrl("/credits/:id/payment", { id }),
+
+  // GET /customers/:customerId/credits
+  getByCustomer: (customerId: string | number) =>
+    buildUrl("/customers/:customerId/credits", { customerId }),
 }
 
 /**
@@ -458,7 +520,10 @@ export const endpoints = {
   user: userEndpoints,
   settings: settingsEndpoints,
   stores: storeEndpoints,
+  ledger: ledgerEndpoints,
+  storeRoles: storeRoleEndpoints,
   admin: adminEndpoints,
+  credits: creditEndpoints,
 }
 
 export default endpoints

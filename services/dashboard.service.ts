@@ -11,6 +11,7 @@ import type {
     DateRangeParams,
     LowStockAlerts,
     PendingOrders,
+    CashVsCredit,
 } from '@/types/dashboard'
 
 // Standard API Response wrapper
@@ -138,6 +139,19 @@ export const dashboardService = {
     async getRecentActivity(params?: { limit?: number }): Promise<RecentActivity> {
         return retryWithBackoff(async () => {
             const { data } = await axiosClient.get<ApiResponse<RecentActivity>>('/dashboard/recent-activity', { params })
+            return data.data
+        })
+    },
+
+    /**
+     * Get cash vs credit breakdown
+     */
+    async getCashVsCredit(params?: DateRangeParams): Promise<CashVsCredit> {
+        return retryWithBackoff(async () => {
+            const { data } = await axiosClient.get<ApiResponse<CashVsCredit>>('/dashboard/cash-vs-credit', {
+                params,
+                timeout: 90000
+            })
             return data.data
         })
     },

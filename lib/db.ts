@@ -5,23 +5,35 @@
 
 import Dexie, { Table } from 'dexie';
 
+// ==================== Sync Status Tracking ====================
+
+export type SyncStatus = 'synced' | 'created' | 'updated' | 'deleted';
+
 // ==================== Local Data Models ====================
 
 /**
- * Local Product (cached from API)
+ * Local Product (cached from API, with local-first tracking)
  */
 export interface LocalProduct {
   id: number;
+  _localId?: string;
+  _status: SyncStatus;
+  _lastModified: Date;
+  _syncError?: string;
   name: string;
+  description?: string;
   sku: string;
   barcode: string | null;
   price: number;
+  cost?: number;
   stock: number;
+  min_stock?: number;
   category_id: number | null;
   category_name?: string;
   unit: string;
   image_url?: string;
   is_active: boolean;
+  is_ecommerce?: boolean;
   last_synced: Date;
 }
 
@@ -36,14 +48,22 @@ export interface LocalCategory {
 }
 
 /**
- * Local Customer (cached from API)
+ * Local Customer (cached from API, with local-first tracking)
  */
 export interface LocalCustomer {
   id: number;
+  _localId?: string;
+  _status: SyncStatus;
+  _lastModified: Date;
+  _syncError?: string;
   name: string;
   email?: string;
   phone?: string;
+  address?: string;
   status: string;
+  orders_count?: number;
+  total_spent?: number;
+  created_at?: string;
   last_synced: Date;
 }
 
@@ -55,6 +75,71 @@ export interface LocalStore {
   name: string;
   is_active: boolean;
   last_synced: Date;
+}
+
+/**
+ * Local Order (cached from API + locally created via POS transactions)
+ */
+export interface LocalOrder {
+  id: number;
+  _localId?: string;
+  _status: SyncStatus;
+  _lastModified: Date;
+  _syncError?: string;
+  order_number?: string;
+  customer_id?: number;
+  customer_name?: string;
+  ordered_at?: string;
+  status: string;
+  total: number;
+  subtotal?: number;
+  tax?: number;
+  discount?: number;
+  delivery_fee?: number;
+  payment_method?: string;
+  items_count?: number;
+  items?: Array<{
+    product_id: number;
+    product_name?: string;
+    quantity: number;
+    price: number;
+  }>;
+  created_at?: string;
+  last_synced: Date;
+}
+
+/**
+ * Local Payment (cached from API + locally created via POS transactions)
+ */
+export interface LocalPayment {
+  id: number;
+  _localId?: string;
+  _status: SyncStatus;
+  _lastModified: Date;
+  _syncError?: string;
+  payment_number?: string;
+  order_id: number;
+  customer_name?: string;
+  amount: number;
+  method: string;
+  status: string;
+  paid_at?: string;
+  created_at?: string;
+  last_synced: Date;
+}
+
+/**
+ * Pending file upload for offline-created products
+ */
+export interface PendingUpload {
+  id?: number;
+  entityType: 'product';
+  entityLocalId: string;
+  fileData: Blob;
+  fileName: string;
+  mimeType: string;
+  status: 'pending' | 'uploaded' | 'failed';
+  createdAt: Date;
 }
 
 /**
@@ -164,6 +249,9 @@ export class VendoraPOSDB extends Dexie {
   categories!: Table<LocalCategory, number>;
   customers!: Table<LocalCustomer, number>;
   stores!: Table<LocalStore, number>;
+  orders!: Table<LocalOrder, number>;
+  payments!: Table<LocalPayment, number>;
+  pendingUploads!: Table<PendingUpload, number>;
   transactions!: Table<LocalTransaction, string>;
   syncQueue!: Table<SyncQueueItem, number>;
   syncLogs!: Table<SyncLog, number>;
@@ -194,6 +282,38 @@ export class VendoraPOSDB extends Dexie {
       cachedCredentials: 'email, cachedAt',
       cachedData: 'key, lastSyncedAt'
     });
+
+    // v3: Add local-first tracking fields, orders, payments, pendingUploads tables
+    this.version(3).stores({
+      products: 'id, _localId, barcode, sku, name, category_id, is_active, _status, last_synced',
+      categories: 'id, name, last_synced',
+      customers: 'id, _localId, name, phone, status, _status, last_synced',
+      stores: 'id, name, is_active, last_synced',
+      orders: 'id, _localId, customer_id, status, _status, ordered_at, _lastModified',
+      payments: 'id, _localId, order_id, method, _status, _lastModified',
+      pendingUploads: '++id, entityType, entityLocalId, status, createdAt',
+      transactions: 'uuid, order_id, customer_id, synced, created_at, status',
+      syncQueue: '++id, uuid, type, status, priority, created_at',
+      syncLogs: '++id, type, status, started_at',
+      cachedCredentials: 'email, cachedAt',
+      cachedData: 'key, lastSyncedAt'
+    }).upgrade(tx => {
+      // Migrate existing products: add tracking fields
+      return tx.table('products').toCollection().modify(product => {
+        if (!product._status) {
+          product._status = 'synced';
+          product._lastModified = new Date();
+        }
+      }).then(() => {
+        // Migrate existing customers: add tracking fields
+        return tx.table('customers').toCollection().modify(customer => {
+          if (!customer._status) {
+            customer._status = 'synced';
+            customer._lastModified = new Date();
+          }
+        });
+      });
+    });
   }
 }
 
@@ -212,6 +332,9 @@ export async function clearDatabase() {
   await db.categories.clear();
   await db.customers.clear();
   await db.stores.clear();
+  await db.orders.clear();
+  await db.payments.clear();
+  await db.pendingUploads.clear();
   await db.transactions.clear();
   await db.syncQueue.clear();
   await db.syncLogs.clear();
@@ -270,6 +393,19 @@ export async function requestPersistentStorage(): Promise<boolean> {
 export async function getPendingTransactionsCount(): Promise<number> {
   const items = await db.transactions.toArray();
   return items.filter(t => t.synced === false).length;
+}
+
+/**
+ * Get dirty records count across all local-first tables
+ */
+export async function getDirtyRecordsCount(): Promise<number> {
+  const [dirtyProducts, dirtyCustomers, dirtyOrders, dirtyPayments] = await Promise.all([
+    db.products.where('_status').notEqual('synced').count(),
+    db.customers.where('_status').notEqual('synced').count(),
+    db.orders.where('_status').notEqual('synced').count(),
+    db.payments.where('_status').notEqual('synced').count(),
+  ]);
+  return dirtyProducts + dirtyCustomers + dirtyOrders + dirtyPayments;
 }
 
 /**

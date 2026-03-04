@@ -34,8 +34,13 @@ export async function registerServiceWorker() {
     navigator.serviceWorker.addEventListener('message', (event) => {
       console.log('[SW Message]', event.data);
 
-      if (event.data.type === 'SYNC_TRANSACTION') {
-        // Trigger sync for specific transaction
+      if (event.data.type === 'SYNC_REQUESTED') {
+        // Trigger full sync (push dirty + pull fresh + sync transactions)
+        import('./sync-service').then(({ syncService }) => {
+          syncService.fullSync().catch(console.error);
+        }).catch(console.error);
+      } else if (event.data.type === 'SYNC_TRANSACTION') {
+        // Legacy: sync single transaction
         import('./sync-service').then(({ syncService }) => {
           syncService.syncSingleTransaction(event.data.uuid).catch(console.error);
         }).catch(console.error);
@@ -46,7 +51,8 @@ export async function registerServiceWorker() {
     if ('sync' in registration) {
       try {
         await (registration as any).sync.register('sync-transactions');
-        console.log('Background sync registered');
+        await (registration as any).sync.register('sync-all');
+        console.log('Background sync registered (transactions + all)');
       } catch (err) {
         console.warn('Background sync registration failed:', err);
       }

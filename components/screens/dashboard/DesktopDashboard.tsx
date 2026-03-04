@@ -43,6 +43,7 @@ export default function DesktopDashboard() {
     topProducts,
     inventoryHealth,
     recentActivity,
+    cashVsCredit,
     loading,
     error,
     isStale,
@@ -201,7 +202,7 @@ export default function DesktopDashboard() {
             </CardContent>
           </Card>
           <div className="md:col-span-2 xl:col-span-1">
-            <CashVsCreditChart data={paymentMethods} className="h-full dark:bg-card dark:border-border" />
+            <CashVsCreditChart data={cashVsCredit} className="h-full dark:bg-card dark:border-border" />
           </div>
         </div>
 

@@ -119,4 +119,12 @@ export const paymentService = {
     refund: async (id: string | number, amount?: number, reason?: string): Promise<ApiPayment> => {
         return api.post<ApiPayment>(endpoints.payments.refund(id), { amount, reason })
     },
+
+    /**
+     * Delete a payment
+     * DELETE /api/payments/{payment}
+     */
+    delete: async (id: string | number): Promise<void> => {
+        return api.delete(endpoints.payments.delete(id))
+    },
 }

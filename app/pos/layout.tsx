@@ -41,6 +41,8 @@ import { ThemeToggle } from "@/components/pos/ThemeToggle"
 // import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
 // import { OfflineBanner } from "@/components/pos/OfflineBanner"
 import { useOfflineInit } from "@/hooks/use-offline-init"
+import { db } from "@/lib/db"
+import { syncService } from "@/lib/sync-service"
 import { authService } from "@/services/auth-jwt.service"
 import { tokenManager } from "@/lib/axios-client"
 import { TOKEN_CONFIG } from "@/config/api.config"
@@ -93,11 +95,27 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [mounted, setMounted] = useState(false)
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
-  // Initialize offline support for all POS pages (kept for background sync side effects)
+  // Initialize offline support for all POS pages
   useOfflineInit()
+  const [isInitialSync, setIsInitialSync] = useState(false)
 
   useEffect(() => {
     setMounted(true)
+
+    // Check if this is first login (no products in IndexedDB)
+    const checkInitialSync = async () => {
+      try {
+        const productCount = await db.products.count()
+        if (productCount === 0 && navigator.onLine) {
+          setIsInitialSync(true)
+          await syncService.pullAllFresh()
+          setIsInitialSync(false)
+        }
+      } catch {
+        setIsInitialSync(false)
+      }
+    }
+    checkInitialSync()
   }, [])
 
   // Auto-collapse sidebar when navigating to POS screen for maximum width
@@ -293,6 +311,24 @@ export default function POSLayout({ children }: { children: ReactNode }) {
               <Loader2 className="w-10 h-10 text-purple-400 animate-spin" />
               <p className="text-purple-300 text-sm">Signing out...</p>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* Initial Sync Overlay - shown on first login */}
+      {isInitialSync && (
+        <div className="fixed inset-0 z-[90] flex items-center justify-center animate-in fade-in duration-300" style={{ backgroundColor: '#110228' }}>
+          <div className="absolute inset-0 overflow-hidden">
+            <div className="absolute -top-40 -right-40 w-80 h-80 bg-purple-600/20 rounded-full blur-3xl" />
+            <div className="absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full blur-3xl" />
+          </div>
+          <div className="relative flex flex-col items-center gap-6 p-8">
+            <div className="relative flex items-center justify-center w-24 h-24 bg-white rounded-2xl shadow-lg p-4">
+              <Image src="/new-logo/vendora 2.png" alt="Vendora" width={72} height={72} className="object-contain" />
+            </div>
+            <h2 className="text-2xl font-bold text-white">Syncing your data...</h2>
+            <p className="text-purple-300 text-sm text-center max-w-xs">Setting up your products, customers, and more for offline use. This only happens once.</p>
+            <Loader2 className="w-8 h-8 text-purple-400 animate-spin" />
           </div>
         </div>
       )}
@@ -569,7 +605,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
         {/* <OfflineBanner
           isOnline={offline.isOnline}
           networkQuality={offline.networkQuality}
-          pendingCount={offline.pendingCount}
+          pendingCount={offline.pendingCount + offline.dirtyCount}
         /> */}
 
         {/* Header */}
@@ -623,13 +659,6 @@ export default function POSLayout({ children }: { children: ReactNode }) {
             {/* Right Side - Theme Toggle, Notifications & User Profile */}
             <div className="flex items-center gap-3">
               {/* Network Status — hidden for now */}
-              {/* <NetworkStatusBadge
-                isOnline={offline.isOnline}
-                networkQuality={offline.networkQuality}
-                pendingCount={offline.pendingCount}
-                isSyncing={offline.isSyncing}
-                onSync={offline.triggerSync}
-              /> */}
 
               {/* Theme Toggle */}
               <ThemeToggle />

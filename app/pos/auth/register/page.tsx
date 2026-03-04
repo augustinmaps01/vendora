@@ -117,7 +117,7 @@ export default function VendorRegisterPage() {
         <Card className="w-full max-w-md">
           <CardHeader className="space-y-1">
             <div className="flex items-center justify-center mb-4">
-              <div className="p-3 rounded-full" style={{ backgroundColor: '#110228' }}>
+              <div className="p-3 rounded-full bg-purple-600">
                 <CheckCircle2 className="h-6 w-6 text-white" />
               </div>
             </div>
@@ -130,7 +130,7 @@ export default function VendorRegisterPage() {
             <p className="text-sm text-center text-gray-600">
               Redirecting to dashboard...
             </p>
-            <Button onClick={() => router.push("/pos/dashboard")} className="w-full hover:opacity-90 text-white" style={{ backgroundColor: '#110228' }}>
+            <Button onClick={() => router.push("/pos/dashboard")} className="w-full bg-purple-600 hover:bg-purple-700 text-white">
               Go to Dashboard
             </Button>
           </CardFooter>
@@ -171,22 +171,19 @@ export default function VendorRegisterPage() {
                     <div className="flex flex-col items-center">
                       <div
                         className={`w-8 h-8 rounded-full flex items-center justify-center font-medium text-sm ${step >= s.num
-                          ? "text-white"
+                          ? "bg-purple-600 text-white"
                           : "bg-gray-200 text-gray-600"
                           }`}
-                        style={step >= s.num ? { backgroundColor: '#110228' } : {}}
                       >
                         {s.num}
                       </div>
-                      <span className={`mt-2 text-xs text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                      <span className={`mt-2 text-xs text-center whitespace-nowrap ${step >= s.num ? "font-medium text-purple-600" : "text-gray-500"}`}>
                         {s.label}
                       </span>
                     </div>
                     {idx < 2 && (
                       <div
-                        className={`w-12 h-0.5 mx-1 mb-5 ${step > s.num ? "" : "bg-gray-200"
-                          }`}
-                        style={step > s.num ? { backgroundColor: '#110228' } : {}}
+                        className={`w-12 h-0.5 mx-1 mb-5 ${step > s.num ? "bg-purple-600" : "bg-gray-200"}`}
                       />
                     )}
                   </div>
@@ -285,8 +282,7 @@ export default function VendorRegisterPage() {
                     </Button>
                     <Button
                       type="submit"
-                      className="hover:opacity-90 text-white"
-                      style={{ backgroundColor: '#110228' }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
                       disabled={isLoading}
                     >
                       {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -315,14 +311,13 @@ export default function VendorRegisterPage() {
                     <div className="flex flex-col items-center">
                       <div
                         className={`w-10 h-10 rounded-full flex items-center justify-center font-medium ${step >= s.num
-                          ? "text-white"
+                          ? "bg-purple-600 text-white"
                           : "bg-gray-200 text-gray-600"
                           }`}
-                        style={step >= s.num ? { backgroundColor: '#110228' } : {}}
                       >
                         {s.num}
                       </div>
-                      <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium" : "text-gray-500"}`} style={step >= s.num ? { color: '#110228' } : {}}>
+                      <span className={`mt-3 text-sm text-center whitespace-nowrap ${step >= s.num ? "font-medium text-purple-600" : "text-gray-500"}`}>
                         {s.label}
                       </span>
                     </div>
@@ -330,9 +325,7 @@ export default function VendorRegisterPage() {
                     {/* Connector Line */}
                     {idx < 2 && (
                       <div
-                        className={`w-16 h-1 mx-2 mb-6 ${step > s.num ? "" : "bg-gray-200"
-                          }`}
-                        style={step > s.num ? { backgroundColor: '#110228' } : {}}
+                        className={`w-16 h-1 mx-2 mb-6 ${step > s.num ? "bg-purple-600" : "bg-gray-200"}`}
                       />
                     )}
                   </div>
@@ -368,8 +361,7 @@ export default function VendorRegisterPage() {
                     </Link>
                     <Button
                       onClick={handleNextStep}
-                      className="hover:opacity-90 text-white"
-                      style={{ backgroundColor: '#110228' }}
+                      className="bg-purple-600 hover:bg-purple-700 text-white"
                       disabled={!selectedPlan}
                     >
                       Continue
@@ -389,7 +381,7 @@ export default function VendorRegisterPage() {
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="flex justify-center py-8">
-                  <Loader2 className="h-12 w-12 animate-spin" style={{ color: '#110228' }} />
+                  <Loader2 className="h-12 w-12 animate-spin text-purple-600" />
                 </CardContent>
               </Card>
             )}

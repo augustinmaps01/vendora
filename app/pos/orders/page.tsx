@@ -7,7 +7,8 @@ import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
 import api from "@/lib/api-client"
 import { posOrderEndpoints } from "./api-endpoints"
-import { db } from "@/lib/db"
+import { type LocalOrder } from "@/lib/db"
+import { useLocalOrders } from "@/hooks/use-local-data"
 import {
   Select,
   SelectContent,
@@ -41,13 +42,6 @@ type OrderRow = {
   items: number
 }
 
-const getErrorMessage = (error: unknown) => {
-  if (error && typeof error === "object" && "message" in error) {
-    return String((error as { message?: string }).message || "Request failed")
-  }
-  return "Request failed"
-}
-
 const normalizeStatus = (status?: string): OrderRow["status"] => {
   if (!status) return "pending"
   if (status === "completed" || status === "pending" || status === "processing" || status === "cancelled") {
@@ -57,39 +51,6 @@ const normalizeStatus = (status?: string): OrderRow["status"] => {
   if (status === "confirmed" || status === "shipped") return "processing"
   if (status === "refunded") return "cancelled"
   return "pending"
-}
-
-const formatDate = (value?: string | number | Date) => {
-  if (!value) return "—"
-  const date = value instanceof Date ? value : new Date(value)
-  if (Number.isNaN(date.getTime())) return "—"
-  return date.toISOString().slice(0, 10)
-}
-
-const normalizeOrder = (raw: any): OrderRow => {
-  const id = raw?.orderNumber || raw?.order_number || raw?.id || raw?.uuid || "—"
-  const customer =
-    raw?.customer?.name ||
-    raw?.customer_name ||
-    raw?.customer?.email ||
-    raw?.customer ||
-    "Walk-in Customer"
-  const items = Array.isArray(raw?.items)
-    ? raw.items.length
-    : Number(raw?.items_count || raw?.item_count || 0)
-  // Convert from centavos to pesos (divide by 100)
-  const total = Number(raw?.total ?? raw?.grand_total ?? 0) / 100
-  const status = normalizeStatus(raw?.status)
-  const date = formatDate(raw?.createdAt ?? raw?.created_at ?? raw?.date)
-
-  return {
-    id: String(id),
-    customer: String(customer),
-    date,
-    total,
-    status,
-    items,
-  }
 }
 
 /**
@@ -147,9 +108,22 @@ const normalizeOrderDetails = (raw: any): any => {
 function DesktopOrdersLayout() {
   const [searchQuery, setSearchQuery] = useState("")
   const [statusFilter, setStatusFilter] = useState<string>("all")
-  const [orders, setOrders] = useState<OrderRow[]>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [loadError, setLoadError] = useState<string | null>(null)
+  const { data: localOrders, isLoading: isLocalLoading } = useLocalOrders()
+  const [loadError] = useState<string | null>(null)
+
+  // Map local orders to OrderRow format
+  const orders = useMemo(() => {
+    return localOrders.map((o: LocalOrder): OrderRow => ({
+      id: o.order_number || String(o.id),
+      customer: o.customer_name || "Walk-in Customer",
+      date: o.ordered_at ? (o.ordered_at.includes("T") ? o.ordered_at.slice(0, 10) : o.ordered_at) : (o.created_at?.slice(0, 10) || "—"),
+      total: Number(o.total || 0) / 100,
+      status: normalizeStatus(o.status),
+      items: o.items_count || (o.items?.length || 0),
+    }))
+  }, [localOrders])
+
+  const isLoading = isLocalLoading
 
   const searchParams = useSearchParams()
   const highlightOrderId = searchParams.get("order")       // numeric DB id
@@ -160,78 +134,7 @@ function DesktopOrdersLayout() {
   const [isDetailsModalOpen, setIsDetailsModalOpen] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
 
-  // Pagination
-  const [currentPage] = useState(1)
-  const [perPage] = useState(15)
-
-  // Date filter
-  const [startDate] = useState<string>("")
-  const [endDate] = useState<string>("")
-
-  const loadOrders = async () => {
-    setIsLoading(true)
-    setLoadError(null)
-
-    // Load from IndexedDB cache first (for first page, no filters)
-    if (currentPage === 1 && statusFilter === "all" && !startDate && !endDate) {
-      try {
-        const cached = await db.cachedData.get('orders-page-1')
-        if (cached) {
-          const parsed = JSON.parse(cached.data)
-          setOrders(parsed.orders || [])
-          setOrders(parsed.orders || [])
-          setIsLoading(false)
-        }
-      } catch {
-        // IndexedDB may not be available
-      }
-    }
-
-    try {
-      const params: any = {
-        page: currentPage,
-        per_page: perPage,
-      }
-      if (statusFilter !== "all") {
-        params.status = statusFilter
-      }
-      if (startDate) {
-        params.start_date = startDate
-      }
-      if (endDate) {
-        params.end_date = endDate
-      }
-
-      const response = await api.get(posOrderEndpoints.list(), { params })
-      const items = Array.isArray((response as any)?.data)
-        ? (response as any).data
-        : Array.isArray((response as any)?.items)
-          ? (response as any).items
-          : Array.isArray(response as any)
-            ? (response as any)
-            : []
-      const normalizedOrders = items.map((item: any) => normalizeOrder(item))
-      setOrders(normalizedOrders)
-
-
-
-      // Cache first page for offline use
-      if (currentPage === 1 && statusFilter === "all" && !startDate && !endDate) {
-        db.cachedData.put({
-          key: 'orders-page-1',
-          data: JSON.stringify({ orders: normalizedOrders, total: (response as any)?.meta?.total }),
-          lastSyncedAt: new Date(),
-        }).catch(() => { })
-      }
-    } catch (error: any) {
-      // Only show error if we have no cached data
-      if (orders.length === 0) {
-        setLoadError(getErrorMessage(error))
-      }
-    } finally {
-      setIsLoading(false)
-    }
-  }
+  // Orders loaded reactively via useLocalOrders() -- no manual loadOrders() needed
 
 
 
@@ -265,10 +168,6 @@ function DesktopOrdersLayout() {
 
 
 
-  useEffect(() => {
-    loadOrders()
-  }, [statusFilter, currentPage, startDate, endDate])
-
   // Auto-open order detail modal when navigated from Pending Orders dashboard
   useEffect(() => {
     if (!highlightOrderId || isLoading || orders.length === 0 || autoOpenedRef.current) return
@@ -284,23 +183,25 @@ function DesktopOrdersLayout() {
     }, 400)
   }, [isLoading, orders.length, highlightOrderId])
 
-  // Auto-refresh every 30 seconds
-  useEffect(() => {
-    const interval = setInterval(() => {
-      loadOrders()
-    }, 30000)
-    return () => clearInterval(interval)
-  }, [currentPage, statusFilter, startDate, endDate])
+  // liveQuery handles reactivity — no auto-refresh interval needed
 
   const filteredOrders = useMemo(() => {
+    let result = orders
+    // Filter by status dropdown
+    if (statusFilter !== "all") {
+      result = result.filter(order => order.status === statusFilter)
+    }
+    // Filter by search query
     const q = searchQuery.trim().toLowerCase()
-    if (!q) return orders
-    return orders.filter((order) =>
-      order.id.toLowerCase().includes(q) ||
-      order.customer.toLowerCase().includes(q) ||
-      order.date.toLowerCase().includes(q)
-    )
-  }, [orders, searchQuery])
+    if (q) {
+      result = result.filter((order) =>
+        order.id.toLowerCase().includes(q) ||
+        order.customer.toLowerCase().includes(q) ||
+        order.date.toLowerCase().includes(q)
+      )
+    }
+    return result
+  }, [orders, searchQuery, statusFilter])
 
   const totalOrders = orders.length
   const pendingOrders = orders.filter((order) => order.status === "pending").length
@@ -849,7 +750,7 @@ function DesktopOrdersLayout() {
 
 export default function OrdersPage() {
   return (
-    <Suspense fallback={<div className="flex items-center justify-center h-64"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" /></div>}>
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[calc(100vh-4rem)]"><div className="animate-spin rounded-full h-8 w-8 border-b-2 border-purple-600" /></div>}>
       <DesktopOrdersLayout />
     </Suspense>
   )

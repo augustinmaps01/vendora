@@ -1,21 +1,171 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Switch } from "@/components/ui/switch"
 import {
-
   Store,
   Bell,
   Lock,
   CreditCard,
   Users,
   Printer,
-  Globe
+  Globe,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
+  UserPlus,
+  Trash2,
+  ChevronDown,
+  ChevronUp,
 } from "lucide-react"
+import { storeService, storeStaffService } from "@/services"
+import type { ApiStore, StoreStaffMember, StoreRole } from "@/services"
 
 export default function SettingsPage() {
+  const [store, setStore] = useState<ApiStore | null>(null)
+  const [staffMembers, setStaffMembers] = useState<StoreStaffMember[]>([])
+  const [roles, setRoles] = useState<StoreRole[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+
+  // Staff management state
+  const [showStaffPanel, setShowStaffPanel] = useState(false)
+  const [staffEmail, setStaffEmail] = useState("")
+  const [staffRole, setStaffRole] = useState("cashier")
+  const [addingStaff, setAddingStaff] = useState(false)
+  const [staffError, setStaffError] = useState<string | null>(null)
+  const [removingId, setRemovingId] = useState<number | null>(null)
+
+  // Form state
+  const [storeName, setStoreName] = useState("")
+  const [storeEmail, setStoreEmail] = useState("")
+  const [storePhone, setStorePhone] = useState("")
+  const [storeAddress, setStoreAddress] = useState("")
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const storesData = await storeService.getAll()
+      const stores = Array.isArray(storesData) ? storesData : storesData.data || []
+
+      if (stores.length > 0) {
+        const firstStore = stores[0]
+        setStore(firstStore)
+        setStoreName(firstStore.name || "")
+        setStoreAddress(firstStore.address || "")
+      }
+
+      // Fetch staff and roles if store exists
+      if (stores.length > 0) {
+        try {
+          const [staff, storeRoles] = await Promise.all([
+            storeStaffService.getStaff(stores[0].id),
+            storeStaffService.getRoles(),
+          ])
+          setStaffMembers(Array.isArray(staff) ? staff : [])
+          setRoles(Array.isArray(storeRoles) ? storeRoles : [])
+        } catch {
+          setStaffMembers([])
+          setRoles([])
+        }
+      }
+    } catch (err: any) {
+      console.error("Failed to load settings:", err)
+      setError(err?.message || "Failed to load settings")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleSave = async () => {
+    if (!store) return
+    setSaving(true)
+    try {
+      const updated = await storeService.update(store.id, {
+        name: storeName,
+        address: storeAddress,
+      })
+      setStore(updated)
+    } catch (err: any) {
+      console.error("Failed to save store:", err)
+      alert(err?.message || "Failed to save changes")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleAddStaff = async () => {
+    if (!store || !staffEmail.trim()) return
+    setAddingStaff(true)
+    setStaffError(null)
+    try {
+      const newMember = await storeStaffService.addStaff(store.id, {
+        email: staffEmail.trim(),
+        role: staffRole,
+      })
+      setStaffMembers(prev => [...prev, newMember])
+      setStaffEmail("")
+      setStaffRole("cashier")
+    } catch (err: any) {
+      const msg = err?.response?.data?.message
+        || Object.values(err?.response?.data?.errors || {}).flat().join(", ")
+        || err?.message
+        || "Failed to add staff member"
+      setStaffError(msg)
+    } finally {
+      setAddingStaff(false)
+    }
+  }
+
+  const handleRemoveStaff = async (userId: number) => {
+    if (!store) return
+    setRemovingId(userId)
+    try {
+      await storeStaffService.removeStaff(store.id, userId)
+      setStaffMembers(prev => prev.filter(s => s.id !== userId))
+    } catch (err: any) {
+      alert(err?.message || "Failed to remove staff member")
+    } finally {
+      setRemovingId(null)
+    }
+  }
+
+  const activeStaff = staffMembers.filter(s => s.status !== "inactive").length
+
+  const availableRoles = roles.length > 0
+    ? roles.map(r => r.name)
+    : ["cashier", "manager", "supervisor"]
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
+        <Button onClick={fetchData} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -38,21 +188,51 @@ export default function SettingsPage() {
             <div className="space-y-4">
               <div>
                 <Label htmlFor="storeName">Store Name</Label>
-                <Input id="storeName" defaultValue="Bunya Retail Shop" className="mt-1.5" />
+                <Input
+                  id="storeName"
+                  value={storeName}
+                  onChange={(e) => setStoreName(e.target.value)}
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" defaultValue="vendor@bunyaretail.com" className="mt-1.5" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={storeEmail}
+                  onChange={(e) => setStoreEmail(e.target.value)}
+                  placeholder="vendor@example.com"
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label htmlFor="phone">Phone Number</Label>
-                <Input id="phone" defaultValue="+63 912 345 6789" className="mt-1.5" />
+                <Input
+                  id="phone"
+                  value={storePhone}
+                  onChange={(e) => setStorePhone(e.target.value)}
+                  placeholder="+63 912 345 6789"
+                  className="mt-1.5"
+                />
               </div>
               <div>
                 <Label htmlFor="address">Business Address</Label>
-                <Input id="address" defaultValue="123 Main St, Manila, Philippines" className="mt-1.5" />
+                <Input
+                  id="address"
+                  value={storeAddress}
+                  onChange={(e) => setStoreAddress(e.target.value)}
+                  className="mt-1.5"
+                />
               </div>
-              <Button className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto">Save Changes</Button>
+              <Button
+                className="bg-purple-600 hover:bg-purple-700 w-full sm:w-auto"
+                onClick={handleSave}
+                disabled={saving}
+              >
+                {saving && <Loader2 className="w-4 h-4 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
             </div>
           </div>
 
@@ -139,26 +319,108 @@ export default function SettingsPage() {
 
           {/* Staff Management */}
           <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
-            <div className="flex items-center gap-3 mb-4">
-              <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg">
-                <Users className="h-5 w-5 text-orange-600" />
+            <button
+              className="flex items-center justify-between w-full mb-2"
+              onClick={() => setShowStaffPanel(v => !v)}
+            >
+              <div className="flex items-center gap-3">
+                <div className="bg-orange-100 dark:bg-orange-900/30 p-2 rounded-lg">
+                  <Users className="h-5 w-5 text-orange-600" />
+                </div>
+                <h3 className="font-semibold text-gray-900 dark:text-white">Staff & Roles</h3>
               </div>
-              <h3 className="font-semibold text-gray-900 dark:text-white">Staff & Roles</h3>
+              {showStaffPanel
+                ? <ChevronUp className="h-4 w-4 text-gray-500" />
+                : <ChevronDown className="h-4 w-4 text-gray-500" />
+              }
+            </button>
+
+            <div className="flex justify-between text-sm mb-3">
+              <span className="text-gray-600 dark:text-[#b4b4d0]">Total Staff</span>
+              <span className="font-semibold dark:text-white">{staffMembers.length}</span>
             </div>
-            <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-4">Manage staff members and their permissions</p>
-            <div className="space-y-2 mb-4">
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-[#b4b4d0]">Total Staff</span>
-                <span className="font-semibold dark:text-white">5</span>
-              </div>
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600 dark:text-[#b4b4d0]">Active</span>
-                <span className="font-semibold text-green-600">4</span>
-              </div>
+            <div className="flex justify-between text-sm mb-4">
+              <span className="text-gray-600 dark:text-[#b4b4d0]">Active</span>
+              <span className="font-semibold text-green-600">{activeStaff}</span>
             </div>
-            <Button className="w-full" variant="outline" size="sm">
-              Manage Staff
-            </Button>
+
+            {showStaffPanel && (
+              <div className="space-y-4 border-t border-gray-100 dark:border-[#2d1b69] pt-4">
+                {/* Add staff form */}
+                <div className="space-y-2">
+                  <Label className="text-sm">Add Staff Member</Label>
+                  <Input
+                    type="email"
+                    placeholder="staff@example.com"
+                    value={staffEmail}
+                    onChange={e => setStaffEmail(e.target.value)}
+                    className="text-sm"
+                  />
+                  <select
+                    value={staffRole}
+                    onChange={e => setStaffRole(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-200 dark:border-[#2d1b69] dark:bg-[#13132a] dark:text-white rounded-lg text-sm"
+                  >
+                    {availableRoles.map(r => (
+                      <option key={r} value={r}>{r.charAt(0).toUpperCase() + r.slice(1)}</option>
+                    ))}
+                  </select>
+                  {staffError && (
+                    <p className="text-xs text-red-500">{staffError}</p>
+                  )}
+                  <Button
+                    className="w-full bg-orange-500 hover:bg-orange-600 text-white"
+                    size="sm"
+                    onClick={handleAddStaff}
+                    disabled={addingStaff || !staffEmail.trim()}
+                  >
+                    {addingStaff
+                      ? <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      : <UserPlus className="w-4 h-4 mr-2" />
+                    }
+                    Add Staff
+                  </Button>
+                </div>
+
+                {/* Staff list */}
+                {staffMembers.length > 0 && (
+                  <div className="space-y-2">
+                    <Label className="text-sm">Current Staff</Label>
+                    {staffMembers.map(member => (
+                      <div
+                        key={member.id}
+                        className="flex items-center justify-between bg-gray-50 dark:bg-[#1a1a3a] rounded-lg px-3 py-2"
+                      >
+                        <div className="min-w-0">
+                          <p className="text-sm font-medium dark:text-white truncate">
+                            {member.name || member.email}
+                          </p>
+                          <p className="text-xs text-gray-500 dark:text-[#b4b4d0] truncate">
+                            {member.name ? member.email : ""}{member.role ? ` · ${member.role}` : ""}
+                          </p>
+                        </div>
+                        <button
+                          className="ml-2 shrink-0 text-red-400 hover:text-red-600 disabled:opacity-40"
+                          onClick={() => handleRemoveStaff(member.id)}
+                          disabled={removingId === member.id}
+                        >
+                          {removingId === member.id
+                            ? <Loader2 className="w-4 h-4 animate-spin" />
+                            : <Trash2 className="w-4 h-4" />
+                          }
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+
+                {staffMembers.length === 0 && (
+                  <p className="text-xs text-center text-gray-400 dark:text-[#b4b4d0] py-2">
+                    No staff members yet
+                  </p>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Printer Settings */}

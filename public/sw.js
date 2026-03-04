@@ -157,11 +157,11 @@ async function staleWhileRevalidate(request, cacheName) {
   return cachedResponse || fetchPromise;
 }
 
-// Background Sync - retry failed transactions when online
+// Background Sync - retry failed transactions and dirty records when online
 self.addEventListener('sync', (event) => {
   console.log('[SW] Background sync triggered:', event.tag);
 
-  if (event.tag === 'sync-transactions') {
+  if (event.tag === 'sync-transactions' || event.tag === 'sync-all') {
     event.waitUntil(syncTransactions());
   }
 });
@@ -195,7 +195,7 @@ async function syncTransactions() {
 // Open IndexedDB
 function openDatabase() {
   return new Promise((resolve, reject) => {
-    const request = indexedDB.open('VendoraPOSDB', 2);
+    const request = indexedDB.open('VendoraPOSDB', 3);
     request.onsuccess = () => resolve(request.result);
     request.onerror = () => reject(request.error);
   });
@@ -214,12 +214,13 @@ function getPendingTransactions(db) {
   });
 }
 
-// Sync a single transaction - message main thread to handle
+// Sync a single transaction - message main thread to handle full sync
 async function syncTransaction(txn) {
   const clients = await self.clients.matchAll();
   clients.forEach((client) => {
     client.postMessage({
-      type: 'SYNC_TRANSACTION',
+      type: 'SYNC_REQUESTED',
+      syncType: 'all',
       uuid: txn.uuid
     });
   });

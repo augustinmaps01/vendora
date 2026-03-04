@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
@@ -13,11 +13,111 @@ import {
   Eye,
   Settings,
   ExternalLink,
-  Palette
+  Palette,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
+import { storeService, orderService } from "@/services"
+import type { ApiStore } from "@/services"
+import type { ApiProduct } from "@/services/product.service"
+
+interface RecentOrder {
+  id: number | string
+  order_number?: string
+  customer?: string | { name?: string }
+  ordered_at?: string
+  created_at?: string
+  total?: number
+  status?: string
+}
 
 export default function EcommercePage() {
+  const [store, setStore] = useState<ApiStore | null>(null)
   const [storeActive, setStoreActive] = useState(true)
+  const [products, setProducts] = useState<ApiProduct[]>([])
+  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const storesData = await storeService.getAll()
+      const stores = Array.isArray(storesData) ? storesData : storesData.data || []
+
+      let storeProducts: ApiProduct[] = []
+      if (stores.length > 0) {
+        const firstStore = stores[0]
+        setStore(firstStore)
+        setStoreActive(firstStore.is_active)
+
+        try {
+          storeProducts = await storeService.getProducts(firstStore.id, { per_page: 500 })
+          if (!Array.isArray(storeProducts)) storeProducts = []
+        } catch {
+          storeProducts = []
+        }
+      }
+      setProducts(storeProducts)
+
+      // Fetch recent orders
+      try {
+        const ordersData = await orderService.getAll({ per_page: 10 } as any)
+        const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any).data || []
+        setRecentOrders(orders)
+      } catch {
+        setRecentOrders([])
+      }
+    } catch (err: any) {
+      console.error("Failed to load e-commerce data:", err)
+      setError(err?.message || "Failed to load e-commerce data")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  const handleStoreToggle = async (active: boolean) => {
+    setStoreActive(active)
+    if (store) {
+      try {
+        await storeService.update(store.id, { is_active: active })
+      } catch (err: any) {
+        console.error("Failed to update store status:", err)
+        setStoreActive(!active) // revert
+      }
+    }
+  }
+
+  const totalProducts = products.length
+  const publishedProducts = products.filter((p: any) => p.is_active !== false && p.status !== "draft").length
+  const draftProducts = totalProducts - publishedProducts
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
+        <Button onClick={fetchData} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
 
   return (
     <div className="space-y-4 sm:space-y-6">
@@ -53,7 +153,7 @@ export default function EcommercePage() {
             <div>
               <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Online Store Status</h3>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">
-                Your store URL: <a href="/ecommerce/products" target="_blank" className="font-medium text-purple-600 hover:underline">bunyaretail.vendora.shop</a>
+                {store?.name || "Your Store"}
               </p>
             </div>
           </div>
@@ -63,7 +163,7 @@ export default function EcommercePage() {
             </span>
             <Switch
               checked={storeActive}
-              onCheckedChange={setStoreActive}
+              onCheckedChange={handleStoreToggle}
               className="data-[state=checked]:bg-green-600"
             />
           </div>
@@ -76,10 +176,9 @@ export default function EcommercePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Online Orders</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">342</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +18.2% this month
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">{recentOrders.length}</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-[#b4b4d0] mt-1 sm:mt-2">
+                Recent orders
               </p>
             </div>
             <div className="bg-blue-100 dark:bg-blue-900/30 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -92,10 +191,9 @@ export default function EcommercePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Store Visitors</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">8,246</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +12.5% this month
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">--</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-[#b4b4d0] mt-1 sm:mt-2">
+                No analytics API
               </p>
             </div>
             <div className="bg-purple-100 dark:bg-purple-900/30 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -108,10 +206,9 @@ export default function EcommercePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Conversion Rate</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">4.2%</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +0.8% this month
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">--</p>
+              <p className="text-[10px] sm:text-xs text-gray-600 dark:text-[#b4b4d0] mt-1 sm:mt-2">
+                No analytics API
               </p>
             </div>
             <div className="bg-green-100 dark:bg-green-900/30 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -124,7 +221,7 @@ export default function EcommercePage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Online Products</p>
-              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">156</p>
+              <p className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">{totalProducts}</p>
               <p className="text-[10px] sm:text-xs text-gray-600 dark:text-[#b4b4d0] mt-1 sm:mt-2">
                 Active listings
               </p>
@@ -149,7 +246,7 @@ export default function EcommercePage() {
           <div className="space-y-4">
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0] mb-2 block">Store Name</label>
-              <Input defaultValue="Bunya Retail Shop" />
+              <Input defaultValue={store?.name || ""} />
             </div>
             <div>
               <label className="text-sm font-medium text-gray-700 dark:text-[#e0e0f0] mb-2 block">Store Tagline</label>
@@ -217,24 +314,24 @@ export default function EcommercePage() {
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Sync your POS products with online store</p>
             </div>
           </div>
-          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 w-fit">Synced 5 mins ago</Badge>
+          <Badge className="bg-green-100 text-green-800 hover:bg-green-100 w-fit">Synced</Badge>
         </div>
         <div className="grid grid-cols-3 gap-3 sm:gap-4">
           <div className="p-3 sm:p-4 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
             <div className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-1">Total Products</div>
-            <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">156</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-900 dark:text-white">{totalProducts}</div>
           </div>
           <div className="p-3 sm:p-4 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
             <div className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-1">Published</div>
-            <div className="text-xl sm:text-2xl font-bold text-green-600">142</div>
+            <div className="text-xl sm:text-2xl font-bold text-green-600">{publishedProducts}</div>
           </div>
           <div className="p-3 sm:p-4 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
             <div className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0] mb-1">Draft/Hidden</div>
-            <div className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-[#b4b4d0]">14</div>
+            <div className="text-xl sm:text-2xl font-bold text-gray-600 dark:text-[#b4b4d0]">{draftProducts}</div>
           </div>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-6">
-          <Button className="bg-purple-600 hover:bg-purple-700 flex-1 sm:flex-none">
+          <Button className="bg-purple-600 hover:bg-purple-700 flex-1 sm:flex-none" onClick={fetchData}>
             Sync Now
           </Button>
           <Button variant="outline" className="flex-1 sm:flex-none">
@@ -246,40 +343,53 @@ export default function EcommercePage() {
       {/* Recent Online Orders */}
       <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
         <h2 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-6">Recent Online Orders</h2>
-        <div className="space-y-3">
-          {[
-            { id: "WEB-001", customer: "Sarah Johnson", date: "2026-01-10 15:30", amount: 1850, status: "processing" },
-            { id: "WEB-002", customer: "Michael Chen", date: "2026-01-10 14:15", amount: 2450, status: "completed" },
-            { id: "WEB-003", customer: "Emma Wilson", date: "2026-01-10 12:45", amount: 950, status: "completed" },
-            { id: "WEB-004", customer: "David Brown", date: "2026-01-09 18:20", amount: 3200, status: "shipped" },
-          ].map((order) => (
-            <div key={order.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
-              <div className="flex items-center gap-3 sm:gap-4">
-                <div className="flex-shrink-0 bg-purple-100 p-1.5 sm:p-2 rounded">
-                  <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
-                </div>
-                <div>
-                  <div className="text-sm font-medium text-gray-900 dark:text-white">{order.id}</div>
-                  <div className="text-xs text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">
-                    {order.customer} <span className="hidden sm:inline">• {order.date}</span>
+        {recentOrders.length === 0 ? (
+          <p className="text-sm text-gray-500 dark:text-[#b4b4d0] text-center py-8">No orders found</p>
+        ) : (
+          <div className="space-y-3">
+            {recentOrders.map((order) => {
+              const statusColor = order.status === "completed"
+                ? "bg-green-100 text-green-800"
+                : order.status === "pending"
+                  ? "bg-purple-100 text-purple-800"
+                  : "bg-blue-100 text-blue-800"
+              const statusLabel = order.status
+                ? order.status.charAt(0).toUpperCase() + order.status.slice(1)
+                : "Unknown"
+              const customerName = typeof order.customer === "object"
+                ? order.customer?.name || "Customer"
+                : order.customer || "Customer"
+              const orderDate = order.ordered_at || order.created_at || ""
+
+              return (
+                <div key={order.id} className="flex items-center justify-between p-3 sm:p-4 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
+                  <div className="flex items-center gap-3 sm:gap-4">
+                    <div className="flex-shrink-0 bg-purple-100 p-1.5 sm:p-2 rounded">
+                      <ShoppingCart className="h-4 w-4 sm:h-5 sm:w-5 text-purple-600" />
+                    </div>
+                    <div>
+                      <div className="text-sm font-medium text-gray-900 dark:text-white">
+                        {order.order_number || `#${order.id}`}
+                      </div>
+                      <div className="text-xs text-gray-600 dark:text-[#b4b4d0] mt-0.5 sm:mt-1">
+                        {customerName}
+                        {orderDate && <span className="hidden sm:inline"> &bull; {orderDate}</span>}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <div className="text-sm font-bold text-gray-900 dark:text-white">
+                      ₱{(order.total ?? 0).toLocaleString()}
+                    </div>
+                    <Badge className={`${statusColor} hidden sm:inline-flex`}>
+                      {statusLabel}
+                    </Badge>
                   </div>
                 </div>
-              </div>
-              <div className="flex items-center gap-2 sm:gap-3">
-                <div className="text-sm font-bold text-gray-900 dark:text-white">₱{order.amount.toFixed(2)}</div>
-                {order.status === "completed" && (
-                  <Badge className="bg-green-100 text-green-800 hover:bg-green-100 hidden sm:inline-flex">Completed</Badge>
-                )}
-                {order.status === "processing" && (
-                  <Badge className="bg-purple-100 text-purple-800 hover:bg-purple-100 hidden sm:inline-flex">Processing</Badge>
-                )}
-                {order.status === "shipped" && (
-                  <Badge className="bg-blue-100 text-blue-800 hover:bg-blue-100 hidden sm:inline-flex">Shipped</Badge>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
+              )
+            })}
+          </div>
+        )}
       </div>
     </div>
   )

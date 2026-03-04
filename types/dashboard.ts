@@ -95,6 +95,21 @@ export interface RecentActivity {
     items: ActivityItem[]
 }
 
+export interface CashVsCredit {
+    total_amount: number
+    cash: {
+        amount: number
+        percentage: number
+        count: number
+    }
+    credit: {
+        amount: number
+        percentage: number
+        count: number
+    }
+    outstanding_credit: number
+}
+
 export interface DateRangeParams {
     start_date?: string
     end_date?: string

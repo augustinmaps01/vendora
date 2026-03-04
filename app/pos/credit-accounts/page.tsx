@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect } from "react"
+import { useState, useMemo, useEffect, useCallback } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -31,11 +31,18 @@ import {
     CreditCard,
     FileText,
     Banknote,
+    RefreshCw,
+    Loader2,
 } from "lucide-react"
 import { CreditAccountsDataTable } from "@/components/pos/CreditAccountsDataTable"
 import { CreditAccountCards } from "@/components/pos/CreditAccountCards"
+import { creditService } from "@/services"
+import type { ApiCredit } from "@/services"
+import Swal from "sweetalert2"
 
-// Types
+// ---------------------------------------------------------------------------
+// Types (kept identical to what DataTable + Cards expect)
+// ---------------------------------------------------------------------------
 interface Payment {
     id: number
     amount: number
@@ -83,100 +90,39 @@ interface CreditAccount {
     lastPaymentDate?: string
 }
 
-// Mock data with more details including paid amounts per item
-const mockAccounts: CreditAccount[] = [
-    {
-        id: 1,
-        customer: {
-            id: 1,
-            name: "Juan Dela Cruz",
-            phone: "+63 912 345 6789",
-            email: "juan@email.com",
-            address: "123 Main St, Quezon City",
-            memberSince: "2025-06-15"
-        },
-        totalAmount: 15000,
-        paidAmount: 5000,
-        remainingBalance: 10000,
-        creditLimit: 20000,
-        dueDate: "2026-02-15",
-        installmentPlan: {
-            frequency: 'monthly',
-            amount: 2500,
-            nextDue: "2026-02-01"
-        },
-        payments: [
-            { id: 1, amount: 3000, paymentDate: "2026-01-05", method: 'cash', notes: "Initial payment", receivedBy: "Staff A" },
-            { id: 2, amount: 2000, paymentDate: "2026-01-20", method: 'bank', notes: "Partial payment", receivedBy: "Staff B" },
-        ],
-        items: [
-            { id: 1, name: "Premium Rice 25kg", quantity: 2, unitPrice: 1500, total: 3000, date: "2026-01-01", status: 'paid', paidAmount: 3000 },
-            { id: 2, name: "Cooking Oil 5L", quantity: 3, unitPrice: 450, total: 1350, date: "2026-01-01", status: 'paid', paidAmount: 1350 },
-            { id: 3, name: "Sugar 1kg (x10)", quantity: 10, unitPrice: 75, total: 750, date: "2026-01-05", status: 'partial', paidAmount: 650 },
-            { id: 4, name: "Canned Goods Bundle", quantity: 1, unitPrice: 2400, total: 2400, date: "2026-01-10", status: 'pending', paidAmount: 0 },
-            { id: 5, name: "Household Items", quantity: 1, unitPrice: 7500, total: 7500, date: "2026-01-15", status: 'pending', paidAmount: 0 },
-        ],
-        status: 'active',
-        createdAt: "2026-01-01",
-        lastPaymentDate: "2026-01-20"
-    },
-    {
-        id: 2,
-        customer: {
-            id: 2,
-            name: "Maria Santos",
-            phone: "+63 923 456 7890",
-            address: "456 Oak Ave, Makati",
-            memberSince: "2025-08-20"
-        },
-        totalAmount: 8500,
-        paidAmount: 8500,
-        remainingBalance: 0,
-        dueDate: "2026-01-25",
-        payments: [
-            { id: 3, amount: 8500, paymentDate: "2026-01-25", method: 'cash', receivedBy: "Staff A" },
-        ],
-        items: [
-            { id: 6, name: "Grocery Bundle", quantity: 1, unitPrice: 5000, total: 5000, date: "2026-01-15", status: 'paid', paidAmount: 5000 },
-            { id: 7, name: "Personal Care Items", quantity: 1, unitPrice: 3500, total: 3500, date: "2026-01-15", status: 'paid', paidAmount: 3500 },
-        ],
-        status: 'paid',
-        createdAt: "2026-01-15",
-        lastPaymentDate: "2026-01-25"
-    },
-    {
-        id: 3,
-        customer: {
-            id: 3,
-            name: "Pedro Reyes",
-            phone: "+63 934 567 8901",
-            address: "789 Pine Rd, Pasig",
-            memberSince: "2025-03-10"
-        },
-        totalAmount: 12000,
-        paidAmount: 3000,
-        remainingBalance: 9000,
-        creditLimit: 15000,
-        dueDate: "2026-01-20",
-        installmentPlan: {
-            frequency: 'weekly',
-            amount: 1500,
-            nextDue: "2026-02-03"
-        },
-        payments: [
-            { id: 4, amount: 3000, paymentDate: "2026-01-10", method: 'card', receivedBy: "Staff C" },
-        ],
-        items: [
-            { id: 8, name: "Electronics Bundle", quantity: 1, unitPrice: 8000, total: 8000, date: "2026-01-05", status: 'partial', paidAmount: 3000 },
-            { id: 9, name: "Accessories", quantity: 1, unitPrice: 4000, total: 4000, date: "2026-01-05", status: 'pending', paidAmount: 0 },
-        ],
-        status: 'overdue',
-        createdAt: "2026-01-05",
-        lastPaymentDate: "2026-01-10"
-    },
-]
+// ---------------------------------------------------------------------------
+// Map API credit → UI CreditAccount shape
+// ---------------------------------------------------------------------------
+function mapApiCredit(c: ApiCredit): CreditAccount {
+    const status: CreditAccount["status"] =
+        c.status === "active" || c.status === "overdue" || c.status === "paid" || c.status === "defaulted"
+            ? c.status
+            : "active"
 
-// Progress Bar Component for Payment Dialog
+    return {
+        id: c.id,
+        customer: {
+            id: c.customer?.id ?? c.customer_id,
+            name: c.customer?.name ?? `Customer #${c.customer_id}`,
+            phone: c.customer?.phone ?? undefined,
+            email: c.customer?.email ?? undefined,
+            address: c.customer?.address ?? undefined,
+        },
+        totalAmount: Number(c.amount) || 0,
+        paidAmount: Number(c.paid_amount) || 0,
+        remainingBalance: Number(c.balance) || 0,
+        creditLimit: c.credit_limit ? Number(c.credit_limit) : undefined,
+        dueDate: c.due_date ?? undefined,
+        payments: [],   // individual transactions not provided by list endpoint
+        items: [],
+        status,
+        createdAt: c.created_at,
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Progress Bar Component
+// ---------------------------------------------------------------------------
 function ProgressBar({ value, max }: { value: number; max: number }) {
     const percentage = max > 0 ? Math.min((value / max) * 100, 100) : 0
 
@@ -192,74 +138,96 @@ function ProgressBar({ value, max }: { value: number; max: number }) {
     )
 }
 
-// Custom hook to detect if screen is desktop (lg breakpoint: 1024px)
+// ---------------------------------------------------------------------------
+// Custom hook: desktop detection
+// ---------------------------------------------------------------------------
 function useIsDesktop() {
     const [isDesktop, setIsDesktop] = useState(false)
 
     useEffect(() => {
-        const checkIsDesktop = () => {
-            setIsDesktop(window.innerWidth >= 1024)
-        }
-
-        // Check on mount
+        const checkIsDesktop = () => setIsDesktop(window.innerWidth >= 1024)
         checkIsDesktop()
-
-        // Add resize listener
         window.addEventListener('resize', checkIsDesktop)
-
         return () => window.removeEventListener('resize', checkIsDesktop)
     }, [])
 
     return isDesktop
 }
 
+// ---------------------------------------------------------------------------
+// Main Page
+// ---------------------------------------------------------------------------
 export default function CreditAccountsPage() {
+    const [accounts, setAccounts] = useState<CreditAccount[]>([])
+    const [isLoading, setIsLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
+    const [isRefreshing, setIsRefreshing] = useState(false)
+
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
-    const [accounts] = useState<CreditAccount[]>(mockAccounts)
     const [selectedAccount, setSelectedAccount] = useState<CreditAccount | null>(null)
     const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
     const [paymentAmount, setPaymentAmount] = useState("")
     const [paymentMethod, setPaymentMethod] = useState("")
     const [paymentNotes, setPaymentNotes] = useState("")
+    const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
     const [expandedAccounts, setExpandedAccounts] = useState<Set<number>>(new Set())
 
     const isDesktop = useIsDesktop()
 
-    // Toggle expanded state for an account (for cards view)
+    // ── Fetch from API ────────────────────────────────────────────────────
+    const fetchAccounts = useCallback(async (silent = false) => {
+        if (!silent) setIsLoading(true)
+        else setIsRefreshing(true)
+        setError(null)
+
+        try {
+            const response = await creditService.getAll({ per_page: 200 })
+            const raw = Array.isArray(response) ? response : (response.data ?? [])
+            setAccounts(raw.map(mapApiCredit))
+        } catch (err: any) {
+            console.error("Failed to load credit accounts:", err)
+            setError(
+                err?.response?.data?.message ||
+                err?.message ||
+                "Failed to load credit accounts. Please try again."
+            )
+        } finally {
+            setIsLoading(false)
+            setIsRefreshing(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchAccounts()
+    }, [fetchAccounts])
+
+    // ── Helpers ───────────────────────────────────────────────────────────
     const toggleExpanded = (accountId: number) => {
         setExpandedAccounts(prev => {
-            const newSet = new Set(prev)
-            if (newSet.has(accountId)) {
-                newSet.delete(accountId)
-            } else {
-                newSet.add(accountId)
-            }
-            return newSet
+            const next = new Set(prev)
+            if (next.has(accountId)) next.delete(accountId)
+            else next.add(accountId)
+            return next
         })
     }
 
-    // Filter accounts for cards view (DataTable handles its own filtering)
     const filteredAccounts = useMemo(() => {
         return accounts.filter(account => {
             const matchesSearch =
                 account.customer.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
                 account.customer.phone?.includes(searchQuery) ||
                 account.customer.email?.toLowerCase().includes(searchQuery.toLowerCase())
-
             const matchesStatus = statusFilter === "all" || account.status === statusFilter
-
             return matchesSearch && matchesStatus
         })
     }, [accounts, searchQuery, statusFilter])
 
-    // Statistics
     const stats = useMemo(() => {
         const totalAccounts = accounts.length
         const activeAccounts = accounts.filter(a => a.status === 'active').length
         const overdueAccounts = accounts.filter(a => a.status === 'overdue').length
         const totalOutstanding = accounts.reduce((sum, a) => sum + a.remainingBalance, 0)
-
         return { totalAccounts, activeAccounts, overdueAccounts, totalOutstanding }
     }, [accounts])
 
@@ -271,9 +239,48 @@ export default function CreditAccountsPage() {
         setIsAddPaymentOpen(true)
     }
 
+    const handleSubmitPayment = async () => {
+        if (!selectedAccount || !paymentAmount || !paymentMethod) return
+
+        const amount = Math.round(parseFloat(paymentAmount))
+        if (isNaN(amount) || amount <= 0) {
+            Swal.fire({ icon: "error", title: "Invalid Amount", text: "Please enter a valid payment amount." })
+            return
+        }
+        if (amount > selectedAccount.remainingBalance) {
+            Swal.fire({ icon: "error", title: "Amount Too High", text: `Payment cannot exceed remaining balance of ₱${selectedAccount.remainingBalance.toLocaleString()}.` })
+            return
+        }
+
+        setIsSubmittingPayment(true)
+        try {
+            // Map "bank" to "online" for API compatibility
+            const method = paymentMethod === "bank" ? "online" : paymentMethod as "cash" | "card" | "online"
+            await creditService.recordPayment(selectedAccount.id, { amount, method })
+
+            Swal.fire({
+                icon: "success",
+                title: "Payment Recorded",
+                text: `₱${amount.toLocaleString()} payment recorded for ${selectedAccount.customer.name}.`,
+                timer: 2000,
+                showConfirmButton: false,
+            })
+
+            setIsAddPaymentOpen(false)
+            fetchAccounts(true) // Refresh list
+        } catch (err: any) {
+            console.error("Failed to record payment:", err)
+            const message = err?.response?.data?.message || err?.message || "Failed to record payment."
+            Swal.fire({ icon: "error", title: "Payment Failed", text: message })
+        } finally {
+            setIsSubmittingPayment(false)
+        }
+    }
+
+    // ── Render ─────────────────────────────────────────────────────────────
     return (
         <div className="space-y-6">
-            {/* Enhanced Header */}
+            {/* Header */}
             <div className="relative pb-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
@@ -284,10 +291,21 @@ export default function CreditAccountsPage() {
                             Manage customer credit, track balances, and record payments
                         </p>
                     </div>
-                    <Button className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 dark:shadow-none transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 dark:hover:shadow-none hover:-translate-y-0.5 w-full sm:w-auto">
-                        <Plus className="w-4 h-4 mr-2" />
-                        New Credit Account
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            onClick={() => fetchAccounts(true)}
+                            disabled={isRefreshing}
+                            className="border-gray-200 dark:border-[#2d1b69] hover:bg-gray-50 dark:hover:bg-[#1a1a35]"
+                        >
+                            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                            Refresh
+                        </Button>
+                        <Button className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 dark:shadow-none transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 dark:hover:shadow-none hover:-translate-y-0.5 w-full sm:w-auto">
+                            <Plus className="w-4 h-4 mr-2" />
+                            New Credit Account
+                        </Button>
+                    </div>
                 </div>
                 <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-purple-500/20 via-purple-500/40 to-purple-500/20" />
             </div>
@@ -299,7 +317,9 @@ export default function CreditAccountsPage() {
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
                             <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Total Accounts</div>
-                            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">{stats.totalAccounts}</div>
+                            <div className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white mt-1">
+                                {isLoading ? <span className="inline-block w-8 h-7 bg-gray-200 dark:bg-[#2d1b69] rounded animate-pulse" /> : stats.totalAccounts}
+                            </div>
                             <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">All time</div>
                         </div>
                         <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-purple-100 to-purple-50 dark:from-purple-900/40 dark:to-purple-900/20 text-purple-600 flex items-center justify-center shadow-sm">
@@ -313,7 +333,9 @@ export default function CreditAccountsPage() {
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
                             <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Active</div>
-                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1">{stats.activeAccounts}</div>
+                            <div className="text-2xl sm:text-3xl font-bold text-blue-600 mt-1">
+                                {isLoading ? <span className="inline-block w-8 h-7 bg-gray-200 dark:bg-[#2d1b69] rounded animate-pulse" /> : stats.activeAccounts}
+                            </div>
                             <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">On track</div>
                         </div>
                         <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-blue-100 to-blue-50 dark:from-blue-900/40 dark:to-blue-900/20 text-blue-600 flex items-center justify-center shadow-sm">
@@ -327,7 +349,9 @@ export default function CreditAccountsPage() {
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
                             <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Overdue</div>
-                            <div className="text-2xl sm:text-3xl font-bold text-red-600 mt-1">{stats.overdueAccounts}</div>
+                            <div className="text-2xl sm:text-3xl font-bold text-red-600 mt-1">
+                                {isLoading ? <span className="inline-block w-8 h-7 bg-gray-200 dark:bg-[#2d1b69] rounded animate-pulse" /> : stats.overdueAccounts}
+                            </div>
                             <div className="text-xs text-red-400 mt-1">Needs attention</div>
                         </div>
                         <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-red-100 to-red-50 dark:from-red-900/40 dark:to-red-900/20 text-red-600 flex items-center justify-center shadow-sm">
@@ -341,7 +365,11 @@ export default function CreditAccountsPage() {
                     <div className="relative flex items-start justify-between gap-3">
                         <div>
                             <div className="text-xs sm:text-sm font-medium text-gray-500 dark:text-[#b4b4d0]">Outstanding</div>
-                            <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-1">₱{stats.totalOutstanding.toLocaleString()}</div>
+                            <div className="text-xl sm:text-2xl font-bold text-orange-600 mt-1">
+                                {isLoading
+                                    ? <span className="inline-block w-20 h-7 bg-gray-200 dark:bg-[#2d1b69] rounded animate-pulse" />
+                                    : `₱${stats.totalOutstanding.toLocaleString()}`}
+                            </div>
                             <div className="text-xs text-gray-400 dark:text-[#9898b8] mt-1">To collect</div>
                         </div>
                         <div className="h-11 w-11 rounded-xl bg-gradient-to-br from-orange-100 to-orange-50 dark:from-orange-900/40 dark:to-orange-900/20 text-orange-600 flex items-center justify-center shadow-sm">
@@ -350,6 +378,24 @@ export default function CreditAccountsPage() {
                     </div>
                 </div>
             </div>
+
+            {/* Error state */}
+            {error && !isLoading && (
+                <div className="flex items-center gap-3 p-4 rounded-xl bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 text-red-700 dark:text-red-300">
+                    <AlertCircle className="w-5 h-5 flex-shrink-0" />
+                    <div className="flex-1">
+                        <p className="font-semibold text-sm">{error}</p>
+                    </div>
+                    <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => fetchAccounts()}
+                        className="border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30"
+                    >
+                        Retry
+                    </Button>
+                </div>
+            )}
 
             {/* Search and Filters */}
             <div className="flex flex-col gap-3 sm:flex-row sm:gap-4">
@@ -376,21 +422,29 @@ export default function CreditAccountsPage() {
                 </Select>
             </div>
 
-            {/* Responsive Layout: DataTable for Desktop, Cards for Mobile/Tablet */}
-            {isDesktop ? (
-                <CreditAccountsDataTable
-                    accounts={accounts}
-                    searchQuery={searchQuery}
-                    statusFilter={statusFilter}
-                    onAddPayment={handleAddPayment}
-                />
+            {/* Loading state */}
+            {isLoading ? (
+                <div className="flex items-center justify-center py-16 gap-3 text-gray-500 dark:text-[#b4b4d0]">
+                    <Loader2 className="w-6 h-6 animate-spin text-purple-500" />
+                    <span className="text-sm font-medium">Loading credit accounts…</span>
+                </div>
             ) : (
-                <CreditAccountCards
-                    accounts={filteredAccounts}
-                    expandedAccounts={expandedAccounts}
-                    onToggleExpanded={toggleExpanded}
-                    onAddPayment={handleAddPayment}
-                />
+                /* Responsive Layout */
+                isDesktop ? (
+                    <CreditAccountsDataTable
+                        accounts={accounts}
+                        searchQuery={searchQuery}
+                        statusFilter={statusFilter}
+                        onAddPayment={handleAddPayment}
+                    />
+                ) : (
+                    <CreditAccountCards
+                        accounts={filteredAccounts}
+                        expandedAccounts={expandedAccounts}
+                        onToggleExpanded={toggleExpanded}
+                        onAddPayment={handleAddPayment}
+                    />
+                )
             )}
 
             {/* Add Payment Dialog */}
@@ -517,10 +571,15 @@ export default function CreditAccountsPage() {
                         </Button>
                         <Button
                             className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 hover:-translate-y-0.5"
-                            disabled={!paymentAmount || !paymentMethod}
+                            disabled={!paymentAmount || !paymentMethod || isSubmittingPayment}
+                            onClick={handleSubmitPayment}
                         >
-                            <CheckCircle2 className="w-4 h-4 mr-2" />
-                            Record Payment
+                            {isSubmittingPayment ? (
+                                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                            ) : (
+                                <CheckCircle2 className="w-4 h-4 mr-2" />
+                            )}
+                            {isSubmittingPayment ? "Processing..." : "Record Payment"}
                         </Button>
                     </DialogFooter>
                 </DialogContent>

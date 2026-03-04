@@ -13,6 +13,10 @@ export * from "./customer.service"
 export * from "./store.service"
 export * from "./dashboard.service"
 export * from "./admin-user.service"
+export * from "./ledger.service"
+export * from "./inventory.service"
+export * from "./store-staff.service"
+export * from "./credit.service"
 
 // Re-export types for convenience
 export type {
@@ -61,6 +65,31 @@ export type {
   PaginatedAdminUserResponse,
 } from "./admin-user.service"
 
-// Example usage in components:
-// import { authService, productService, categoryService, orderService, paymentService, customerService, storeService } from "@/services"
-// import type { ApiProduct, ProductPayload, ApiCategory, ApiPayment, ApiCustomer, ApiStore } from "@/services"
+export type {
+  LedgerEntry,
+  LedgerFilters,
+  LedgerSummary,
+  LedgerCreatePayload,
+  PaginatedLedgerResponse,
+} from "./ledger.service"
+
+export type {
+  InventoryItem,
+  InventoryFilters,
+  InventorySummary,
+  InventoryAdjustment,
+  PaginatedInventoryResponse,
+} from "./inventory.service"
+
+export type {
+  StoreRole,
+  StoreStaffMember,
+  AddStaffPayload,
+  UpdateStaffPayload,
+} from "./store-staff.service"
+
+export type {
+  ApiCredit,
+  CreditFilters,
+  PaginatedCreditResponse,
+} from "./credit.service"

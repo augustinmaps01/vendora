@@ -44,4 +44,28 @@ export const categoryService = {
   getById: async (id: string | number): Promise<ApiCategory> => {
     return api.get<ApiCategory>(endpoints.categories.get(id))
   },
+
+  /**
+   * Create a new category
+   * POST /api/categories
+   */
+  create: async (data: { name: string; description?: string; icon?: string; is_active?: boolean }): Promise<ApiCategory> => {
+    return api.post<ApiCategory>(endpoints.categories.create(), data)
+  },
+
+  /**
+   * Update an existing category
+   * PUT /api/categories/{category}
+   */
+  update: async (id: string | number, data: Partial<{ name: string; description?: string; icon?: string; is_active?: boolean }>): Promise<ApiCategory> => {
+    return api.put<ApiCategory>(endpoints.categories.update(id), data)
+  },
+
+  /**
+   * Delete a category
+   * DELETE /api/categories/{category}
+   */
+  delete: async (id: string | number): Promise<void> => {
+    return api.delete(endpoints.categories.delete(id))
+  },
 }

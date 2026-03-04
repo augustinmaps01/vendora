@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/admin/layout/DashboardLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -39,133 +39,81 @@ import {
     AlertTriangle,
     CheckCircle,
     XCircle,
-    TrendingUp
+    TrendingUp,
+    Loader2,
+    AlertCircle,
+    RefreshCw,
 } from "lucide-react"
+import { productService, type ApiProduct } from "@/services"
 
-// Mock data - Replace with actual API call
-const products = [
-    {
-        id: 1,
-        name: "Premium Rice 5kg",
-        sku: "GR-1001",
-        category: "Grocery",
-        vendor: "Food Market",
-        price: 1250,
-        stock: 18,
-        status: "in_stock",
-        isActive: true,
-        isEcommerce: true,
-        imageUrl: "/api/placeholder/60/60",
-    },
-    {
-        id: 2,
-        name: "Wireless Bluetooth Headphones",
-        sku: "EL-2001",
-        category: "Electronics",
-        vendor: "Tech Store",
-        price: 2999,
-        stock: 5,
-        status: "low_stock",
-        isActive: true,
-        isEcommerce: true,
-        imageUrl: "/api/placeholder/60/60",
-    },
-    {
-        id: 3,
-        name: "Cotton T-Shirt - Black",
-        sku: "AP-3001",
-        category: "Apparel",
-        vendor: "Fashion Hub",
-        price: 599,
-        stock: 0,
-        status: "out_of_stock",
-        isActive: false,
-        isEcommerce: true,
-        imageUrl: "/api/placeholder/60/60",
-    },
-    {
-        id: 4,
-        name: "Organic Coffee Beans 1kg",
-        sku: "GR-1002",
-        category: "Grocery",
-        vendor: "Food Market",
-        price: 850,
-        stock: 42,
-        status: "in_stock",
-        isActive: true,
-        isEcommerce: false,
-        imageUrl: "/api/placeholder/60/60",
-    },
-    {
-        id: 5,
-        name: "Smart Watch Pro",
-        sku: "EL-2002",
-        category: "Electronics",
-        vendor: "Electronics Plus",
-        price: 5499,
-        stock: 12,
-        status: "in_stock",
-        isActive: true,
-        isEcommerce: true,
-        imageUrl: "/api/placeholder/60/60",
-    },
-    {
-        id: 6,
-        name: "Programming Book - JavaScript",
-        sku: "BK-4001",
-        category: "Books",
-        vendor: "Book Shop",
-        price: 1200,
-        stock: 3,
-        status: "low_stock",
-        isActive: true,
-        isEcommerce: true,
-        imageUrl: "/api/placeholder/60/60",
-    },
-]
+const formatPrice = (price: number) =>
+    new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(price)
 
-const categories = ["All", "Grocery", "Electronics", "Apparel", "Books"]
-const vendors = ["All", "Tech Store", "Food Market", "Fashion Hub", "Electronics Plus", "Book Shop"]
+const getStockStatus = (stock: number) => {
+    if (stock === 0) return "out_of_stock"
+    if (stock <= 5) return "low_stock"
+    return "in_stock"
+}
+
+const getProductImageUrl = (product: ApiProduct): string | null => {
+    return (product as any).image_url || product.image || null
+}
 
 export default function ProductsPage() {
+    const [products, setProducts] = useState<ApiProduct[]>([])
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
-    const [categoryFilter, setCategoryFilter] = useState("All")
-    const [vendorFilter, setVendorFilter] = useState("All")
     const [statusFilter, setStatusFilter] = useState("all")
 
+    const fetchProducts = useCallback(async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const res = await productService.getAll({ per_page: 100 })
+            const data = Array.isArray(res) ? res : (res as any).data || []
+            setProducts(data)
+        } catch (err: any) {
+            console.error("Failed to load products:", err)
+            setError(err?.message || "Failed to load products")
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchProducts()
+    }, [fetchProducts])
+
     const filteredProducts = products.filter((product) => {
+        const stock = product.stock ?? 0
+        const stockStatus = getStockStatus(stock)
         const matchesSearch =
             product.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            product.sku.toLowerCase().includes(searchQuery.toLowerCase())
-
-        const matchesCategory = categoryFilter === "All" || product.category === categoryFilter
-        const matchesVendor = vendorFilter === "All" || product.vendor === vendorFilter
-        const matchesStatus = statusFilter === "all" || product.status === statusFilter
-
-        return matchesSearch && matchesCategory && matchesVendor && matchesStatus
+            (product.sku || "").toLowerCase().includes(searchQuery.toLowerCase())
+        const matchesStatus = statusFilter === "all" || stockStatus === statusFilter
+        return matchesSearch && matchesStatus
     })
 
-    const getStockBadge = (status: string) => {
+    const getStockBadge = (stock: number) => {
+        const status = getStockStatus(stock)
         switch (status) {
             case "in_stock":
                 return (
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        In Stock
+                        <CheckCircle className="w-3 h-3 mr-1" />In Stock
                     </Badge>
                 )
             case "low_stock":
                 return (
                     <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
-                        <AlertTriangle className="w-3 h-3 mr-1" />
-                        Low Stock
+                        <AlertTriangle className="w-3 h-3 mr-1" />Low Stock
                     </Badge>
                 )
             case "out_of_stock":
                 return (
                     <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Out of Stock
+                        <XCircle className="w-3 h-3 mr-1" />Out of Stock
                     </Badge>
                 )
             default:
@@ -173,11 +121,32 @@ export default function ProductsPage() {
         }
     }
 
-    const formatPrice = (price: number) => {
-        return new Intl.NumberFormat("en-PH", {
-            style: "currency",
-            currency: "PHP",
-        }).format(price)
+    const inStock = products.filter(p => (p.stock ?? 0) > 5).length
+    const lowStock = products.filter(p => { const s = p.stock ?? 0; return s > 0 && s <= 5 }).length
+    const outOfStock = products.filter(p => (p.stock ?? 0) === 0).length
+
+    if (loading) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                </div>
+            </DashboardLayout>
+        )
+    }
+
+    if (error) {
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                    <p className="text-muted-foreground">{error}</p>
+                    <Button onClick={fetchProducts} variant="outline">
+                        <RefreshCw className="w-4 h-4 mr-2" />Retry
+                    </Button>
+                </div>
+            </DashboardLayout>
+        )
     }
 
     return (
@@ -209,9 +178,7 @@ export default function ProductsPage() {
                         <CheckCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {products.filter(p => p.status === "in_stock").length}
-                        </div>
+                        <div className="text-2xl font-bold">{inStock}</div>
                         <p className="text-xs text-muted-foreground">Available products</p>
                     </CardContent>
                 </Card>
@@ -222,9 +189,7 @@ export default function ProductsPage() {
                         <AlertTriangle className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {products.filter(p => p.status === "low_stock").length}
-                        </div>
+                        <div className="text-2xl font-bold">{lowStock}</div>
                         <p className="text-xs text-muted-foreground">Needs attention</p>
                     </CardContent>
                 </Card>
@@ -235,9 +200,7 @@ export default function ProductsPage() {
                         <XCircle className="h-4 w-4 text-red-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">
-                            {products.filter(p => p.status === "out_of_stock").length}
-                        </div>
+                        <div className="text-2xl font-bold">{outOfStock}</div>
                         <p className="text-xs text-muted-foreground">Unavailable</p>
                     </CardContent>
                 </Card>
@@ -246,13 +209,11 @@ export default function ProductsPage() {
             {/* Main Content Card */}
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle>All Products</CardTitle>
-                            <CardDescription>
-                                Browse and manage products from all vendors on the platform
-                            </CardDescription>
-                        </div>
+                    <div>
+                        <CardTitle>All Products</CardTitle>
+                        <CardDescription>
+                            Browse and manage products from all vendors on the platform
+                        </CardDescription>
                     </div>
 
                     {/* Filters and Search */}
@@ -266,30 +227,9 @@ export default function ProductsPage() {
                                 className="pl-10"
                             />
                         </div>
-                        <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                            <SelectTrigger className="w-[150px]">
-                                <Filter className="mr-2 h-4 w-4" />
-                                <SelectValue placeholder="Category" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {categories.map((cat) => (
-                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                        <Select value={vendorFilter} onValueChange={setVendorFilter}>
-                            <SelectTrigger className="w-[180px]">
-                                <Store className="mr-2 h-4 w-4" />
-                                <SelectValue placeholder="Vendor" />
-                            </SelectTrigger>
-                            <SelectContent>
-                                {vendors.map((vendor) => (
-                                    <SelectItem key={vendor} value={vendor}>{vendor}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
                         <Select value={statusFilter} onValueChange={setStatusFilter}>
                             <SelectTrigger className="w-[150px]">
+                                <Filter className="mr-2 h-4 w-4" />
                                 <SelectValue placeholder="Stock Status" />
                             </SelectTrigger>
                             <SelectContent>
@@ -308,7 +248,6 @@ export default function ProductsPage() {
                                 <TableHead>Product</TableHead>
                                 <TableHead>SKU</TableHead>
                                 <TableHead>Category</TableHead>
-                                <TableHead>Vendor</TableHead>
                                 <TableHead>Price</TableHead>
                                 <TableHead>Stock</TableHead>
                                 <TableHead>Status</TableHead>
@@ -319,96 +258,85 @@ export default function ProductsPage() {
                         <TableBody>
                             {filteredProducts.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={9} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                                         No products found
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredProducts.map((product) => (
-                                    <TableRow key={product.id}>
-                                        <TableCell className="font-medium">
-                                            <div className="flex items-center gap-3">
-                                                <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
-                                                    <Package className="h-6 w-6 text-gray-400" />
+                                filteredProducts.map((product) => {
+                                    const stock = product.stock ?? 0
+                                    const category = typeof product.category === "object"
+                                        ? (product.category as any)?.name || "—"
+                                        : (product.category as any) || "—"
+                                    return (
+                                        <TableRow key={product.id}>
+                                            <TableCell className="font-medium">
+                                                <div className="flex items-center gap-3">
+                                                    <div className="h-12 w-12 rounded-lg bg-gray-100 flex items-center justify-center overflow-hidden">
+                                                        {getProductImageUrl(product)
+                                                            ? <img src={getProductImageUrl(product)!} alt={product.name} className="h-full w-full object-cover" />
+                                                            : <Package className="h-6 w-6 text-gray-400" />
+                                                        }
+                                                    </div>
+                                                    <div>
+                                                        <p className="font-medium">{product.name}</p>
+                                                        <p className="text-xs text-muted-foreground">
+                                                            {product.is_active
+                                                                ? <span className="text-green-600">Active</span>
+                                                                : <span className="text-red-600">Inactive</span>
+                                                            }
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium">{product.name}</p>
-                                                    <p className="text-xs text-muted-foreground">
-                                                        {product.isActive ? (
-                                                            <span className="text-green-600">Active</span>
-                                                        ) : (
-                                                            <span className="text-red-600">Inactive</span>
-                                                        )}
-                                                    </p>
-                                                </div>
-                                            </div>
-                                        </TableCell>
-                                        <TableCell>
-                                            <code className="text-sm bg-gray-100 px-2 py-1 rounded">{product.sku}</code>
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline">{product.category}</Badge>
-                                        </TableCell>
-                                        <TableCell>
-                                            <div className="flex items-center gap-2">
-                                                <Store className="h-4 w-4 text-muted-foreground" />
-                                                {product.vendor}
-                                            </div>
-                                        </TableCell>
-                                        <TableCell className="font-medium">{formatPrice(product.price)}</TableCell>
-                                        <TableCell>
-                                            <span className={`font-medium ${product.stock === 0 ? "text-red-600" :
-                                                product.stock <= 5 ? "text-yellow-600" : "text-green-600"
-                                                }`}>
-                                                {product.stock} units
-                                            </span>
-                                        </TableCell>
-                                        <TableCell>{getStockBadge(product.status)}</TableCell>
-                                        <TableCell>
-                                            {product.isEcommerce ? (
-                                                <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
-                                                    <TrendingUp className="w-3 h-3 mr-1" />
-                                                    Listed
-                                                </Badge>
-                                            ) : (
-                                                <Badge variant="outline">POS Only</Badge>
-                                            )}
-                                        </TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreVertical className="h-4 w-4" />
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                                                    <DropdownMenuSeparator />
-                                                    <DropdownMenuItem>
-                                                        <Eye className="mr-2 h-4 w-4" />
-                                                        View Details
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem>
-                                                        <Store className="mr-2 h-4 w-4" />
-                                                        View Vendor
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuSeparator />
-                                                    {product.isActive ? (
-                                                        <DropdownMenuItem className="text-orange-600">
-                                                            <XCircle className="mr-2 h-4 w-4" />
-                                                            Deactivate
+                                            </TableCell>
+                                            <TableCell>
+                                                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                                    {product.sku || "—"}
+                                                </code>
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline">{category}</Badge>
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {formatPrice(product.price)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <span className={`font-medium ${stock === 0 ? "text-red-600" : stock <= 5 ? "text-yellow-600" : "text-green-600"}`}>
+                                                    {stock} units
+                                                </span>
+                                            </TableCell>
+                                            <TableCell>{getStockBadge(stock)}</TableCell>
+                                            <TableCell>
+                                                {product.is_ecommerce ? (
+                                                    <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">
+                                                        <TrendingUp className="w-3 h-3 mr-1" />Listed
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline">POS Only</Badge>
+                                                )}
+                                            </TableCell>
+                                            <TableCell className="text-right">
+                                                <DropdownMenu>
+                                                    <DropdownMenuTrigger asChild>
+                                                        <Button variant="ghost" size="icon">
+                                                            <MoreVertical className="h-4 w-4" />
+                                                        </Button>
+                                                    </DropdownMenuTrigger>
+                                                    <DropdownMenuContent align="end">
+                                                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                                                        <DropdownMenuSeparator />
+                                                        <DropdownMenuItem>
+                                                            <Eye className="mr-2 h-4 w-4" />View Details
                                                         </DropdownMenuItem>
-                                                    ) : (
-                                                        <DropdownMenuItem className="text-green-600">
-                                                            <CheckCircle className="mr-2 h-4 w-4" />
-                                                            Activate
+                                                        <DropdownMenuItem>
+                                                            <Store className="mr-2 h-4 w-4" />View Vendor
                                                         </DropdownMenuItem>
-                                                    )}
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                                    </DropdownMenuContent>
+                                                </DropdownMenu>
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             )}
                         </TableBody>
                     </Table>

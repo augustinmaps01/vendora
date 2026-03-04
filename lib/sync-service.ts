@@ -4,19 +4,32 @@
  */
 
 import { db, LocalTransaction, LocalProduct, LocalCategory, LocalCustomer, LocalStore } from './db';
-import { orderService, paymentService, productService, categoryService, customerService, storeService } from '@/services';
+import { orderService, paymentService, productService, categoryService, customerService, storeService, creditService } from '@/services';
 import type { ApiProduct, ApiCategory, ApiCustomer, ApiStore } from '@/services';
 import { networkMonitor } from './network-quality-monitor';
+import { localDb } from './local-first-service';
+import {
+  getOnlineStatus,
+  setOnlineStatus,
+  onOnlineStatusChange,
+} from './online-status';
+
+// Re-export so existing importers of sync-service still work
+export { getOnlineStatus, onOnlineStatusChange };
 
 // ==================== Online/Offline Detection ====================
 
-let isOnline = typeof navigator !== 'undefined' ? navigator.onLine : true;
-let onlineListeners: Array<(online: boolean) => void> = [];
+/**
+ * Check if user is authenticated before making any API calls.
+ * Prevents 401 loops on the login page.
+ */
+function isAuthenticated(): boolean {
+  if (typeof localStorage === 'undefined') return false;
+  return !!localStorage.getItem('vendora_access_token');
+}
 
 /**
  * Check if network quality is good enough for syncing.
- * Syncs on any connection that isn't fully offline.
- * Poor connections are slow but can still transfer data.
  */
 function isNetworkGoodForSync(): boolean {
   const stats = networkMonitor.getCurrentStats();
@@ -29,16 +42,14 @@ function isNetworkGoodForSync(): boolean {
 export function initializeOnlineDetection() {
   if (typeof window === 'undefined') return;
 
-  // Update online status
   const updateOnlineStatus = () => {
-    isOnline = navigator.onLine;
-    notifyOnlineListeners(isOnline);
+    const online = navigator.onLine;
+    setOnlineStatus(online);
 
-    // If coming back online, trigger sync
-    if (isOnline) {
-      console.log('✅ Connection restored - starting sync...');
-      syncPendingTransactions().catch(console.error);
-    } else {
+    if (online && isAuthenticated()) {
+      console.log('✅ Connection restored - starting full sync...');
+      fullSync().catch(console.error);
+    } else if (!online) {
       console.log('❌ Connection lost - working offline');
     }
   };
@@ -46,37 +57,8 @@ export function initializeOnlineDetection() {
   window.addEventListener('online', updateOnlineStatus);
   window.addEventListener('offline', updateOnlineStatus);
 
-  // Initial check
-  updateOnlineStatus();
-}
-
-/**
- * Subscribe to online/offline changes
- */
-export function onOnlineStatusChange(callback: (online: boolean) => void) {
-  onlineListeners.push(callback);
-
-  // Call immediately with current status
-  callback(isOnline);
-
-  // Return unsubscribe function
-  return () => {
-    onlineListeners = onlineListeners.filter(cb => cb !== callback);
-  };
-}
-
-/**
- * Notify all listeners of online status change
- */
-function notifyOnlineListeners(online: boolean) {
-  onlineListeners.forEach(callback => callback(online));
-}
-
-/**
- * Get current online status
- */
-export function getOnlineStatus(): boolean {
-  return isOnline;
+  // Initial check — only update online state, don't sync on page load
+  setOnlineStatus(navigator.onLine);
 }
 
 // ==================== Data Caching (API → IndexedDB) ====================
@@ -85,19 +67,26 @@ export function getOnlineStatus(): boolean {
  * Cache products from API to IndexedDB
  */
 export async function cacheProducts(products: ApiProduct[]): Promise<void> {
+  const now = new Date();
   const localProducts: LocalProduct[] = products.map(p => ({
     id: p.id,
+    _status: 'synced' as const,
+    _lastModified: now,
     name: p.name,
+    description: p.description,
     sku: p.sku,
     barcode: p.barcode || null,
     price: p.price,
+    cost: p.cost,
     stock: p.stock,
+    min_stock: p.min_stock,
     category_id: p.category?.id || null,
     category_name: p.category?.name,
-    unit: p.unit || 'pc',
+    unit: (p as any).unit || 'pc',
     image_url: (p as any).image_url,
     is_active: p.is_active !== false,
-    last_synced: new Date()
+    is_ecommerce: p.is_ecommerce,
+    last_synced: now
   }));
 
   await db.products.bulkPut(localProducts);
@@ -123,13 +112,19 @@ export async function cacheCategories(categories: ApiCategory[]): Promise<void> 
  * Cache customers from API to IndexedDB
  */
 export async function cacheCustomers(customers: ApiCustomer[]): Promise<void> {
+  const now = new Date();
   const localCustomers: LocalCustomer[] = customers.map(c => ({
     id: c.id,
+    _status: 'synced' as const,
+    _lastModified: now,
     name: c.name,
     email: c.email || undefined,
     phone: c.phone || undefined,
     status: c.status as string,
-    last_synced: new Date()
+    orders_count: c.orders_count,
+    total_spent: c.total_spent,
+    created_at: c.created_at,
+    last_synced: now
   }));
 
   await db.customers.bulkPut(localCustomers);
@@ -171,7 +166,7 @@ export async function saveTransactionLocally(transaction: Omit<LocalTransaction,
   console.log(`💾 Transaction saved locally: ${uuid}`);
 
   // Try to sync immediately if online
-  if (isOnline) {
+  if (getOnlineStatus()) {
     syncSingleTransaction(uuid).catch(err => {
       console.error(`Failed to sync transaction immediately:`, err);
       // Already in local DB, will retry later
@@ -218,11 +213,23 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
     const order = await orderService.create(orderPayload as any);
     console.log(`✅ Order created on server: ${order.id}`);
 
-    // Create payment(s) on server
+    // Create payment(s) or credit record on server
     const paymentTime = new Date(transaction.created_at);
     const paidAt = `${paymentTime.toISOString().split('T')[0]} ${paymentTime.toTimeString().slice(0, 5)}`;
 
-    if (transaction.payment_methods && transaction.payment_methods.length > 1) {
+    const isCredit = transaction.status === 'pending';
+
+    if (isCredit) {
+      // Credit transaction: create a credit record instead of a payment
+      const creditPayload = {
+        customer_id: transaction.customer_id,
+        amount: Math.round(transaction.total),
+        reference: `ORD-${order.id}`,
+        notes: transaction.notes || undefined,
+      };
+      const credit = await creditService.create(creditPayload);
+      console.log(`✅ Credit record created on server: ${credit.id}`);
+    } else if (transaction.payment_methods && transaction.payment_methods.length > 1) {
       // Split payment
       await Promise.all(
         transaction.payment_methods.map(pm =>
@@ -235,6 +242,7 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
           })
         )
       );
+      console.log(`✅ Split payments created on server`);
     } else {
       // Single payment
       await paymentService.create({
@@ -244,9 +252,8 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
         status: 'completed',
         paid_at: paidAt
       });
+      console.log(`✅ Payment created on server`);
     }
-
-    console.log(`✅ Payment created on server`);
 
     // Update inventory (non-blocking)
     productService.bulkStockDecrement({
@@ -397,8 +404,8 @@ export function startBackgroundSync() {
   console.log('🔄 Starting background sync (every 5 minutes)');
 
   syncInterval = setInterval(() => {
-    if (isOnline) {
-      syncPendingTransactions().catch(err => {
+    if (getOnlineStatus() && isAuthenticated()) {
+      fullSync().catch(err => {
         console.error('Background sync failed:', err);
       });
     }
@@ -422,8 +429,8 @@ export function stopBackgroundSync() {
  * Full sync: Fetch fresh data from API and cache to IndexedDB
  */
 export async function fullDataSync(): Promise<void> {
-  if (!isOnline) {
-    console.log('Offline - skipping full data sync');
+  if (!getOnlineStatus() || !isAuthenticated()) {
+    console.log('Offline or unauthenticated - skipping full data sync');
     return;
   }
 
@@ -495,6 +502,98 @@ export async function fullDataSync(): Promise<void> {
   }
 }
 
+// ==================== Local-First Sync ====================
+
+/**
+ * Push all dirty records from all local-first tables to the server
+ */
+export async function pushAllDirty(): Promise<{ synced: number; failed: number }> {
+  let totalSynced = 0;
+  let totalFailed = 0;
+
+  // Push products and customers (entities with CRUD)
+  const [productResult, customerResult] = await Promise.allSettled([
+    localDb.products.pushDirty(),
+    localDb.customers.pushDirty(),
+  ]);
+
+  if (productResult.status === 'fulfilled') {
+    totalSynced += productResult.value.synced;
+    totalFailed += productResult.value.failed;
+  }
+  if (customerResult.status === 'fulfilled') {
+    totalSynced += customerResult.value.synced;
+    totalFailed += customerResult.value.failed;
+  }
+
+  // Also sync pending POS transactions
+  const txnResult = await syncPendingTransactions();
+  totalSynced += txnResult.synced;
+  totalFailed += txnResult.failed;
+
+  console.log(`📤 pushAllDirty complete: ${totalSynced} synced, ${totalFailed} failed`);
+  return { synced: totalSynced, failed: totalFailed };
+}
+
+/**
+ * Pull fresh data from the server for all entities
+ */
+export async function pullAllFresh(): Promise<void> {
+  const results = await Promise.allSettled([
+    localDb.products.pullFresh(),
+    localDb.customers.pullFresh(),
+    localDb.orders.pullFresh(),
+    localDb.payments.pullFresh(),
+    localDb.categories.pullFresh(),
+    localDb.stores.pullFresh(),
+  ]);
+
+  const failed = results.filter(r => r.status === 'rejected');
+  if (failed.length > 0) {
+    console.warn(`⚠️ pullAllFresh: ${failed.length} entity pulls failed`);
+  }
+  console.log(`📥 pullAllFresh complete`);
+}
+
+/**
+ * Full sync: push local changes first, then pull remote changes
+ */
+export async function fullSync(): Promise<{ synced: number; failed: number }> {
+  if (!getOnlineStatus() || !isAuthenticated()) {
+    console.log('Offline or unauthenticated - skipping full sync');
+    return { synced: 0, failed: 0 };
+  }
+
+  if (!isNetworkGoodForSync()) {
+    console.log('Network too poor for sync');
+    return { synced: 0, failed: 0 };
+  }
+
+  console.log('🔄 Starting full sync (push → pull)...');
+  const startTime = Date.now();
+
+  // 1. Push local changes to server
+  const pushResult = await pushAllDirty();
+
+  // 2. Pull fresh data from server
+  await pullAllFresh();
+
+  const elapsed = Date.now() - startTime;
+  console.log(`✅ Full sync complete in ${elapsed}ms`);
+
+  // Log sync result
+  await db.syncLogs.add({
+    type: 'full',
+    status: pushResult.failed === 0 ? 'success' : 'partial',
+    items_synced: pushResult.synced,
+    items_failed: pushResult.failed,
+    started_at: new Date(startTime),
+    completed_at: new Date(),
+  });
+
+  return pushResult;
+}
+
 // ==================== Exports ====================
 
 export const syncService = {
@@ -503,7 +602,7 @@ export const syncService = {
   onOnlineStatusChange,
   getOnlineStatus,
 
-  // Caching
+  // Caching (legacy - kept for backwards compatibility)
   cacheProducts,
   cacheCategories,
   cacheCustomers,
@@ -518,6 +617,11 @@ export const syncService = {
   startBackgroundSync,
   stopBackgroundSync,
 
-  // Full Sync
-  fullDataSync
+  // Full Sync (legacy)
+  fullDataSync,
+
+  // Local-First Sync
+  pushAllDirty,
+  pullAllFresh,
+  fullSync,
 };

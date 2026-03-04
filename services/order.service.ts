@@ -99,4 +99,12 @@ export const orderService = {
   refund: async (id: string | number, amount?: number, reason?: string): Promise<Order> => {
     return api.post<Order>(endpoints.orders.refund(id), { amount, reason })
   },
+
+  /**
+   * Get order summary
+   * GET /api/orders/summary
+   */
+  getSummary: async (): Promise<{ total_orders: number; total_amount: number; pending_orders: number; completed_orders: number }> => {
+    return api.get(endpoints.orders.summary())
+  },
 }

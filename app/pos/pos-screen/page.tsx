@@ -47,6 +47,7 @@ import { tokenManager } from "@/lib/axios-client";
 import Swal from "sweetalert2";
 import { db } from "@/lib/db";
 import { syncService } from "@/lib/sync-service";
+import { localDb } from "@/lib/local-first-service";
 
 // Lazy load heavy components
 const DesktopPOSLayout = lazy(() => import("@/components/screens/pos-screen/DesktopPOSLayout"));
@@ -621,6 +622,54 @@ export default function VendoraPOS() {
       });
 
       console.log(`✅ Transaction saved locally: ${transactionUuid}`);
+
+      // Write to orders and payments tables for immediate visibility on those pages
+      const txnDate = new Date().toISOString().split('T')[0] || "";
+      const txnTime = new Date();
+      const paidAtStr = `${txnDate} ${txnTime.toTimeString().slice(0, 5)}`;
+
+      await localDb.orders.addFromTransaction({
+        order_number: `TXN-${transactionUuid.substring(0, 8).toUpperCase()}`,
+        customer_id: customerId || 1,
+        customer_name: customerName,
+        ordered_at: txnDate,
+        status: isCredit ? 'pending' : 'completed',
+        total: Math.round(totals.total),
+        subtotal: Math.round(totals.subtotal),
+        tax: Math.round(totals.tax),
+        discount: Math.round(totals.discount),
+        delivery_fee: Math.round(totals.deliveryFee),
+        payment_method: (isCredit || primaryMethod === "credit") ? "cash" : primaryMethod,
+        items: cart.map(item => ({
+          product_id: Number(item.id),
+          product_name: item.name,
+          quantity: item.qty,
+          price: item.price,
+        })),
+      }).catch(err => console.error('Failed to write order to local DB:', err));
+
+      // Write payment record(s)
+      if (paymentMethods && paymentMethods.length > 1) {
+        for (const pm of paymentMethods) {
+          await localDb.payments.addFromTransaction({
+            order_id: -Date.now(),
+            customer_name: customerName,
+            amount: Math.round(pm.amount),
+            method: pm.method,
+            status: 'completed',
+            paid_at: paidAtStr,
+          }).catch(err => console.error('Failed to write payment to local DB:', err));
+        }
+      } else {
+        await localDb.payments.addFromTransaction({
+          order_id: -Date.now(),
+          customer_name: customerName,
+          amount: Math.round(isCredit ? totals.total : paid),
+          method: (isCredit || primaryMethod === "credit") ? "cash" : primaryMethod,
+          status: isCredit ? 'pending' : 'completed',
+          paid_at: paidAtStr,
+        }).catch(err => console.error('Failed to write payment to local DB:', err));
+      }
 
       // Use UUID as transaction number
       const txnNumber = transactionUuid.substring(0, 8).toUpperCase();

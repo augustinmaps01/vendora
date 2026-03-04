@@ -3,26 +3,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from "recharts"
 import { Banknote, CreditCard } from "lucide-react"
-import type { PaymentMethods } from "@/types/dashboard"
+import type { CashVsCredit } from "@/types/dashboard"
 
 type Props = {
-  data?: PaymentMethods | null
+  data?: CashVsCredit | null
   className?: string
 }
 
 export function CashVsCreditChart({ data, className }: Props) {
-  const getMethod = (name: string) =>
-    data?.methods.find(m => m.method === name)
+  const cashAmount   = data?.cash?.amount   ?? 0
+  const creditAmount = data?.credit?.amount ?? 0
+  const total        = data?.total_amount ?? (cashAmount + creditAmount)
 
-  const cashMethod   = getMethod("cash")
-  const creditMethod = getMethod("credit")
+  const cashPct   = data?.cash?.percentage   ?? (total > 0 ? (cashAmount / total) * 100 : 0)
+  const creditPct = data?.credit?.percentage ?? (total > 0 ? (creditAmount / total) * 100 : 0)
 
-  const cashAmount   = cashMethod?.amount   ?? 0
-  const creditAmount = creditMethod?.amount ?? 0
-  const total        = cashAmount + creditAmount
-
-  const cashPct   = total > 0 ? (cashAmount / total) * 100   : 0
-  const creditPct = total > 0 ? (creditAmount / total) * 100 : 0
+  const cashCount   = data?.cash?.count   ?? 0
+  const creditCount = data?.credit?.count ?? 0
 
   // Always show both slices; use a thin placeholder slice when one is 0
   const chartData = [
@@ -36,7 +33,7 @@ export function CashVsCreditChart({ data, className }: Props) {
       icon:   Banknote,
       pct:    cashPct,
       amount: cashAmount,
-      count:  cashMethod?.payments_count ?? 0,
+      count:  cashCount,
       color:  "#10b981",
     },
     {
@@ -44,7 +41,7 @@ export function CashVsCreditChart({ data, className }: Props) {
       icon:   CreditCard,
       pct:    creditPct,
       amount: creditAmount,
-      count:  creditMethod?.payments_count ?? 0,
+      count:  creditCount,
       color:  "#f43f5e",
     },
   ]
@@ -102,6 +99,15 @@ export function CashVsCreditChart({ data, className }: Props) {
               </span>
             </div>
           </div>
+
+          {/* Outstanding credit */}
+          {data?.outstanding_credit != null && data.outstanding_credit > 0 && (
+            <div className="w-full text-center bg-rose-50 dark:bg-rose-500/10 rounded-lg py-1.5 px-3">
+              <span className="text-[11px] text-rose-600 dark:text-rose-400 font-medium">
+                Outstanding: ₱ {data.outstanding_credit.toLocaleString()}
+              </span>
+            </div>
+          )}
 
           {/* 2-column legend */}
           <div className="grid grid-cols-2 gap-3 w-full">

@@ -1,5 +1,6 @@
 "use client"
 
+import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -8,10 +9,63 @@ import {
   DollarSign,
   ShoppingCart,
   Users,
-  Download
+  Download,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
+import { dashboardService } from "@/services"
+import type { DashboardKPIs, TopProducts } from "@/types/dashboard"
 
 export default function ReportsPage() {
+  const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
+  const [topProducts, setTopProducts] = useState<TopProducts | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
+
+  const fetchData = async () => {
+    setLoading(true)
+    setError(null)
+    try {
+      const [kpiData, topData] = await Promise.all([
+        dashboardService.getKPIs(),
+        dashboardService.getTopProducts({ limit: 5 }),
+      ])
+      setKpis(kpiData)
+      setTopProducts(topData)
+    } catch (err: any) {
+      console.error("Failed to load reports data:", err)
+      setError(err?.message || "Failed to load reports data")
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    fetchData()
+  }, [])
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    )
+  }
+
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
+        <Button onClick={fetchData} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
   return (
     <div className="space-y-4 sm:space-y-6">
       {/* Header */}
@@ -32,10 +86,8 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Total Sales</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱1,245,670</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +12.5% from last month
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">
+                ₱{(kpis?.total_sales ?? 0).toLocaleString()}
               </p>
             </div>
             <div className="bg-purple-100 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -48,10 +100,8 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Total Orders</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">1,248</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +8.2% from last month
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">
+                {(kpis?.total_orders ?? 0).toLocaleString()}
               </p>
             </div>
             <div className="bg-blue-100 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -63,11 +113,9 @@ export default function ReportsPage() {
         <div className="bg-white dark:bg-[#13132a] p-3 sm:p-4 md:p-6 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">New Customers</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">342</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +15.3% from last month
+              <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Items Sold</p>
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">
+                {(kpis?.items_sold ?? 0).toLocaleString()}
               </p>
             </div>
             <div className="bg-green-100 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -80,10 +128,8 @@ export default function ReportsPage() {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-xs sm:text-sm text-gray-600 dark:text-[#b4b4d0]">Avg. Order Value</p>
-              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">₱998</p>
-              <p className="text-[10px] sm:text-xs text-green-600 mt-1 sm:mt-2 flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1" />
-                +3.8% from last month
+              <p className="text-lg sm:text-2xl font-bold text-gray-900 dark:text-white mt-0.5 sm:mt-1">
+                ₱{(kpis?.average_order_value ?? 0).toLocaleString()}
               </p>
             </div>
             <div className="bg-orange-100 p-2 sm:p-3 rounded-lg hidden sm:block">
@@ -122,25 +168,24 @@ export default function ReportsPage() {
       {/* Top Selling Products */}
       <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
         <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Top Selling Products</h3>
-        <div className="space-y-3">
-          {[
-            { name: "Premium Rice 5kg", sales: 145, revenue: 181250 },
-            { name: "Cooking Oil 1L", sales: 128, revenue: 23680 },
-            { name: "Mineral Water 1L", sales: 412, revenue: 8240 },
-            { name: "Cola 1.5L", sales: 96, revenue: 6240 },
-          ].map((product, idx) => (
-            <div key={idx} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
-              <div className="flex items-center gap-3">
-                <Badge className="bg-purple-100 text-purple-800">{idx + 1}</Badge>
-                <span className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</span>
+        {(!topProducts?.items || topProducts.items.length === 0) ? (
+          <p className="text-sm text-gray-500 dark:text-[#b4b4d0] text-center py-8">No product data available</p>
+        ) : (
+          <div className="space-y-3">
+            {topProducts.items.map((product, idx) => (
+              <div key={product.product_id} className="flex items-center justify-between p-3 bg-gray-50 dark:bg-[#1a1a35] rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Badge className="bg-purple-100 text-purple-800">{idx + 1}</Badge>
+                  <span className="text-sm font-medium text-gray-900 dark:text-white">{product.name}</span>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-semibold text-gray-900 dark:text-white">₱{product.revenue.toLocaleString()}</div>
+                  <div className="text-xs text-gray-600 dark:text-[#b4b4d0]">{product.units_sold} units</div>
+                </div>
               </div>
-              <div className="text-right">
-                <div className="text-sm font-semibold text-gray-900 dark:text-white">₱{product.revenue.toLocaleString()}</div>
-                <div className="text-xs text-gray-600 dark:text-[#b4b4d0]">{product.sales} units</div>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   )

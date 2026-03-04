@@ -1,10 +1,11 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect, useCallback } from "react"
 import { DashboardLayout } from "@/components/admin/layout/DashboardLayout"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
 import {
     Table,
     TableBody,
@@ -28,86 +29,60 @@ import {
     CheckCircle,
     Clock,
     XCircle,
-    Filter
+    Filter,
+    Loader2,
+    AlertCircle,
+    RefreshCw,
 } from "lucide-react"
+import { paymentService, type ApiPayment, type PaymentSummary } from "@/services"
 
-// Mock data for payments
-const payments = [
-    {
-        id: 1,
-        transactionId: "TXN-2024-001",
-        vendor: "Tech Store",
-        type: "subscription",
-        plan: "Premium",
-        amount: 2999,
-        status: "completed",
-        date: "2024-01-15 10:30",
-        method: "card",
-    },
-    {
-        id: 2,
-        transactionId: "TXN-2024-002",
-        vendor: "Fashion Hub",
-        type: "subscription",
-        plan: "Basic",
-        amount: 999,
-        status: "completed",
-        date: "2024-01-14 14:20",
-        method: "card",
-    },
-    {
-        id: 3,
-        transactionId: "TXN-2024-003",
-        vendor: "Food Market",
-        type: "subscription",
-        plan: "Premium",
-        amount: 2999,
-        status: "pending",
-        date: "2024-01-15 16:00",
-        method: "bank_transfer",
-    },
-    {
-        id: 4,
-        transactionId: "TXN-2024-004",
-        vendor: "Electronics Plus",
-        type: "subscription",
-        plan: "Basic",
-        amount: 999,
-        status: "completed",
-        date: "2024-01-13 09:15",
-        method: "card",
-    },
-    {
-        id: 5,
-        transactionId: "TXN-2024-005",
-        vendor: "Book Shop",
-        type: "subscription",
-        plan: "Free",
-        amount: 0,
-        status: "completed",
-        date: "2024-01-12 11:45",
-        method: "free",
-    },
-]
-
-const paymentStats = {
-    totalRevenue: 8995,
-    completedPayments: 4,
-    pendingPayments: 1,
-    monthlyGrowth: 15.2,
-}
+const formatCurrency = (value: number) =>
+    new Intl.NumberFormat("en-PH", { style: "currency", currency: "PHP" }).format(value)
 
 export default function PaymentsPage() {
+    const [payments, setPayments] = useState<ApiPayment[]>([])
+    const [summary, setSummary] = useState<PaymentSummary | null>(null)
+    const [loading, setLoading] = useState(true)
+    const [error, setError] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState("all")
 
+    const fetchData = useCallback(async () => {
+        setLoading(true)
+        setError(null)
+        try {
+            const [paymentsRes, summaryRes] = await Promise.allSettled([
+                paymentService.getAll({ per_page: 100 }),
+                paymentService.getSummary(),
+            ])
+
+            if (paymentsRes.status === "fulfilled") {
+                const data = Array.isArray(paymentsRes.value)
+                    ? paymentsRes.value
+                    : (paymentsRes.value as any).data || []
+                setPayments(data)
+            }
+            if (summaryRes.status === "fulfilled") {
+                setSummary(summaryRes.value)
+            }
+        } catch (err: any) {
+            console.error("Failed to load payments:", err)
+            setError(err?.message || "Failed to load payments")
+        } finally {
+            setLoading(false)
+        }
+    }, [])
+
+    useEffect(() => {
+        fetchData()
+    }, [fetchData])
+
     const filteredPayments = payments.filter((payment) => {
+        const txnId = (payment as any).transaction_id || `#${payment.id}`
         const matchesSearch =
-            payment.transactionId.toLowerCase().includes(searchQuery.toLowerCase()) ||
-            payment.vendor.toLowerCase().includes(searchQuery.toLowerCase())
-
+            txnId.toLowerCase().includes(searchQuery.toLowerCase()) ||
+            String(payment.order_id || "").includes(searchQuery)
         const matchesStatus = statusFilter === "all" || payment.status === statusFilter
-
         return matchesSearch && matchesStatus
     })
 
@@ -116,47 +91,54 @@ export default function PaymentsPage() {
             case "completed":
                 return (
                     <Badge className="bg-green-100 text-green-700 hover:bg-green-100">
-                        <CheckCircle className="w-3 h-3 mr-1" />
-                        Completed
+                        <CheckCircle className="w-3 h-3 mr-1" />Completed
                     </Badge>
                 )
             case "pending":
                 return (
                     <Badge className="bg-yellow-100 text-yellow-700 hover:bg-yellow-100">
-                        <Clock className="w-3 h-3 mr-1" />
-                        Pending
+                        <Clock className="w-3 h-3 mr-1" />Pending
                     </Badge>
                 )
             case "failed":
                 return (
                     <Badge className="bg-red-100 text-red-700 hover:bg-red-100">
-                        <XCircle className="w-3 h-3 mr-1" />
-                        Failed
+                        <XCircle className="w-3 h-3 mr-1" />Failed
                     </Badge>
                 )
             default:
-                return <Badge variant="secondary">{status}</Badge>
+                return <Badge variant="secondary" className="capitalize">{status}</Badge>
         }
     }
 
-    const getPlanBadge = (plan: string) => {
-        switch (plan) {
-            case "Premium":
-                return <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Premium</Badge>
-            case "Basic":
-                return <Badge className="bg-blue-100 text-blue-700 hover:bg-blue-100">Basic</Badge>
-            case "Free":
-                return <Badge variant="outline">Free</Badge>
-            default:
-                return <Badge variant="secondary">{plan}</Badge>
-        }
+    const totalRevenue = payments
+        .filter(p => p.status === "completed")
+        .reduce((sum, p) => sum + p.amount, 0)
+    const completedCount = payments.filter(p => p.status === "completed").length
+    const pendingCount = payments.filter(p => p.status === "pending").length
+
+    if (loading) {
+        return (
+            <DashboardLayout>
+                <div className="flex items-center justify-center min-h-[400px]">
+                    <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+                </div>
+            </DashboardLayout>
+        )
     }
 
-    const formatCurrency = (value: number) => {
-        return new Intl.NumberFormat("en-PH", {
-            style: "currency",
-            currency: "PHP",
-        }).format(value)
+    if (error) {
+        return (
+            <DashboardLayout>
+                <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+                    <AlertCircle className="h-12 w-12 text-red-500" />
+                    <p className="text-muted-foreground">{error}</p>
+                    <Button onClick={fetchData} variant="outline">
+                        <RefreshCw className="w-4 h-4 mr-2" />Retry
+                    </Button>
+                </div>
+            </DashboardLayout>
+        )
     }
 
     return (
@@ -165,7 +147,7 @@ export default function PaymentsPage() {
             <div className="mb-6">
                 <h1 className="text-3xl font-bold tracking-tight">Payments</h1>
                 <p className="text-muted-foreground mt-2">
-                    Manage subscription payments and transaction history
+                    View and manage all platform payment transactions
                 </p>
             </div>
 
@@ -177,8 +159,10 @@ export default function PaymentsPage() {
                         <DollarSign className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{formatCurrency(paymentStats.totalRevenue)}</div>
-                        <p className="text-xs text-muted-foreground">This month</p>
+                        <div className="text-2xl font-bold">
+                            {summary ? formatCurrency(summary.total_revenue ?? totalRevenue) : formatCurrency(totalRevenue)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Completed payments</p>
                     </CardContent>
                 </Card>
 
@@ -188,7 +172,7 @@ export default function PaymentsPage() {
                         <CheckCircle className="h-4 w-4 text-green-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{paymentStats.completedPayments}</div>
+                        <div className="text-2xl font-bold">{completedCount}</div>
                         <p className="text-xs text-muted-foreground">Successful payments</p>
                     </CardContent>
                 </Card>
@@ -199,19 +183,19 @@ export default function PaymentsPage() {
                         <Clock className="h-4 w-4 text-yellow-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{paymentStats.pendingPayments}</div>
+                        <div className="text-2xl font-bold">{pendingCount}</div>
                         <p className="text-xs text-muted-foreground">Awaiting confirmation</p>
                     </CardContent>
                 </Card>
 
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-                        <CardTitle className="text-sm font-medium">Growth</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total Transactions</CardTitle>
                         <TrendingUp className="h-4 w-4 text-purple-500" />
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold text-green-600">+{paymentStats.monthlyGrowth}%</div>
-                        <p className="text-xs text-muted-foreground">vs last month</p>
+                        <div className="text-2xl font-bold">{payments.length}</div>
+                        <p className="text-xs text-muted-foreground">All time</p>
                     </CardContent>
                 </Card>
             </div>
@@ -219,16 +203,14 @@ export default function PaymentsPage() {
             {/* Main Content Card */}
             <Card>
                 <CardHeader>
-                    <div className="flex items-center justify-between">
-                        <div>
-                            <CardTitle className="flex items-center gap-2">
-                                <CreditCard className="h-5 w-5 text-purple-600" />
-                                Transaction History
-                            </CardTitle>
-                            <CardDescription>
-                                View and manage all subscription payments
-                            </CardDescription>
-                        </div>
+                    <div>
+                        <CardTitle className="flex items-center gap-2">
+                            <CreditCard className="h-5 w-5 text-purple-600" />
+                            Transaction History
+                        </CardTitle>
+                        <CardDescription>
+                            View and manage all payment transactions
+                        </CardDescription>
                     </div>
 
                     {/* Filters and Search */}
@@ -236,7 +218,7 @@ export default function PaymentsPage() {
                         <div className="relative flex-1 min-w-[200px] max-w-sm">
                             <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                             <Input
-                                placeholder="Search by transaction ID or vendor..."
+                                placeholder="Search by transaction ID or order..."
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
                                 className="pl-10"
@@ -261,8 +243,7 @@ export default function PaymentsPage() {
                         <TableHeader>
                             <TableRow>
                                 <TableHead>Transaction ID</TableHead>
-                                <TableHead>Vendor</TableHead>
-                                <TableHead>Plan</TableHead>
+                                <TableHead>Order</TableHead>
                                 <TableHead>Amount</TableHead>
                                 <TableHead>Method</TableHead>
                                 <TableHead>Status</TableHead>
@@ -272,34 +253,38 @@ export default function PaymentsPage() {
                         <TableBody>
                             {filteredPayments.length === 0 ? (
                                 <TableRow>
-                                    <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                                    <TableCell colSpan={6} className="text-center py-8 text-muted-foreground">
                                         No payments found
                                     </TableCell>
                                 </TableRow>
                             ) : (
-                                filteredPayments.map((payment) => (
-                                    <TableRow key={payment.id}>
-                                        <TableCell className="font-medium">
-                                            <code className="text-sm bg-gray-100 px-2 py-1 rounded">
-                                                {payment.transactionId}
-                                            </code>
-                                        </TableCell>
-                                        <TableCell>{payment.vendor}</TableCell>
-                                        <TableCell>{getPlanBadge(payment.plan)}</TableCell>
-                                        <TableCell className="font-medium">
-                                            {payment.amount > 0 ? formatCurrency(payment.amount) : "-"}
-                                        </TableCell>
-                                        <TableCell>
-                                            <Badge variant="outline" className="capitalize">
-                                                {payment.method.replace("_", " ")}
-                                            </Badge>
-                                        </TableCell>
-                                        <TableCell>{getStatusBadge(payment.status)}</TableCell>
-                                        <TableCell className="text-sm text-muted-foreground">
-                                            {payment.date}
-                                        </TableCell>
-                                    </TableRow>
-                                ))
+                                filteredPayments.map((payment) => {
+                                    const txnId = (payment as any).transaction_id || `#${payment.id}`
+                                    return (
+                                        <TableRow key={payment.id}>
+                                            <TableCell className="font-medium">
+                                                <code className="text-sm bg-gray-100 px-2 py-1 rounded">
+                                                    {txnId}
+                                                </code>
+                                            </TableCell>
+                                            <TableCell className="text-muted-foreground">
+                                                Order #{payment.order_id}
+                                            </TableCell>
+                                            <TableCell className="font-medium">
+                                                {formatCurrency(payment.amount)}
+                                            </TableCell>
+                                            <TableCell>
+                                                <Badge variant="outline" className="capitalize">
+                                                    {(payment.method || "—").replace("_", " ")}
+                                                </Badge>
+                                            </TableCell>
+                                            <TableCell>{getStatusBadge(payment.status)}</TableCell>
+                                            <TableCell className="text-sm text-muted-foreground">
+                                                {payment.paid_at || (payment as any).created_at || "—"}
+                                            </TableCell>
+                                        </TableRow>
+                                    )
+                                })
                             )}
                         </TableBody>
                     </Table>
