@@ -40,6 +40,9 @@ export interface ReceiptData {
   paymentMethod: string;
   amountTendered: number;
   change: number;
+  isCredit?: boolean;
+  creditorPhone?: string;
+  creditorAddress?: string;
 }
 
 export interface POSScreenProps {
@@ -102,7 +105,7 @@ export interface POSScreenProps {
   canComplete: boolean;
   setReceiptOpen: (value: boolean) => void;
   calcDeliveryFee: (fulfillment: Fulfillment, deliveryKm: number) => number;
-  completeOrder?: (isCredit?: boolean) => Promise<void>;
+  completeOrder?: (isCredit?: boolean, creditInfo?: { name: string; phone: string; address: string; dueDate?: string }) => Promise<void>;
   categories?: any[];
   receiptData?: ReceiptData | null;
   startNewTransaction?: () => void;

@@ -12,9 +12,7 @@ import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Alert, AlertDescription } from "@/components/ui/alert"
 import { Loader2, Building2, Mail, Lock, AlertCircle, CheckCircle2, ArrowLeft } from "lucide-react"
-import { VendorRegisterData } from "@/types/auth"
 import { SubscriptionPlanSelector } from "@/components/auth/subscription-plan-selector"
-import { authService } from "@/services/auth-jwt.service"
 
 const registerSchema = z.object({
   business_name: z.string().min(2, "Business name must be at least 2 characters"),
@@ -76,24 +74,30 @@ export default function VendorRegisterPage() {
     setError(null)
 
     try {
-      const registerData: VendorRegisterData = {
-        ...data,
-        name: data.business_name,
-        subscription_plan: selectedPlan,
-        user_type: "vendor",
-      }
+      // Call the server-side proxy route which uses admin credentials
+      // to create a proper vendor account via POST /api/admin/vendors
+      const response = await fetch('/api/vendor-register', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: data.business_name,
+          business_name: data.business_name,
+          email: data.email,
+          password: data.password,
+          password_confirmation: data.password_confirmation,
+          subscription_plan: selectedPlan,
+          user_type: "vendor",
+        }),
+      })
 
-      // Use the authService which properly handles API calls
-      const result = await authService.pos.register(registerData)
+      const result = await response.json()
 
-      if (!result.success) {
+      if (!response.ok) {
         throw new Error(result.message || "Registration failed")
       }
 
-      // Redirect to payment processor (Stripe/PayPal)
-      if (result.data.payment_url) {
-        // This would redirect to Stripe or PayPal checkout
-        window.location.href = result.data.payment_url
+      if (result.payment_url) {
+        window.location.href = result.payment_url
       } else {
         setSuccess(true)
         setTimeout(() => {
@@ -101,10 +105,7 @@ export default function VendorRegisterPage() {
         }, 2000)
       }
     } catch (err) {
-      // Handle API errors properly
-      const errorMessage = (err as { response?: { data?: { message?: string } }, message?: string })?.response?.data?.message
-        || (err as Error)?.message
-        || "An error occurred during registration"
+      const errorMessage = (err as Error)?.message || "An error occurred during registration"
       setError(errorMessage)
     } finally {
       setIsLoading(false)

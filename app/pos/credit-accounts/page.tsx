@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo, useEffect, useCallback } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -39,6 +39,9 @@ import { CreditAccountCards } from "@/components/pos/CreditAccountCards"
 import { creditService } from "@/services"
 import type { ApiCredit } from "@/services"
 import Swal from "sweetalert2"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
+import { getOnlineStatus } from "@/lib/sync-service"
 
 // ---------------------------------------------------------------------------
 // Types (kept identical to what DataTable + Cards expect)
@@ -89,6 +92,41 @@ interface CreditAccount {
     createdAt: string
     lastPaymentDate?: string
 }
+
+// ---------------------------------------------------------------------------
+// Dummy data — used when the API credits endpoint is unavailable
+// ---------------------------------------------------------------------------
+const DUMMY_CREDITS: CreditAccount[] = [
+    {
+        id: 1,
+        customer: { id: 1, name: "Juan dela Cruz", phone: "09171234567", email: "juan@email.com", address: "123 Rizal St, Manila" },
+        totalAmount: 5000, paidAmount: 2000, remainingBalance: 3000,
+        status: "active", createdAt: "2026-02-01T08:00:00Z",
+        payments: [], items: [],
+    },
+    {
+        id: 2,
+        customer: { id: 2, name: "Maria Santos", phone: "09281234567", email: "maria@email.com", address: "456 Mabini Ave, Quezon City" },
+        totalAmount: 8500, paidAmount: 8500, remainingBalance: 0,
+        status: "paid", createdAt: "2026-01-15T08:00:00Z",
+        payments: [], items: [],
+    },
+    {
+        id: 3,
+        customer: { id: 3, name: "Pedro Reyes", phone: "09351234567", address: "789 Luna St, Cebu City" },
+        totalAmount: 12000, paidAmount: 3000, remainingBalance: 9000,
+        dueDate: "2026-03-01T00:00:00Z",
+        status: "overdue", createdAt: "2026-01-10T08:00:00Z",
+        payments: [], items: [],
+    },
+    {
+        id: 4,
+        customer: { id: 4, name: "Ana Gomez", phone: "09461234567", email: "ana@email.com" },
+        totalAmount: 3500, paidAmount: 1000, remainingBalance: 2500,
+        status: "active", createdAt: "2026-02-20T08:00:00Z",
+        payments: [], items: [],
+    },
+]
 
 // ---------------------------------------------------------------------------
 // Map API credit → UI CreditAccount shape
@@ -158,11 +196,6 @@ function useIsDesktop() {
 // Main Page
 // ---------------------------------------------------------------------------
 export default function CreditAccountsPage() {
-    const [accounts, setAccounts] = useState<CreditAccount[]>([])
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-    const [isRefreshing, setIsRefreshing] = useState(false)
-
     const [searchQuery, setSearchQuery] = useState("")
     const [statusFilter, setStatusFilter] = useState<string>("all")
     const [selectedAccount, setSelectedAccount] = useState<CreditAccount | null>(null)
@@ -175,32 +208,19 @@ export default function CreditAccountsPage() {
 
     const isDesktop = useIsDesktop()
 
-    // ── Fetch from API ────────────────────────────────────────────────────
-    const fetchAccounts = useCallback(async (silent = false) => {
-        if (!silent) setIsLoading(true)
-        else setIsRefreshing(true)
-        setError(null)
-
-        try {
+    // ── Fetch via offline-first hook ──────────────────────────────────────
+    const { data: rawAccounts, isLoading, isStale, lastSyncedAt, error, refresh } = useOfflineData<any[]>(
+        "credit-accounts",
+        async () => {
             const response = await creditService.getAll({ per_page: 200 })
-            const raw = Array.isArray(response) ? response : (response.data ?? [])
-            setAccounts(raw.map(mapApiCredit))
-        } catch (err: any) {
-            console.error("Failed to load credit accounts:", err)
-            setError(
-                err?.response?.data?.message ||
-                err?.message ||
-                "Failed to load credit accounts. Please try again."
-            )
-        } finally {
-            setIsLoading(false)
-            setIsRefreshing(false)
-        }
-    }, [])
-
-    useEffect(() => {
-        fetchAccounts()
-    }, [fetchAccounts])
+            return Array.isArray(response) ? response : (response as any).data ?? []
+        },
+        { staleAfterMinutes: 5 }
+    )
+    const accounts = useMemo(() => {
+        const mapped = (rawAccounts ?? []).map(mapApiCredit)
+        return mapped.length > 0 ? mapped : DUMMY_CREDITS
+    }, [rawAccounts])
 
     // ── Helpers ───────────────────────────────────────────────────────────
     const toggleExpanded = (accountId: number) => {
@@ -242,6 +262,11 @@ export default function CreditAccountsPage() {
     const handleSubmitPayment = async () => {
         if (!selectedAccount || !paymentAmount || !paymentMethod) return
 
+        if (!getOnlineStatus()) {
+            Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Payments cannot be recorded while offline." })
+            return
+        }
+
         const amount = Math.round(parseFloat(paymentAmount))
         if (isNaN(amount) || amount <= 0) {
             Swal.fire({ icon: "error", title: "Invalid Amount", text: "Please enter a valid payment amount." })
@@ -267,7 +292,7 @@ export default function CreditAccountsPage() {
             })
 
             setIsAddPaymentOpen(false)
-            fetchAccounts(true) // Refresh list
+            refresh() // Refresh list
         } catch (err: any) {
             console.error("Failed to record payment:", err)
             const message = err?.response?.data?.message || err?.message || "Failed to record payment."
@@ -280,6 +305,7 @@ export default function CreditAccountsPage() {
     // ── Render ─────────────────────────────────────────────────────────────
     return (
         <div className="space-y-6">
+            <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
             {/* Header */}
             <div className="relative pb-4">
                 <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
@@ -294,11 +320,10 @@ export default function CreditAccountsPage() {
                     <div className="flex gap-2">
                         <Button
                             variant="outline"
-                            onClick={() => fetchAccounts(true)}
-                            disabled={isRefreshing}
+                            onClick={refresh}
                             className="border-gray-200 dark:border-[#2d1b69] hover:bg-gray-50 dark:hover:bg-[#1a1a35]"
                         >
-                            <RefreshCw className={`w-4 h-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+                            <RefreshCw className="w-4 h-4 mr-2" />
                             Refresh
                         </Button>
                         <Button className="bg-purple-600 hover:bg-purple-700 shadow-lg shadow-purple-200 dark:shadow-none transition-all duration-200 hover:shadow-xl hover:shadow-purple-200 dark:hover:shadow-none hover:-translate-y-0.5 w-full sm:w-auto">
@@ -389,7 +414,7 @@ export default function CreditAccountsPage() {
                     <Button
                         size="sm"
                         variant="outline"
-                        onClick={() => fetchAccounts()}
+                        onClick={refresh}
                         className="border-red-300 dark:border-red-700 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-900/30"
                     >
                         Retry

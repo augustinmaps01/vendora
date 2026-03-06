@@ -46,7 +46,6 @@ import {
   Image as ImageIcon,
   X,
   FileText,
-  DollarSign,
   Boxes,
   Tags,
   Plus,
@@ -179,6 +178,16 @@ const getErrorMessage = (error: unknown): { message: string; isAuthError: boolea
 }
 
 /**
+ * Resolve image URL — handles relative paths from API storage
+ */
+const resolveImageUrl = (url: string | null | undefined): string | null => {
+  if (!url) return null
+  if (url.startsWith('http://') || url.startsWith('https://')) return url
+  const base = 'https://vendora-api.abedubas.dev'
+  return `${base}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+/**
  * Normalize API product response to consistent format
  */
 const normalizeProduct = (raw: Partial<ApiProduct>): ApiProduct => {
@@ -200,7 +209,7 @@ const normalizeProduct = (raw: Partial<ApiProduct>): ApiProduct => {
     min_stock: Number(raw?.min_stock ?? 0),
     max_stock: Number(raw?.max_stock ?? 0),
     is_low_stock: Boolean(raw?.is_low_stock ?? false),
-    image: raw?.image ?? null,
+    image: raw?.image ?? (raw as any)?.image_url ?? null,
     is_active: raw?.is_active ?? true,
     is_ecommerce: raw?.is_ecommerce ?? true,
     created_at: raw?.created_at ?? "",
@@ -219,6 +228,8 @@ function DesktopInventoryLayout() {
   const [isActiveProduct, setIsActiveProduct] = useState(true)
   const [isEcommerceProduct, setIsEcommerceProduct] = useState(true)
   const [isBulkPricing, setIsBulkPricing] = useState(false)
+  const [useMarkup, setUseMarkup] = useState(false)
+  const [markup, setMarkup] = useState<number | "">(0)
   const [isEditing, setIsEditing] = useState(false)
   const [selectedProduct, setSelectedProduct] = useState<ApiProduct | null>(null)
   const [formData, setFormData] = useState<ProductForm>(initialFormState)
@@ -297,6 +308,8 @@ function DesktopInventoryLayout() {
     setIsActiveProduct(true)
     setIsEcommerceProduct(true)
     setIsBulkPricing(false)
+    setUseMarkup(false)
+    setMarkup(0)
     setImagePreview(null)
     setImageFile(null)
     setImageName("")
@@ -521,6 +534,16 @@ function DesktopInventoryLayout() {
     setImageFile(null)
     setImageName("")
     setImageSize(null)
+    // Compute markup from existing cost/price
+    const existingCost = product.cost || 0
+    const existingPrice = product.price || 0
+    if (existingCost > 0 && existingPrice > existingCost) {
+      setUseMarkup(true)
+      setMarkup(Math.round(((existingPrice - existingCost) / existingCost) * 100 * 100) / 100)
+    } else {
+      setUseMarkup(false)
+      setMarkup(0)
+    }
     setIsAddProductOpen(true)
   }
 
@@ -1035,18 +1058,20 @@ function DesktopInventoryLayout() {
                     {visibleColumns.product && (
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
-                          {item.image && (
-                            <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0">
+                          <div className="h-10 w-10 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0 flex items-center justify-center">
+                            {resolveImageUrl(item.image) ? (
                               <NextImage
-                                src={item.image}
+                                src={resolveImageUrl(item.image)!}
                                 alt={item.name}
                                 width={40}
                                 height={40}
                                 className="object-cover w-full h-full"
                                 unoptimized
                               />
-                            </div>
-                          )}
+                            ) : (
+                              <Package className="w-5 h-5 text-gray-400 dark:text-gray-600" />
+                            )}
+                          </div>
                           <div className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</div>
                         </div>
                       </td>
@@ -1182,18 +1207,20 @@ function DesktopInventoryLayout() {
             <div key={item.id} className="bg-white dark:bg-[#13132a] p-4 rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm">
               <div className="flex items-start justify-between mb-3">
                 <div className="flex items-start gap-3 flex-1">
-                  {item.image && (
-                    <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0">
+                  <div className="h-12 w-12 rounded-lg overflow-hidden bg-gray-100 dark:bg-[#1a1a35] flex-shrink-0 flex items-center justify-center">
+                    {resolveImageUrl(item.image) ? (
                       <NextImage
-                        src={item.image}
+                        src={resolveImageUrl(item.image)!}
                         alt={item.name}
                         width={48}
                         height={48}
                         className="object-cover w-full h-full"
                         unoptimized
                       />
-                    </div>
-                  )}
+                    ) : (
+                      <Package className="w-6 h-6 text-gray-400 dark:text-gray-600" />
+                    )}
+                  </div>
                   <div>
                     <h3 className="text-sm font-medium text-gray-900 dark:text-white">{item.name}</h3>
                     <p className="text-xs text-gray-500 dark:text-[#b4b4d0] mt-0.5">SKU: {item.sku}</p>
@@ -1551,13 +1578,80 @@ function DesktopInventoryLayout() {
 
                 {/* Pricing */}
                 <section className="space-y-4 sm:rounded-2xl sm:border sm:border-white/10 sm:bg-white/[0.04] sm:p-4">
-                  <h3 className="text-sm font-semibold">Pricing</h3>
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-semibold">Pricing</h3>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs text-white/50">Use Markup</span>
+                      <Switch
+                        checked={useMarkup}
+                        onCheckedChange={(checked) => {
+                          setUseMarkup(checked)
+                          if (!checked) {
+                            setMarkup(0)
+                          }
+                        }}
+                      />
+                    </div>
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
-                    {/* Price */}
-                    <div className="space-y-2">
-                      <p className="text-xs text-white/70">Price *</p>
+                    {/* Cost — only shown when markup is enabled */}
+                    {useMarkup && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-white/70">Cost *</p>
+                        <div className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3">
+                          <span className="text-white/50 text-sm font-medium">₱</span>
+                          <Input
+                            className="border-0 bg-transparent text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="0.00"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={formData.cost || ""}
+                            onChange={(e) => {
+                              const cost = Number(e.target.value)
+                              handleInputChange("cost", cost)
+                              if (markup !== "" && markup > 0 && cost > 0) {
+                                const newPrice = Math.round(cost * (1 + (markup as number) / 100) * 100) / 100
+                                handleInputChange("price", newPrice)
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Markup % — only shown when enabled */}
+                    {useMarkup && (
+                      <div className="space-y-2">
+                        <p className="text-xs text-white/70">Markup %</p>
+                        <div className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3">
+                          <span className="text-white/50 text-sm font-medium">%</span>
+                          <Input
+                            className="border-0 bg-transparent text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
+                            placeholder="0"
+                            type="number"
+                            min="0"
+                            step="0.01"
+                            value={markup === 0 ? "" : markup}
+                            onChange={(e) => {
+                              const pct = e.target.value === "" ? "" : Number(e.target.value)
+                              setMarkup(pct)
+                              const cost = formData.cost || 0
+                              if (pct !== "" && cost > 0) {
+                                const newPrice = Math.round(cost * (1 + (pct as number) / 100) * 100) / 100
+                                handleInputChange("price", newPrice)
+                              }
+                            }}
+                          />
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Selling Price */}
+                    <div className={`space-y-2 ${useMarkup ? "col-span-2" : ""}`}>
+                      <p className="text-xs text-white/70">Selling Price *</p>
                       <div className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3">
-                        <DollarSign className="h-4 w-4 text-white/50" />
+                        <span className="text-white/50 text-sm font-medium">₱</span>
                         <Input
                           className="border-0 bg-transparent text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
                           placeholder="0.00"
@@ -1565,26 +1659,25 @@ function DesktopInventoryLayout() {
                           min="0"
                           step="0.01"
                           value={formData.price || ""}
-                          onChange={(e) => handleInputChange("price", Number(e.target.value))}
+                          onChange={(e) => {
+                            const price = Number(e.target.value)
+                            handleInputChange("price", price)
+                            if (useMarkup) {
+                              const cost = formData.cost || 0
+                              if (cost > 0 && price > cost) {
+                                setMarkup(Math.round(((price - cost) / cost) * 100 * 100) / 100)
+                              } else {
+                                setMarkup("")
+                              }
+                            }
+                          }}
                         />
                       </div>
-                    </div>
-
-                    {/* Cost */}
-                    <div className="space-y-2">
-                      <p className="text-xs text-white/70">Cost (optional)</p>
-                      <div className="flex items-center gap-2 rounded-xl bg-white/10 border border-white/10 px-3">
-                        <DollarSign className="h-4 w-4 text-white/50" />
-                        <Input
-                          className="border-0 bg-transparent text-white placeholder:text-white/40 focus-visible:ring-0 focus-visible:ring-offset-0"
-                          placeholder="0.00"
-                          type="number"
-                          min="0"
-                          step="0.01"
-                          value={formData.cost || ""}
-                          onChange={(e) => handleInputChange("cost", Number(e.target.value))}
-                        />
-                      </div>
+                      {useMarkup && formData.cost > 0 && formData.price > 0 && markup !== "" && Number(markup) > 0 && (
+                        <p className="text-xs text-purple-400">
+                          ₱{formData.cost.toFixed(2)} cost + {markup}% = ₱{formData.price.toFixed(2)} selling price
+                        </p>
+                      )}
                     </div>
 
                     {/* Currency */}

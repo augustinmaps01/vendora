@@ -34,12 +34,13 @@ import {
   ChevronRight,
   MoreVertical,
   Loader2,
-  UtensilsCrossed
+  UtensilsCrossed,
+  BookOpen
 } from "lucide-react"
 import { NotificationPanel } from "@/components/pos/NotificationPanel"
 import { ThemeToggle } from "@/components/pos/ThemeToggle"
 // import { NetworkStatusBadge } from "@/components/pos/NetworkStatusBadge"
-// import { OfflineBanner } from "@/components/pos/OfflineBanner"
+import { OfflineBanner } from "@/components/pos/OfflineBanner"
 import { useOfflineInit } from "@/hooks/use-offline-init"
 import { db } from "@/lib/db"
 import { syncService } from "@/lib/sync-service"
@@ -74,6 +75,7 @@ const sidebarSections = [
     title: "Management",
     items: [
       { icon: Calculator, label: "Accounting", href: "/pos/accounting", comingSoon: true },
+      { icon: BookOpen, label: "Ledger", href: "/pos/ledger", comingSoon: false },
       { icon: Settings, label: "Settings", href: "/pos/settings", comingSoon: true },
       { icon: HelpCircle, label: "Help and Support", href: "/pos/help", comingSoon: true },
     ]
@@ -96,7 +98,7 @@ export default function POSLayout({ children }: { children: ReactNode }) {
   const [isLoggingOut, setIsLoggingOut] = useState(false)
 
   // Initialize offline support for all POS pages
-  useOfflineInit()
+  const offline = useOfflineInit()
   const [isInitialSync, setIsInitialSync] = useState(false)
 
   useEffect(() => {
@@ -105,6 +107,8 @@ export default function POSLayout({ children }: { children: ReactNode }) {
     // Check if this is first login (no products in IndexedDB)
     const checkInitialSync = async () => {
       try {
+        // Don't sync if user is not authenticated (e.g. on login page)
+        if (!tokenManager.getAccessToken()) return
         const productCount = await db.products.count()
         if (productCount === 0 && navigator.onLine) {
           setIsInitialSync(true)
@@ -601,12 +605,12 @@ export default function POSLayout({ children }: { children: ReactNode }) {
           paddingTop: '4rem',
         }}
       >
-        {/* Offline Banner — hidden for now */}
-        {/* <OfflineBanner
+        {/* Offline Banner */}
+        <OfflineBanner
           isOnline={offline.isOnline}
           networkQuality={offline.networkQuality}
           pendingCount={offline.pendingCount + offline.dirtyCount}
-        /> */}
+        />
 
         {/* Header */}
         <header

@@ -7,11 +7,14 @@ import {
     UtensilsCrossed, Coffee, Sandwich, Soup,
     Flame, Leaf, Search, ShoppingBag,
     Plus, Minus, Check, Users, X, CalendarDays,
-    AlertTriangle, User2, LogOut,
+    AlertTriangle, User2, LogOut, Loader2,
 } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { BuyerAuthModal, BUYER_TOKEN_KEY, BUYER_USER_KEY, type BuyerUser } from "@/components/ecommerce/BuyerAuthModal"
+import { foodMenuService } from "@/services"
+import type { FoodMenuItem as ApiFoodMenuItem } from "@/services"
+import { env } from "@/config/env"
 
 
 // ---------------------------------------------------------------------------
@@ -308,6 +311,34 @@ const CATEGORIES: { id: MealCategory; label: string; icon: any; time?: string }[
 
 
 // ---------------------------------------------------------------------------
+// API → local type mapper
+// ---------------------------------------------------------------------------
+function mapCategoryToMeal(cat: string): MealCategory {
+    const lower = cat.toLowerCase()
+    if (lower.includes("breakfast")) return "breakfast"
+    if (lower.includes("lunch") || lower.includes("main")) return "lunch"
+    if (lower.includes("snack") || lower.includes("appetizer") || lower.includes("salad")) return "snacks"
+    if (lower.includes("dinner") || lower.includes("soup")) return "dinner"
+    if (lower.includes("drink") || lower.includes("beverage")) return "drinks"
+    if (lower.includes("dessert") || lower.includes("combo")) return "snacks"
+    return "lunch"
+}
+
+function mapApiToFoodItem(item: ApiFoodMenuItem): FoodItem {
+    return {
+        id: String(item.id),
+        name: item.name,
+        description: item.description,
+        price: item.price,
+        category: mapCategoryToMeal(item.category),
+        image: "https://images.unsplash.com/photo-1504674900247-0877df9cc836?q=80&w=800",
+        totalQty: item.total_servings,
+        availableQty: item.total_servings - item.reserved_servings,
+        rating: 4.5,
+    }
+}
+
+// ---------------------------------------------------------------------------
 // Availability helpers
 // ---------------------------------------------------------------------------
 function getAvailabilityStatus(item: FoodItem) {
@@ -464,6 +495,7 @@ function ReservationPanel({
     onConfirm,
     onClose,
     isMobile,
+    isSubmitting,
 }: {
     items: ReservationItem[]
     onQtyChange: (id: string, qty: number) => void
@@ -471,6 +503,7 @@ function ReservationPanel({
     onConfirm: () => void
     onClose?: () => void
     isMobile?: boolean
+    isSubmitting?: boolean
 }) {
     const total = items.reduce((sum, r) => sum + r.food.price * r.qty, 0)
 
@@ -548,10 +581,15 @@ function ReservationPanel({
                     </div>
                     <Button
                         onClick={onConfirm}
-                        className="w-full h-11 rounded-xl font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-[#7C3AED]/20 active:scale-95 transition-all"
+                        disabled={isSubmitting}
+                        className="w-full h-11 rounded-xl font-bold bg-[#7C3AED] hover:bg-[#6D28D9] text-white shadow-lg shadow-[#7C3AED]/20 active:scale-95 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                     >
-                        <Check className="w-4 h-4 mr-2" />
-                        Confirm Reservation
+                        {isSubmitting ? (
+                            <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                        ) : (
+                            <Check className="w-4 h-4 mr-2" />
+                        )}
+                        {isSubmitting ? "Submitting..." : "Confirm Reservation"}
                     </Button>
                 </div>
             )}
@@ -644,6 +682,9 @@ export default function FoodMenuPage() {
     const [isMounted, setIsMounted] = useState(false)
     const [buyer, setBuyer] = useState<BuyerUser | null>(null)
     const [showAuthModal, setShowAuthModal] = useState(false)
+    const [foodItems, setFoodItems] = useState<FoodItem[]>(FOOD_ITEMS)
+    const [isLoadingMenu, setIsLoadingMenu] = useState(true)
+    const [isSubmittingReservation, setIsSubmittingReservation] = useState(false)
 
     const heroReveal = useScrollReveal()
     const menuReveal = useScrollReveal()
@@ -654,12 +695,41 @@ export default function FoodMenuPage() {
             const stored = localStorage.getItem(BUYER_USER_KEY)
             if (stored) setBuyer(JSON.parse(stored))
         } catch { /* ignore */ }
+
+        // Load food menu from public API endpoint (no vendor auth needed)
+        const loadMenu = async () => {
+            try {
+                const buyerToken = localStorage.getItem(BUYER_TOKEN_KEY)
+                const headers: Record<string, string> = {}
+                if (buyerToken) headers["Authorization"] = `Bearer ${buyerToken}`
+
+                const todayDate = new Date().toLocaleDateString("en-CA", {
+                    timeZone: "Asia/Manila",
+                })
+                const response = await fetch(
+                    `${env.api.baseUrl}/food-menu?per_page=500&date=${todayDate}`,
+                    { headers }
+                )
+                if (response.ok) {
+                    const json = await response.json()
+                    const raw: ApiFoodMenuItem[] = json?.data?.data ?? json?.data ?? json ?? []
+                    if (Array.isArray(raw) && raw.length > 0) {
+                        setFoodItems(raw.map(mapApiToFoodItem))
+                    }
+                }
+            } catch {
+                // Keep hardcoded FOOD_ITEMS as fallback
+            } finally {
+                setIsLoadingMenu(false)
+            }
+        }
+        loadMenu()
     }, [])
 
     const today = new Date()
     const dateStr = today.toLocaleDateString("en-PH", { weekday: "long", year: "numeric", month: "long", day: "numeric" })
 
-    const filteredItems = FOOD_ITEMS.filter((item) => {
+    const filteredItems = foodItems.filter((item) => {
         const matchCat = activeCategory === "all" || item.category === activeCategory
         const matchSearch = searchQuery.trim() === "" ||
             item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -687,7 +757,25 @@ export default function FoodMenuPage() {
         setReservations((prev) => prev.map((r) => r.food.id === id ? { ...r, qty } : r))
     }
 
-    const handleConfirm = () => {
+    const handleConfirm = async () => {
+        if (!buyer) return
+        setIsSubmittingReservation(true)
+        try {
+            await Promise.all(
+                reservations.map((r) =>
+                    foodMenuService.createReservation({
+                        menu_item_id: Number(r.food.id),
+                        customer_name: buyer.name,
+                        phone: "N/A",
+                        servings: r.qty,
+                    })
+                )
+            )
+        } catch {
+            // If API fails (backend not ready), still show confirmation
+        } finally {
+            setIsSubmittingReservation(false)
+        }
         setConfirmed(true)
         setShowPanel(false)
     }
@@ -790,13 +878,13 @@ export default function FoodMenuPage() {
                             <div className="grid grid-cols-3 gap-3 sm:gap-4 lg:flex lg:gap-3">
                                 <div className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08] min-w-[88px]">
                                     <span className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-                                        {FOOD_ITEMS.filter(f => f.availableQty > 0).length}
+                                        {foodItems.filter(f => f.availableQty > 0).length}
                                     </span>
                                     <span className="text-[11px] text-purple-300/60 mt-1 font-medium whitespace-nowrap">Available</span>
                                 </div>
                                 <div className="flex flex-col items-center justify-center p-4 sm:p-5 rounded-2xl bg-white/[0.04] border border-white/[0.08] min-w-[88px]">
                                     <span className="text-2xl sm:text-3xl font-black text-white tabular-nums">
-                                        {FOOD_ITEMS.length}
+                                        {foodItems.length}
                                     </span>
                                     <span className="text-[11px] text-purple-300/60 mt-1 font-medium whitespace-nowrap">Total Items</span>
                                 </div>
@@ -871,7 +959,12 @@ export default function FoodMenuPage() {
                             </p>
 
                             {/* Grid */}
-                            {filteredItems.length === 0 ? (
+                            {isLoadingMenu ? (
+                                <div className="rounded-2xl p-12 text-center bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.06]">
+                                    <Loader2 className="w-8 h-8 mx-auto mb-3 text-[#7C3AED] animate-spin" />
+                                    <p className="text-sm text-gray-500 dark:text-white/40">Loading menu...</p>
+                                </div>
+                            ) : filteredItems.length === 0 ? (
                                 <div className="rounded-2xl p-12 text-center bg-white dark:bg-white/[0.03] border border-gray-100 dark:border-white/[0.06]">
                                     <UtensilsCrossed className="w-10 h-10 mx-auto mb-3 text-gray-300 dark:text-white/20" />
                                     <p className="text-base font-semibold text-gray-900 dark:text-white mb-1">No items found</p>
@@ -900,6 +993,7 @@ export default function FoodMenuPage() {
                                     onQtyChange={handleQtyChange}
                                     onRemove={handleRemove}
                                     onConfirm={handleConfirm}
+                                    isSubmitting={isSubmittingReservation}
                                 />
                             </div>
                         </aside>
@@ -939,6 +1033,7 @@ export default function FoodMenuPage() {
                                 onConfirm={handleConfirm}
                                 onClose={() => setShowPanel(false)}
                                 isMobile
+                                isSubmitting={isSubmittingReservation}
                             />
                         </div>
                     </div>

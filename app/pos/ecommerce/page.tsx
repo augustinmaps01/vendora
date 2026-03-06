@@ -21,6 +21,10 @@ import {
 import { storeService, orderService } from "@/services"
 import type { ApiStore } from "@/services"
 import type { ApiProduct } from "@/services/product.service"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
+import { getOnlineStatus } from "@/lib/sync-service"
+import Swal from "sweetalert2"
 
 interface RecentOrder {
   id: number | string
@@ -33,56 +37,45 @@ interface RecentOrder {
 }
 
 export default function EcommercePage() {
-  const [store, setStore] = useState<ApiStore | null>(null)
   const [storeActive, setStoreActive] = useState(true)
-  const [products, setProducts] = useState<ApiProduct[]>([])
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
 
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const storesData = await storeService.getAll()
-      const stores = Array.isArray(storesData) ? storesData : storesData.data || []
-
-      let storeProducts: ApiProduct[] = []
-      if (stores.length > 0) {
-        const firstStore = stores[0]
-        setStore(firstStore)
-        setStoreActive(firstStore.is_active)
-
+  const { data, isLoading: loading, isStale, lastSyncedAt, error, refresh } = useOfflineData<{
+    store: ApiStore | null;
+    products: ApiProduct[];
+    recentOrders: RecentOrder[];
+  }>(
+    "ecommerce-store",
+    async () => {
+      const storesRaw = await storeService.getAll()
+      const stores = Array.isArray(storesRaw) ? storesRaw : (storesRaw as any).data || []
+      const firstStore = stores[0] ?? null
+      let products: ApiProduct[] = []
+      let recentOrders: RecentOrder[] = []
+      if (firstStore) {
+        try { products = await storeService.getProducts(firstStore.id, { per_page: 500 }) } catch {}
         try {
-          storeProducts = await storeService.getProducts(firstStore.id, { per_page: 500 })
-          if (!Array.isArray(storeProducts)) storeProducts = []
-        } catch {
-          storeProducts = []
-        }
+          const ord = await orderService.getAll({ per_page: 10 } as any)
+          recentOrders = Array.isArray(ord) ? ord : (ord as any).data || []
+        } catch {}
       }
-      setProducts(storeProducts)
+      return { store: firstStore, products, recentOrders }
+    },
+    { staleAfterMinutes: 10 }
+  )
 
-      // Fetch recent orders
-      try {
-        const ordersData = await orderService.getAll({ per_page: 10 } as any)
-        const orders = Array.isArray(ordersData) ? ordersData : (ordersData as any).data || []
-        setRecentOrders(orders)
-      } catch {
-        setRecentOrders([])
-      }
-    } catch (err: any) {
-      console.error("Failed to load e-commerce data:", err)
-      setError(err?.message || "Failed to load e-commerce data")
-    } finally {
-      setLoading(false)
-    }
-  }
+  const store = data?.store ?? null
+  const products = data?.products ?? []
+  const recentOrders = data?.recentOrders ?? []
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (data?.store) setStoreActive(data.store.is_active)
+  }, [data?.store])
 
   const handleStoreToggle = async (active: boolean) => {
+    if (!getOnlineStatus()) {
+      Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Store activation cannot be changed while offline." })
+      return
+    }
     setStoreActive(active)
     if (store) {
       try {
@@ -106,12 +99,12 @@ export default function EcommercePage() {
     )
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
-        <Button onClick={fetchData} variant="outline">
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error as string}</p>
+        <Button onClick={refresh} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry
         </Button>
@@ -121,6 +114,7 @@ export default function EcommercePage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -331,7 +325,7 @@ export default function EcommercePage() {
           </div>
         </div>
         <div className="flex gap-3 mt-4 sm:mt-6">
-          <Button className="bg-purple-600 hover:bg-purple-700 flex-1 sm:flex-none" onClick={fetchData}>
+          <Button className="bg-purple-600 hover:bg-purple-700 flex-1 sm:flex-none" onClick={refresh}>
             Sync Now
           </Button>
           <Button variant="outline" className="flex-1 sm:flex-none">

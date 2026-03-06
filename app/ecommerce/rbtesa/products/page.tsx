@@ -248,7 +248,7 @@ export default function RbtesaProductsPage() {
 
             try {
                 const [apiProducts, cats] = await Promise.allSettled([
-                    productService.getAll({ per_page: 200 }),
+                    productService.getMy({ per_page: 200 }),
                     categoryService.getAll(),
                 ])
 

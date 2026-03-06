@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import {
@@ -16,34 +15,26 @@ import {
 } from "lucide-react"
 import { dashboardService } from "@/services"
 import type { DashboardKPIs, TopProducts } from "@/types/dashboard"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
 
 export default function ReportsPage() {
-  const [kpis, setKpis] = useState<DashboardKPIs | null>(null)
-  const [topProducts, setTopProducts] = useState<TopProducts | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const { data, isLoading: loading, isStale, lastSyncedAt, error, refresh } = useOfflineData<{
+    kpis: DashboardKPIs;
+    topProducts: TopProducts;
+  }>(
+    "reports-data",
+    async () => {
       const [kpiData, topData] = await Promise.all([
         dashboardService.getKPIs(),
         dashboardService.getTopProducts({ limit: 5 }),
       ])
-      setKpis(kpiData)
-      setTopProducts(topData)
-    } catch (err: any) {
-      console.error("Failed to load reports data:", err)
-      setError(err?.message || "Failed to load reports data")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
+      return { kpis: kpiData, topProducts: topData }
+    },
+    { staleAfterMinutes: 30 }
+  )
+  const kpis = data?.kpis ?? null
+  const topProducts = data?.topProducts ?? null
 
   if (loading) {
     return (
@@ -53,12 +44,12 @@ export default function ReportsPage() {
     )
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
-        <Button onClick={fetchData} variant="outline">
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error as string}</p>
+        <Button onClick={refresh} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry
         </Button>
@@ -68,6 +59,7 @@ export default function ReportsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>

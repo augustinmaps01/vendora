@@ -1,7 +1,6 @@
 ﻿"use client"
 
 import React, { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -72,7 +71,6 @@ function StatRow({ label, value, strong }: { label: string; value: React.ReactNo
  * Uses responsive grid utilities for all screen sizes
  */
 export default function DesktopPOSLayout(props: POSScreenProps) {
-  const router = useRouter();
   const {
     screen = "sale",
     cart = [],
@@ -131,11 +129,11 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
     receiptData = null,
     startNewTransaction = () => { },
     creditorName: _creditorName = "",
-    setCreditorName = () => { },
+    setCreditorName: _setCreditorName = () => { },
     creditorPhone: _creditorPhone = "",
-    setCreditorPhone = () => { },
+    setCreditorPhone: _setCreditorPhone = () => { },
     creditorAddress: _creditorAddress = "",
-    setCreditorAddress = () => { },
+    setCreditorAddress: _setCreditorAddress = () => { },
   } = props || {};
 
   const [activeDiscountPreset, setActiveDiscountPreset] = useState<string>("None");
@@ -143,6 +141,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
   const [localCreditorName, setLocalCreditorName] = useState("");
   const [localCreditorPhone, setLocalCreditorPhone] = useState("");
   const [localCreditorAddress, setLocalCreditorAddress] = useState("");
+  const [localCreditorDueDate, setLocalCreditorDueDate] = useState("");
   const barcodeInputRef = useRef<HTMLInputElement>(null);
 
   // Auto-focus barcode input when on sale screen
@@ -1072,7 +1071,7 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
       )}
 
       {/* Credit Info Dialog */}
-      <Dialog open={isCreditDialogOpen} onOpenChange={(v) => { setIsCreditDialogOpen(v); if (!v) { setLocalCreditorName(""); setLocalCreditorPhone(""); setLocalCreditorAddress(""); } }}>
+      <Dialog open={isCreditDialogOpen} onOpenChange={(v) => { setIsCreditDialogOpen(v); if (!v) { setLocalCreditorName(""); setLocalCreditorPhone(""); setLocalCreditorAddress(""); setLocalCreditorDueDate(""); } }}>
         <DialogContent className="sm:max-w-[420px] bg-white dark:bg-[#1e1340] border-gray-200 dark:border-white/10 rounded-2xl">
           <DialogHeader>
             <DialogTitle className="text-gray-900 dark:text-white flex items-center gap-2">
@@ -1094,6 +1093,10 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
               <Label htmlFor="cd-address" className="text-gray-700 dark:text-white/80 text-sm">Address <span className="text-red-500">*</span></Label>
               <Input id="cd-address" placeholder="Complete address" value={localCreditorAddress} onChange={(e) => setLocalCreditorAddress(e.target.value)} className="rounded-xl bg-gray-50 border-gray-200 dark:bg-white/10 dark:border-white/10 dark:text-white" />
             </div>
+            <div className="grid gap-1.5">
+              <Label htmlFor="cd-due-date" className="text-gray-700 dark:text-white/80 text-sm">Due Date <span className={`text-xs ${THEME.muted}`}>(optional)</span></Label>
+              <Input id="cd-due-date" type="date" value={localCreditorDueDate} onChange={(e) => setLocalCreditorDueDate(e.target.value)} className="rounded-xl bg-gray-50 border-gray-200 dark:bg-white/10 dark:border-white/10 dark:text-white" />
+            </div>
             <div className={`rounded-xl ${THEME.panel} p-3 flex items-center justify-between`}>
               <span className={`text-sm ${THEME.muted}`}>Amount to Credit</span>
               <span className="font-bold text-purple-600 dark:text-purple-400 text-base">&#8369; {amountDue.toFixed(2)}</span>
@@ -1105,12 +1108,8 @@ export default function DesktopPOSLayout(props: POSScreenProps) {
               className="rounded-xl bg-purple-600 hover:bg-purple-700 dark:bg-purple-500 dark:hover:bg-purple-600 text-white"
               disabled={!localCreditorName.trim() || !localCreditorPhone.trim() || !localCreditorAddress.trim()}
               onClick={async () => {
-                if (setCreditorName) setCreditorName(localCreditorName);
-                if (setCreditorPhone) setCreditorPhone(localCreditorPhone);
-                if (setCreditorAddress) setCreditorAddress(localCreditorAddress);
                 setIsCreditDialogOpen(false);
-                if (completeOrder) await completeOrder();
-                router.push("/pos/credit-accounts");
+                if (completeOrder) await completeOrder(true, { name: localCreditorName, phone: localCreditorPhone, address: localCreditorAddress, dueDate: localCreditorDueDate || undefined });
               }}
             >
               Confirm Credit

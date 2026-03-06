@@ -230,7 +230,12 @@ const products = {
           if (imageFile) {
             const formData = new FormData();
             Object.entries(payload).forEach(([key, val]) => {
-              if (val !== undefined && val !== null) formData.append(key, String(val));
+              if (val === undefined || val === null) return;
+              if (typeof val === 'boolean') {
+                formData.append(key, val ? '1' : '0');
+              } else {
+                formData.append(key, String(val));
+              }
             });
             formData.append('image', imageFile);
             created = await api.upload<ApiProduct>('/products', formData);
@@ -246,7 +251,7 @@ const products = {
             _status: 'synced',
             _lastModified: new Date(),
             _syncError: undefined,
-            image_url: (created as any).image_url || product.image_url,
+            image_url: (created as any).image || (created as any).image_url || product.image_url,
             last_synced: new Date(),
           });
 
@@ -287,7 +292,12 @@ const products = {
           if (imageFile) {
             const formData = new FormData();
             Object.entries(payload).forEach(([key, val]) => {
-              if (val !== undefined && val !== null) formData.append(key, String(val));
+              if (val === undefined || val === null) return;
+              if (typeof val === 'boolean') {
+                formData.append(key, val ? '1' : '0');
+              } else {
+                formData.append(key, String(val));
+              }
             });
             formData.append('image', imageFile);
             await api.upload<ApiProduct>(`/products/${product.id}`, formData);
@@ -359,7 +369,7 @@ const products = {
           category_id: p.category?.id || null,
           category_name: p.category?.name,
           unit: (p as any).unit || 'pc',
-          image_url: (p as any).image_url,
+          image_url: p.image || (p as any).image_url,
           is_active: p.is_active !== false,
           is_ecommerce: p.is_ecommerce,
           last_synced: now,

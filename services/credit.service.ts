@@ -85,15 +85,23 @@ export const creditService = {
      * GET /api/credits
      */
     getAll: async (filters?: CreditFilters): Promise<PaginatedCreditResponse> => {
-        const response = await api.get<PaginatedCreditResponse>(
-            endpoints.credits.list(),
-            { params: filters }
-        )
-        // Handle both paginated { data: [...] } and plain array responses
-        if (Array.isArray(response)) {
-            return { data: response as unknown as ApiCredit[] }
+        try {
+            const response = await api.get<PaginatedCreditResponse>(
+                endpoints.credits.list(),
+                { params: filters }
+            )
+            // Handle both paginated { data: [...] } and plain array responses
+            if (Array.isArray(response)) {
+                return { data: response as unknown as ApiCredit[] }
+            }
+            return response
+        } catch (err: any) {
+            // 404 = endpoint not found or no records — treat as empty
+            if (err?.response?.status === 404) {
+                return { data: [] }
+            }
+            throw err
         }
-        return response
     },
 
     /**

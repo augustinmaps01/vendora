@@ -292,6 +292,9 @@ export const paymentEndpoints = {
 
   // DELETE /payments/:id
   delete: (id: string | number) => buildUrl("/payments/:id", { id }),
+
+  // POST /payments/credit
+  credit: () => "/payments/credit",
 }
 
 /**
@@ -450,6 +453,44 @@ export const ledgerEndpoints = {
 }
 
 /**
+ * Food Menu Endpoints
+ */
+export const foodMenuEndpoints = {
+  // GET /food-menu
+  list: () => "/food-menu",
+
+  // GET /food-menu/:id
+  get: (id: string | number) => buildUrl("/food-menu/:id", { id }),
+
+  // POST /food-menu
+  create: () => "/food-menu",
+
+  // PUT /food-menu/:id
+  update: (id: string | number) => buildUrl("/food-menu/:id", { id }),
+
+  // DELETE /food-menu/:id
+  delete: (id: string | number) => buildUrl("/food-menu/:id", { id }),
+
+  // PATCH /food-menu/:id/availability
+  toggleAvailability: (id: string | number) => buildUrl("/food-menu/:id/availability", { id }),
+
+  // GET /food-menu/categories
+  categories: () => "/food-menu/categories",
+
+  // Reservations
+  reservations: {
+    // GET /food-menu/reservations
+    list: () => "/food-menu/reservations",
+
+    // POST /food-menu/reservations
+    create: () => "/food-menu/reservations",
+
+    // PATCH /food-menu/reservations/:id/status
+    updateStatus: (id: string | number) => buildUrl("/food-menu/reservations/:id/status", { id }),
+  },
+}
+
+/**
  * Store Role Endpoints
  */
 export const storeRoleEndpoints = {
@@ -524,6 +565,7 @@ export const endpoints = {
   storeRoles: storeRoleEndpoints,
   admin: adminEndpoints,
   credits: creditEndpoints,
+  foodMenu: foodMenuEndpoints,
 }
 
 export default endpoints

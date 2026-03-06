@@ -28,11 +28,12 @@ export function useLocalProducts() {
     0
   );
 
-  // Pull fresh on mount if online
+  // Pull fresh + push any unsynced products on mount if online
   useEffect(() => {
     if (pulledRef.current) return;
     pulledRef.current = true;
     if (getOnlineStatus()) {
+      localDb.products.pushDirty().catch(console.error);
       localDb.products.pullFresh().catch(console.error);
     }
   }, []);

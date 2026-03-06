@@ -4,7 +4,7 @@
  */
 
 import { db, LocalTransaction, LocalProduct, LocalCategory, LocalCustomer, LocalStore } from './db';
-import { orderService, paymentService, productService, categoryService, customerService, storeService, creditService } from '@/services';
+import { orderService, paymentService, productService, categoryService, customerService, storeService } from '@/services';
 import type { ApiProduct, ApiCategory, ApiCustomer, ApiStore } from '@/services';
 import { networkMonitor } from './network-quality-monitor';
 import { localDb } from './local-first-service';
@@ -83,7 +83,7 @@ export async function cacheProducts(products: ApiProduct[]): Promise<void> {
     category_id: p.category?.id || null,
     category_name: p.category?.name,
     unit: (p as any).unit || 'pc',
-    image_url: (p as any).image_url,
+    image_url: p.image || (p as any).image_url,
     is_active: p.is_active !== false,
     is_ecommerce: p.is_ecommerce,
     last_synced: now
@@ -220,15 +220,16 @@ export async function syncSingleTransaction(uuid: string): Promise<void> {
     const isCredit = transaction.status === 'pending';
 
     if (isCredit) {
-      // Credit transaction: create a credit record instead of a payment
+      // Credit transaction: record via POST /payments/credit
       const creditPayload = {
         customer_id: transaction.customer_id,
         amount: Math.round(transaction.total),
-        reference: `ORD-${order.id}`,
-        notes: transaction.notes || undefined,
+        paid_at: paidAt,
+        method: "cash" as const,
+        note: transaction.notes ? `${transaction.notes} | Ref: ORD-${order.id}` : `Ref: ORD-${order.id}`,
       };
-      const credit = await creditService.create(creditPayload);
-      console.log(`✅ Credit record created on server: ${credit.id}`);
+      await paymentService.recordCredit(creditPayload);
+      console.log(`✅ Credit record created on server for order ${order.id}`);
     } else if (transaction.payment_methods && transaction.payment_methods.length > 1) {
       // Split payment
       await Promise.all(

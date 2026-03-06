@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useEffect, useCallback, use } from "react"
+import { useState, use } from "react"
 import Link from "next/link"
 import { useRouter } from "next/navigation"
 import { Button } from "@/components/ui/button"
@@ -34,10 +34,16 @@ import {
     Plus,
     CheckCircle2,
     Loader2,
+    BookOpen,
+    TrendingDown,
+    TrendingUp,
 } from "lucide-react"
 import { creditService } from "@/services"
 import type { ApiCredit } from "@/services"
 import Swal from "sweetalert2"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
+import { getOnlineStatus } from "@/lib/sync-service"
 
 // Types for UI display
 interface CreditAccount {
@@ -58,6 +64,74 @@ interface CreditAccount {
     status: 'active' | 'overdue' | 'paid' | 'defaulted'
     createdAt: string
     notes?: string
+}
+
+// ---------------------------------------------------------------------------
+// Dummy data — fallback when API credits endpoint is unavailable
+// ---------------------------------------------------------------------------
+const DUMMY_CREDITS: Record<string, CreditAccount> = {
+    "1": {
+        id: 1,
+        customer: { id: 1, name: "Juan dela Cruz", phone: "09171234567", email: "juan@email.com", address: "123 Rizal St, Manila" },
+        totalAmount: 5000, paidAmount: 2000, remainingBalance: 3000,
+        status: "active", createdAt: "2026-02-01T08:00:00Z",
+    },
+    "2": {
+        id: 2,
+        customer: { id: 2, name: "Maria Santos", phone: "09281234567", email: "maria@email.com", address: "456 Mabini Ave, Quezon City" },
+        totalAmount: 8500, paidAmount: 8500, remainingBalance: 0,
+        status: "paid", createdAt: "2026-01-15T08:00:00Z",
+    },
+    "3": {
+        id: 3,
+        customer: { id: 3, name: "Pedro Reyes", phone: "09351234567", address: "789 Luna St, Cebu City" },
+        totalAmount: 12000, paidAmount: 3000, remainingBalance: 9000,
+        dueDate: "2026-03-01T00:00:00Z",
+        status: "overdue", createdAt: "2026-01-10T08:00:00Z",
+    },
+    "4": {
+        id: 4,
+        customer: { id: 4, name: "Ana Gomez", phone: "09461234567", email: "ana@email.com" },
+        totalAmount: 3500, paidAmount: 1000, remainingBalance: 2500,
+        status: "active", createdAt: "2026-02-20T08:00:00Z",
+    },
+}
+
+// ---------------------------------------------------------------------------
+// Ledger entry type
+// ---------------------------------------------------------------------------
+interface LedgerEntry {
+    date: string
+    description: string
+    debit: number | null
+    credit: number | null
+    balance: number
+}
+
+function buildLedgerEntries(account: CreditAccount): LedgerEntry[] {
+    const entries: LedgerEntry[] = []
+
+    // Opening debit: credit issued
+    entries.push({
+        date: account.createdAt,
+        description: "Credit Issued",
+        debit: account.totalAmount,
+        credit: null,
+        balance: account.totalAmount,
+    })
+
+    // Credit: total payments received
+    if (account.paidAmount > 0) {
+        entries.push({
+            date: account.notes ? account.createdAt : new Date().toISOString(),
+            description: "Payment Received",
+            debit: null,
+            credit: account.paidAmount,
+            balance: account.remainingBalance,
+        })
+    }
+
+    return entries
 }
 
 function mapApiCredit(c: ApiCredit): CreditAccount {
@@ -91,37 +165,27 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
     const resolvedParams = use(params)
     const accountId = resolvedParams.id
 
-    const [account, setAccount] = useState<CreditAccount | null>(null)
-    const [isLoading, setIsLoading] = useState(true)
-    const [error, setError] = useState<string | null>(null)
-
     const [isAddPaymentOpen, setIsAddPaymentOpen] = useState(false)
     const [paymentAmount, setPaymentAmount] = useState("")
     const [paymentMethod, setPaymentMethod] = useState("")
     const [paymentNotes, setPaymentNotes] = useState("")
     const [isSubmittingPayment, setIsSubmittingPayment] = useState(false)
-    const [activeTab, setActiveTab] = useState<'overview' | 'payments'>('overview')
+    const [activeTab, setActiveTab] = useState<'overview' | 'ledger' | 'payments'>('overview')
 
-    const fetchAccount = useCallback(async () => {
-        setIsLoading(true)
-        setError(null)
-        try {
-            const data = await creditService.getById(accountId)
-            setAccount(mapApiCredit(data))
-        } catch (err: any) {
-            console.error("Failed to load credit account:", err)
-            setError(err?.response?.data?.message || err?.message || "Failed to load credit account.")
-        } finally {
-            setIsLoading(false)
-        }
-    }, [accountId])
-
-    useEffect(() => {
-        fetchAccount()
-    }, [fetchAccount])
+    const { data: rawAccount, isLoading, isStale, lastSyncedAt, error, refresh } = useOfflineData<any>(
+        `credit-account-${accountId}`,
+        () => creditService.getById(accountId),
+        { staleAfterMinutes: 5 }
+    )
+    const account = rawAccount ? mapApiCredit(rawAccount) : (DUMMY_CREDITS[accountId] ?? null)
 
     const handleSubmitPayment = async () => {
         if (!account || !paymentAmount || !paymentMethod) return
+
+        if (!getOnlineStatus()) {
+            Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Payments cannot be recorded while offline." })
+            return
+        }
 
         const amount = Math.round(parseFloat(paymentAmount))
         if (isNaN(amount) || amount <= 0) {
@@ -147,7 +211,7 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
             })
 
             setIsAddPaymentOpen(false)
-            fetchAccount() // Refresh data
+            refresh() // Refresh data
         } catch (err: any) {
             console.error("Failed to record payment:", err)
             const message = err?.response?.data?.message || err?.message || "Failed to record payment."
@@ -166,7 +230,7 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
         )
     }
 
-    if (error || !account) {
+    if (!account) {
         return (
             <div className="flex flex-col items-center justify-center min-h-[50vh]">
                 <AlertCircle className="w-12 h-12 text-gray-300 dark:text-[#9898b8] mb-3" />
@@ -207,6 +271,7 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
 
     return (
         <div className="space-y-4 pb-6">
+            <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
             {/* Compact Header */}
             <div className="flex items-center justify-between gap-3 flex-wrap">
                 <div className="flex items-center gap-3">
@@ -263,7 +328,8 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                 <nav className="flex gap-4">
                     {[
                         { id: 'overview', label: 'Overview', icon: User },
-                        { id: 'payments', label: 'Payment History', icon: History },
+                        { id: 'ledger', label: 'Ledger', icon: BookOpen },
+                        { id: 'payments', label: 'Payments', icon: History },
                     ].map((tab) => {
                         const Icon = tab.icon
                         const isActive = activeTab === tab.id
@@ -366,6 +432,117 @@ export default function CreditAccountDetailsPage({ params }: { params: Promise<{
                         </div>
                     </div>
                 )}
+
+                {/* Ledger Tab */}
+                {activeTab === 'ledger' && (() => {
+                    const entries = buildLedgerEntries(account)
+                    const fmt = (n: number) => `₱${n.toLocaleString('en-PH', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+                    const fmtDate = (d: string) => new Date(d).toLocaleDateString('en-PH', { month: 'short', day: 'numeric', year: 'numeric' })
+                    return (
+                        <div className="space-y-4">
+                            {/* Summary Cards */}
+                            <div className="grid grid-cols-3 gap-3">
+                                <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-3 text-center">
+                                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-[#b4b4d0] mb-1">
+                                        <TrendingDown className="w-3.5 h-3.5 text-red-500" />
+                                        Total Debit
+                                    </div>
+                                    <div className="text-base font-bold text-red-600">{fmt(account.totalAmount)}</div>
+                                </div>
+                                <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-3 text-center">
+                                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-[#b4b4d0] mb-1">
+                                        <TrendingUp className="w-3.5 h-3.5 text-emerald-500" />
+                                        Total Credit
+                                    </div>
+                                    <div className="text-base font-bold text-emerald-600">{fmt(account.paidAmount)}</div>
+                                </div>
+                                <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-3 text-center">
+                                    <div className="flex items-center justify-center gap-1 text-xs text-gray-500 dark:text-[#b4b4d0] mb-1">
+                                        <Banknote className="w-3.5 h-3.5 text-orange-500" />
+                                        Balance Due
+                                    </div>
+                                    <div className={`text-base font-bold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                        {fmt(account.remainingBalance)}
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Ledger Table — Desktop */}
+                            <div className="hidden sm:block bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] overflow-hidden">
+                                <div className="flex items-center gap-2 px-4 py-3 border-b border-gray-100 dark:border-[#2d1b69]">
+                                    <BookOpen className="w-4 h-4 text-purple-500" />
+                                    <span className="text-sm font-semibold text-gray-900 dark:text-white">
+                                        Account Ledger — {account.customer.name}
+                                    </span>
+                                </div>
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="bg-gray-50 dark:bg-[#1a1a35] border-b border-gray-100 dark:border-[#2d1b69]">
+                                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wide">Date</th>
+                                            <th className="text-left py-2.5 px-4 text-xs font-semibold text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wide">Description</th>
+                                            <th className="text-right py-2.5 px-4 text-xs font-semibold text-red-500 uppercase tracking-wide">Debit (₱)</th>
+                                            <th className="text-right py-2.5 px-4 text-xs font-semibold text-emerald-600 uppercase tracking-wide">Credit (₱)</th>
+                                            <th className="text-right py-2.5 px-4 text-xs font-semibold text-gray-500 dark:text-[#b4b4d0] uppercase tracking-wide">Balance (₱)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {entries.map((entry, i) => (
+                                            <tr key={i} className="border-b border-gray-50 dark:border-[#2d1b69]/50 hover:bg-gray-50 dark:hover:bg-[#1a1a35] transition-colors">
+                                                <td className="py-3 px-4 text-gray-600 dark:text-[#b4b4d0] whitespace-nowrap">{fmtDate(entry.date)}</td>
+                                                <td className="py-3 px-4 text-gray-900 dark:text-white font-medium">{entry.description}</td>
+                                                <td className="py-3 px-4 text-right font-semibold text-red-600">
+                                                    {entry.debit !== null ? fmt(entry.debit) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                                                </td>
+                                                <td className="py-3 px-4 text-right font-semibold text-emerald-600">
+                                                    {entry.credit !== null ? fmt(entry.credit) : <span className="text-gray-300 dark:text-gray-600">—</span>}
+                                                </td>
+                                                <td className={`py-3 px-4 text-right font-bold ${entry.balance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                                    {fmt(entry.balance)}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                        {/* Balance Due footer row */}
+                                        <tr className={`border-t-2 ${account.remainingBalance > 0 ? 'border-orange-200 dark:border-orange-800 bg-orange-50 dark:bg-orange-900/10' : 'border-emerald-200 dark:border-emerald-800 bg-emerald-50 dark:bg-emerald-900/10'}`}>
+                                            <td colSpan={4} className={`py-3 px-4 text-sm font-bold ${account.remainingBalance > 0 ? 'text-orange-700 dark:text-orange-400' : 'text-emerald-700 dark:text-emerald-400'}`}>
+                                                {account.remainingBalance > 0 ? 'Balance Due' : '✓ Fully Paid'}
+                                            </td>
+                                            <td className={`py-3 px-4 text-right text-base font-extrabold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                                {fmt(account.remainingBalance)}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Ledger Cards — Mobile */}
+                            <div className="sm:hidden space-y-2">
+                                {entries.map((entry, i) => (
+                                    <div key={i} className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-100 dark:border-[#2d1b69] p-3">
+                                        <div className="flex justify-between items-start mb-1">
+                                            <span className="text-sm font-medium text-gray-900 dark:text-white">{entry.description}</span>
+                                            <span className="text-xs text-gray-400 dark:text-[#9898b8]">{fmtDate(entry.date)}</span>
+                                        </div>
+                                        <div className="flex gap-4 text-xs mt-1">
+                                            <span className="text-red-500">DR: {entry.debit !== null ? fmt(entry.debit) : '—'}</span>
+                                            <span className="text-emerald-600">CR: {entry.credit !== null ? fmt(entry.credit) : '—'}</span>
+                                            <span className={`font-semibold ml-auto ${entry.balance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                                Bal: {fmt(entry.balance)}
+                                            </span>
+                                        </div>
+                                    </div>
+                                ))}
+                                <div className={`rounded-lg border-2 p-3 text-center ${account.remainingBalance > 0 ? 'border-orange-300 bg-orange-50 dark:bg-orange-900/10' : 'border-emerald-300 bg-emerald-50 dark:bg-emerald-900/10'}`}>
+                                    <div className={`text-xs font-semibold mb-0.5 ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                        {account.remainingBalance > 0 ? 'Balance Due' : '✓ Fully Paid'}
+                                    </div>
+                                    <div className={`text-lg font-extrabold ${account.remainingBalance > 0 ? 'text-orange-600' : 'text-emerald-600'}`}>
+                                        {fmt(account.remainingBalance)}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    )
+                })()}
 
                 {/* Payments Tab */}
                 {activeTab === 'payments' && (

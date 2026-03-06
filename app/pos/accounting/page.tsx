@@ -1,6 +1,5 @@
 "use client"
 
-import { useState, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import {
   Calculator,
@@ -13,36 +12,32 @@ import {
   AlertCircle,
   RefreshCw,
 } from "lucide-react"
+import Link from "next/link"
 import { ledgerService } from "@/services"
 import type { LedgerSummary, LedgerEntry } from "@/services"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
 
 export default function AccountingPage() {
-  const [summary, setSummary] = useState<LedgerSummary | null>(null)
-  const [entries, setEntries] = useState<LedgerEntry[]>([])
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
+  const { data, isLoading: loading, isStale, lastSyncedAt, error, refresh } = useOfflineData<{
+    summary: LedgerSummary;
+    entries: LedgerEntry[];
+  }>(
+    "accounting-data",
+    async () => {
       const [summaryData, entriesData] = await Promise.all([
         ledgerService.getSummary(),
         ledgerService.getAll({ per_page: 10 }),
       ])
-      setSummary(summaryData)
-      setEntries(Array.isArray(entriesData) ? entriesData : entriesData.data || [])
-    } catch (err: any) {
-      console.error("Failed to load accounting data:", err)
-      setError(err?.message || "Failed to load accounting data")
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  useEffect(() => {
-    fetchData()
-  }, [])
+      return {
+        summary: summaryData,
+        entries: Array.isArray(entriesData) ? entriesData : (entriesData as any).data || [],
+      }
+    },
+    { staleAfterMinutes: 30 }
+  )
+  const summary = data?.summary ?? null
+  const entries = data?.entries ?? []
 
   const profitMargin = summary && summary.total_income > 0
     ? ((summary.net_balance / summary.total_income) * 100).toFixed(1)
@@ -56,12 +51,12 @@ export default function AccountingPage() {
     )
   }
 
-  if (error) {
+  if (error && !data) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
-        <Button onClick={fetchData} variant="outline">
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error as string}</p>
+        <Button onClick={refresh} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry
         </Button>
@@ -71,6 +66,7 @@ export default function AccountingPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
       {/* Header */}
       <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
         <div>
@@ -182,7 +178,15 @@ export default function AccountingPage() {
 
       {/* Recent Transactions */}
       <div className="bg-white dark:bg-[#13132a] rounded-lg border border-gray-200 dark:border-[#2d1b69] shadow-sm p-4 sm:p-6">
-        <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white mb-3 sm:mb-4">Recent Transactions</h3>
+        <div className="flex items-center justify-between mb-3 sm:mb-4">
+          <h3 className="text-base sm:text-lg font-semibold text-gray-900 dark:text-white">Recent Transactions</h3>
+          <Link
+            href="/pos/ledger"
+            className="text-sm font-medium text-purple-600 hover:text-purple-700 transition-colors"
+          >
+            View All
+          </Link>
+        </div>
         {entries.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-[#b4b4d0] text-center py-8">No transactions found</p>
         ) : (

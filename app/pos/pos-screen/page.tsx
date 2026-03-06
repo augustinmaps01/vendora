@@ -36,6 +36,7 @@ import {
   productService,
   customerService,
   orderService,
+  paymentService,
   categoryService,
   storeService,
   type ApiProduct,
@@ -344,9 +345,35 @@ export default function VendoraPOS() {
         }
 
         if (productsResult.status === "fulfilled") {
-          const products = extractDataArray(productsResult.value);
-          setApiProducts(products);
-          await syncService.cacheProducts(products);
+          const apiProds = extractDataArray(productsResult.value);
+          await syncService.cacheProducts(apiProds);
+        }
+
+        // After caching, read ALL active products fresh from IndexedDB as the
+        // single source of truth. This prevents a race condition where pushDirty()
+        // completes between the API query and the pendingNotInApi check, causing
+        // newly uploaded products to disappear from the grid.
+        const freshLocal = await db.products.toArray();
+        const allActive = freshLocal
+          .filter(p => p.is_active === true && p._status !== 'deleted')
+          .map(p => ({
+            id: p.id,
+            name: p.name,
+            sku: p.sku || '',
+            barcode: p.barcode || '',
+            price: p.price,
+            stock: p.stock,
+            unit: p.unit,
+            category: p.category_id ? { id: p.category_id, name: p.category_name || '' } : undefined,
+            image_url: p.image_url,
+            is_active: true,
+            currency: 'PHP',
+            is_low_stock: false,
+            created_at: '',
+            updated_at: '',
+          } as ApiProduct));
+        if (allActive.length > 0) {
+          setApiProducts(allActive);
         }
 
         if (customersResult.status === "fulfilled") {
@@ -544,9 +571,14 @@ export default function VendoraPOS() {
   const canComplete = useMemo(() => cart.length > 0 && totals.total > 0 && balance === 0, [cart.length, totals.total, balance]);
 
   // Complete order (Local-first: Save to IndexedDB, then sync)
-  const completeOrder = useCallback(async (isCredit = false) => {
+  const completeOrder = useCallback(async (isCredit = false, creditInfo?: { name: string; phone: string; address: string; dueDate?: string }) => {
     // For non-credit, ensure balance is 0. For credit, ignore balance as user is promising to pay later.
     if (!isCredit && !canComplete) return;
+    // Prefer explicitly passed credit info over component state (state updates are async)
+    const resolvedCreditName = creditInfo?.name ?? creditorName;
+    const resolvedCreditPhone = creditInfo?.phone ?? creditorPhone;
+    const resolvedCreditAddress = creditInfo?.address ?? creditorAddress;
+    const resolvedCreditDueDate = creditInfo?.dueDate ?? "";
     setIsProcessing(true);
 
     try {
@@ -578,8 +610,8 @@ export default function VendoraPOS() {
 
       if (!customerId && !isCredit) throw new Error("Customer selection required");
 
-      if (isCredit && creditorName.trim() !== "") {
-        customerName = creditorName.trim();
+      if (isCredit && resolvedCreditName.trim() !== "") {
+        customerName = resolvedCreditName.trim();
       }
 
       // Save transaction locally FIRST (offline-first approach)
@@ -614,8 +646,9 @@ export default function VendoraPOS() {
         store_id: selectedStore || undefined,
         notes: isCredit
           ? [
-            creditorPhone.trim() ? `Contact: ${creditorPhone.trim()}` : '',
-            creditorAddress.trim() ? `Address: ${creditorAddress.trim()}` : '',
+            resolvedCreditPhone.trim() ? `Contact: ${resolvedCreditPhone.trim()}` : '',
+            resolvedCreditAddress.trim() ? `Address: ${resolvedCreditAddress.trim()}` : '',
+            resolvedCreditDueDate.trim() ? `Due: ${resolvedCreditDueDate.trim()}` : '',
             notes ? `Notes: ${notes}` : ''
           ].filter(Boolean).join(' | ') || undefined
           : (notes || undefined)
@@ -675,6 +708,75 @@ export default function VendoraPOS() {
       const txnNumber = transactionUuid.substring(0, 8).toUpperCase();
       const now = new Date();
 
+      // Create credit record via API when this is a credit transaction
+      if (isCredit) {
+        if (!syncService.getOnlineStatus()) {
+          console.warn('[Credit] Offline — credit record will need to be created manually when back online');
+        } else {
+          try {
+            let creditCustomerId = customerId;
+
+            // If creditor name is provided but no existing customer is selected, create a new customer
+            if (resolvedCreditName.trim() && !selectedCustomerId) {
+              try {
+                const newCustomer = await customerService.create({
+                  name: resolvedCreditName.trim(),
+                  phone: resolvedCreditPhone.trim() || undefined,
+                  status: "active",
+                } as any);
+                creditCustomerId = newCustomer.id;
+                customerId = creditCustomerId;
+                customerName = resolvedCreditName.trim();
+                console.log(`[Credit] Created new customer: ${creditCustomerId}`);
+              } catch (custErr: any) {
+                console.error('[Credit] Failed to create customer:', {
+                  status: custErr?.response?.status,
+                  data: JSON.stringify(custErr?.response?.data),
+                  message: custErr?.message,
+                });
+                // Fallback: use walk-in customer ID (same as local save fallback)
+                if (!creditCustomerId) creditCustomerId = 1;
+              }
+            }
+
+            // Final fallback — ensure a valid customer_id
+            if (!creditCustomerId) creditCustomerId = 1;
+
+            const creditPayload = {
+              customer_id: creditCustomerId,
+              amount: Math.round(totals.total),
+              paid_at: paidAtStr,
+              method: "cash" as const,
+              note: [
+                resolvedCreditPhone.trim() ? `Contact: ${resolvedCreditPhone.trim()}` : '',
+                resolvedCreditAddress.trim() ? `Address: ${resolvedCreditAddress.trim()}` : '',
+                resolvedCreditDueDate.trim() ? `Due: ${resolvedCreditDueDate.trim()}` : '',
+              ].filter(Boolean).join(' | ') || undefined,
+            };
+
+            console.log('[Credit] Creating credit record via POST /payments/credit:', JSON.stringify(creditPayload));
+            await paymentService.recordCredit(creditPayload);
+            console.log(`✅ Credit record created for customer ${creditCustomerId}`);
+          } catch (creditErr: any) {
+            const status = creditErr?.response?.status;
+            const msg = creditErr?.response?.data?.message
+              || (creditErr?.response?.data?.errors ? Object.values(creditErr.response.data.errors).flat().join(', ') : '')
+              || creditErr?.message
+              || 'Unknown error';
+            console.error('[Credit] Failed to create credit record:', { status, msg, data: creditErr?.response?.data });
+
+            // Show non-blocking warning — transaction is saved locally
+            Swal.fire({
+              icon: 'warning',
+              title: 'Credit Not Saved to API',
+              html: `Transaction was recorded locally but the credit record could not be saved.<br/><br/><small>${msg}</small>`,
+              confirmButtonText: 'OK',
+              confirmButtonColor: '#f97316',
+            });
+          }
+        }
+      }
+
       // Build discount label
       let discountLabel = "Discount";
       if (discountValue > 0) {
@@ -702,8 +804,8 @@ export default function VendoraPOS() {
         ? "Walk-in Customer"
         : customers.find(c => c.id === customerId)?.name || "Customer";
 
-      if (isCredit && creditorName.trim() !== "") {
-        customerName = creditorName.trim();
+      if (isCredit && resolvedCreditName.trim() !== "") {
+        customerName = resolvedCreditName.trim();
       }
 
       // Build receipt data
@@ -730,13 +832,16 @@ export default function VendoraPOS() {
         paymentMethod: paymentMethodLabel,
         amountTendered: isCredit ? amountDue : paid,
         change: isCredit ? 0 : change,
+        isCredit,
+        creditorPhone: isCredit ? resolvedCreditPhone.trim() : undefined,
+        creditorAddress: isCredit ? resolvedCreditAddress.trim() : undefined,
       };
 
       setReceiptData(receipt);
       setCart([]);  // Clear cart immediately — receipt snapshot already captured above
 
-      // Silent print: send ESC/POS data directly to thermal printer via API (no dialog)
-      try {
+      // Silent print: skip for credit transactions (no receipt needed)
+      if (!isCredit) try {
         const res = await fetch('/api/print-receipt', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
@@ -969,7 +1074,7 @@ export default function VendoraPOS() {
         {receiptOpen && <InlineReceiptDialog open={receiptOpen} onOpenChange={setReceiptOpen} cart={cart} totals={totals} saleId={saleId} notes={notes} receiptData={receiptData} />}
         {settingsOpen && <InlineSettingsDialog open={settingsOpen} onOpenChange={setSettingsOpen} taxEnabled={taxEnabled} setTaxEnabled={setTaxEnabled} taxRate={taxRate} setTaxRate={setTaxRate} />}
         {orderHistoryOpen && <InlineOrderHistoryDialog open={orderHistoryOpen} onOpenChange={setOrderHistoryOpen} recentOrders={recentOrders} />}
-        {successModalOpen && <TransactionSuccessDialog open={successModalOpen} onOpenChange={(open: boolean) => { if (!open) startNewTransaction(); }} receiptData={receiptData} onNewTransaction={startNewTransaction} />}
+        {successModalOpen && <TransactionSuccessDialog open={successModalOpen} onOpenChange={(open: boolean) => { if (!open) startNewTransaction(); }} receiptData={receiptData} onNewTransaction={startNewTransaction} onViewCredits={() => { startNewTransaction(); router.push('/pos/credit-accounts'); }} />}
       </Suspense>
 
       {/* Hidden thermal receipt for printing */}
@@ -1160,9 +1265,10 @@ function InlineOrderHistoryDialog({ open, onOpenChange, recentOrders }: any) {
 }
 
 // Transaction Success Modal - Thermal receipt style preview
-function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction }: any) {
+function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransaction, onViewCredits }: any) {
   if (!receiptData) return null;
 
+  const isCredit = receiptData.isCredit === true;
   const fmt2 = (n: number) => n.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 });
   const Row = ({ label, value, bold, green }: { label: string; value: string; bold?: boolean; green?: boolean }) => (
     <div className="flex justify-between">
@@ -1170,6 +1276,63 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
       <span className={`${bold ? 'font-bold' : ''} ${green ? 'text-emerald-600 dark:text-emerald-400' : ''}`}>{value}</span>
     </div>
   );
+
+  if (isCredit) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="max-w-sm bg-transparent border-0 p-0 sm:max-w-md">
+          <DialogTitle className="sr-only">Credit Transaction Recorded</DialogTitle>
+
+          {/* Badge */}
+          <div className="flex justify-center -mb-6 relative z-10">
+            <div className="flex h-12 w-12 items-center justify-center rounded-full bg-orange-500 shadow-lg">
+              <CheckCircle2 className="h-7 w-7 text-white" />
+            </div>
+          </div>
+
+          <div className="bg-white dark:bg-[#1a1a2e] rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
+            <div className="px-6 pt-10 pb-6 text-center space-y-1">
+              <div className="text-lg font-bold text-gray-900 dark:text-white">Credit Recorded!</div>
+              <div className="text-sm text-gray-500 dark:text-gray-400">Transaction has been saved as credit</div>
+            </div>
+
+            <div className="px-6 pb-4 font-sans text-xs text-gray-700 dark:text-gray-300 space-y-1.5">
+              <Row label="TXN:" value={receiptData.transactionNumber} />
+              <Row label="Date:" value={receiptData.date} />
+              <Row label="Creditor:" value={receiptData.customerName || 'Customer'} />
+              {receiptData.creditorPhone && <Row label="Contact:" value={receiptData.creditorPhone} />}
+              <div className="border-t border-dashed border-gray-300 dark:border-gray-600 my-2" />
+              <div className="flex justify-between font-bold text-sm">
+                <span>Balance Due:</span>
+                <span className="text-orange-500">₱{fmt2(receiptData.total)}</span>
+              </div>
+              <div className="flex justify-between text-[11px] text-gray-500 mt-1">
+                <span>{receiptData.items.length} item{receiptData.items.length !== 1 ? 's' : ''}</span>
+                <span>Status: <span className="text-orange-500 font-semibold">Pending</span></span>
+              </div>
+            </div>
+
+            <div className="px-5 py-4 bg-gray-50 dark:bg-[#12121f] space-y-3">
+              <Button
+                className="w-full rounded-xl bg-orange-500 hover:bg-orange-600 text-white font-semibold py-5 text-sm"
+                onClick={onViewCredits}
+              >
+                <FileText className="h-4 w-4 mr-2" />
+                View Credit Accounts
+              </Button>
+              <Button
+                variant="secondary"
+                className="w-full rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-900 dark:bg-white/10 dark:hover:bg-white/20 dark:text-white py-4 text-sm"
+                onClick={onNewTransaction}
+              >
+                New Transaction
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -1185,24 +1348,17 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
 
         {/* Receipt Paper */}
         <div className="bg-white dark:bg-[#1a1a2e] rounded-lg shadow-2xl overflow-hidden border border-gray-200 dark:border-white/10">
-          {/* Receipt Content - Monospace thermal style */}
-          <div className="px-5 pt-8 pb-4 font-mono text-xs text-gray-800 dark:text-gray-200 leading-relaxed">
-
-            {/* Header */}
+          <div className="px-5 pt-8 pb-4 font-sans text-xs text-gray-800 dark:text-gray-200 leading-relaxed">
             <div className="text-center mb-3">
               <div className="text-base font-bold tracking-wide">VENDORA POS</div>
               <div className="text-[11px] text-gray-500 dark:text-gray-400">Point of Sale System</div>
             </div>
-
-            {/* Transaction Info */}
             <div className="space-y-0.5 mb-3">
               <Row label="TXN:" value={receiptData.transactionNumber} />
               <Row label="Date:" value={receiptData.date} />
               <Row label="Customer:" value={receiptData.customerName || 'Walk-in Customer'} />
               <Row label="Cashier:" value="Staff" />
             </div>
-
-            {/* Items */}
             <div className="space-y-1.5 mb-3">
               {receiptData.items.map((item: any, index: number) => (
                 <div key={index}>
@@ -1214,8 +1370,6 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                 </div>
               ))}
             </div>
-
-            {/* Totals */}
             <div className="space-y-0.5 mb-3">
               <Row label="Subtotal:" value={`₱${fmt2(receiptData.subtotal)}`} />
               <Row label="Vatable Sales:" value={`₱${fmt2(receiptData.vatableSales)}`} />
@@ -1227,20 +1381,14 @@ function TransactionSuccessDialog({ open, onOpenChange, receiptData, onNewTransa
                 <Row label="Delivery Fee:" value={`₱${fmt2(receiptData.deliveryFee)}`} />
               )}
             </div>
-
-            {/* Grand Total */}
             <div className="flex justify-between text-sm font-bold mb-3">
               <span>TOTAL:</span>
               <span className="text-emerald-600 dark:text-emerald-400">₱{fmt2(receiptData.total)}</span>
             </div>
-
-            {/* Payment */}
             <div className="space-y-0.5 mb-3">
               <Row label={`Payment (${receiptData.paymentMethod}):`} value={`₱${fmt2(receiptData.amountTendered)}`} />
               <Row label="Change:" value={`₱${fmt2(receiptData.change)}`} bold green />
             </div>
-
-            {/* Footer */}
             <div className="text-center text-gray-500 dark:text-gray-400 mt-2 mb-1">
               <div>Thank you for your purchase!</div>
               <div>Please come again</div>

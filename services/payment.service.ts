@@ -127,4 +127,18 @@ export const paymentService = {
     delete: async (id: string | number): Promise<void> => {
         return api.delete(endpoints.payments.delete(id))
     },
+
+    /**
+     * Record a credit (buy-now-pay-later) transaction
+     * POST /api/payments/credit
+     */
+    recordCredit: async (data: {
+        customer_id: number;
+        amount: number;
+        paid_at: string;
+        method: "cash" | "card" | "online";
+        note?: string;
+    }): Promise<any> => {
+        return api.post(endpoints.payments.credit(), data)
+    },
 }

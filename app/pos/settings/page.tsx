@@ -23,14 +23,13 @@ import {
 } from "lucide-react"
 import { storeService, storeStaffService } from "@/services"
 import type { ApiStore, StoreStaffMember, StoreRole } from "@/services"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
+import { getOnlineStatus } from "@/lib/sync-service"
+import Swal from "sweetalert2"
 
 export default function SettingsPage() {
-  const [store, setStore] = useState<ApiStore | null>(null)
-  const [staffMembers, setStaffMembers] = useState<StoreStaffMember[]>([])
-  const [roles, setRoles] = useState<StoreRole[]>([])
-  const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
 
   // Staff management state
   const [showStaffPanel, setShowStaffPanel] = useState(false)
@@ -46,55 +45,61 @@ export default function SettingsPage() {
   const [storePhone, setStorePhone] = useState("")
   const [storeAddress, setStoreAddress] = useState("")
 
-  const fetchData = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const storesData = await storeService.getAll()
-      const stores = Array.isArray(storesData) ? storesData : storesData.data || []
-
-      if (stores.length > 0) {
-        const firstStore = stores[0]
-        setStore(firstStore)
-        setStoreName(firstStore.name || "")
-        setStoreAddress(firstStore.address || "")
-      }
-
-      // Fetch staff and roles if store exists
-      if (stores.length > 0) {
+  const { data: settingsData, isLoading: loading, isStale, lastSyncedAt, error, refresh } = useOfflineData<{
+    store: ApiStore | null;
+    staff: StoreStaffMember[];
+    roles: StoreRole[];
+  }>(
+    "settings-data",
+    async () => {
+      const storesRaw = await storeService.getAll()
+      const stores = Array.isArray(storesRaw) ? storesRaw : (storesRaw as any).data || []
+      const firstStore = stores[0] ?? null
+      let staff: StoreStaffMember[] = [], roles: StoreRole[] = []
+      if (firstStore) {
         try {
-          const [staff, storeRoles] = await Promise.all([
-            storeStaffService.getStaff(stores[0].id),
+          [staff, roles] = await Promise.all([
+            storeStaffService.getStaff(firstStore.id),
             storeStaffService.getRoles(),
           ])
-          setStaffMembers(Array.isArray(staff) ? staff : [])
-          setRoles(Array.isArray(storeRoles) ? storeRoles : [])
-        } catch {
-          setStaffMembers([])
-          setRoles([])
-        }
+        } catch {}
       }
-    } catch (err: any) {
-      console.error("Failed to load settings:", err)
-      setError(err?.message || "Failed to load settings")
-    } finally {
-      setLoading(false)
-    }
-  }
+      return {
+        store: firstStore,
+        staff: Array.isArray(staff) ? staff : [],
+        roles: Array.isArray(roles) ? roles : [],
+      }
+    },
+    { staleAfterMinutes: 60 }
+  )
+
+  const store = settingsData?.store ?? null
+  const [staffMembers, setStaffMembers] = useState<StoreStaffMember[]>([])
+  const [roles, setRoles] = useState<StoreRole[]>([])
 
   useEffect(() => {
-    fetchData()
-  }, [])
+    if (settingsData) {
+      setStaffMembers(settingsData.staff)
+      setRoles(settingsData.roles)
+      if (settingsData.store) {
+        setStoreName(settingsData.store.name || "")
+        setStoreAddress(settingsData.store.address || "")
+      }
+    }
+  }, [settingsData])
 
   const handleSave = async () => {
     if (!store) return
+    if (!getOnlineStatus()) {
+      Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Settings cannot be saved while offline." })
+      return
+    }
     setSaving(true)
     try {
-      const updated = await storeService.update(store.id, {
+      await storeService.update(store.id, {
         name: storeName,
         address: storeAddress,
       })
-      setStore(updated)
     } catch (err: any) {
       console.error("Failed to save store:", err)
       alert(err?.message || "Failed to save changes")
@@ -105,6 +110,10 @@ export default function SettingsPage() {
 
   const handleAddStaff = async () => {
     if (!store || !staffEmail.trim()) return
+    if (!getOnlineStatus()) {
+      Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Staff cannot be added while offline." })
+      return
+    }
     setAddingStaff(true)
     setStaffError(null)
     try {
@@ -128,6 +137,10 @@ export default function SettingsPage() {
 
   const handleRemoveStaff = async (userId: number) => {
     if (!store) return
+    if (!getOnlineStatus()) {
+      Swal.fire({ icon: "info", title: "Unavailable Offline", text: "Staff cannot be removed while offline." })
+      return
+    }
     setRemovingId(userId)
     try {
       await storeStaffService.removeStaff(store.id, userId)
@@ -153,12 +166,12 @@ export default function SettingsPage() {
     )
   }
 
-  if (error) {
+  if (error && !settingsData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[calc(100vh-4rem)] gap-4">
         <AlertCircle className="h-12 w-12 text-red-500" />
-        <p className="text-gray-600 dark:text-[#b4b4d0]">{error}</p>
-        <Button onClick={fetchData} variant="outline">
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{error as string}</p>
+        <Button onClick={refresh} variant="outline">
           <RefreshCw className="w-4 h-4 mr-2" />
           Retry
         </Button>
@@ -168,6 +181,12 @@ export default function SettingsPage() {
 
   return (
     <div className="space-y-4 sm:space-y-6">
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
+      {!getOnlineStatus() && (
+        <div className="flex items-center gap-2 px-3 py-1.5 rounded-md bg-blue-50 dark:bg-blue-950/30 border border-blue-200 text-blue-700 text-xs">
+          Read-only mode — settings cannot be saved while offline
+        </div>
+      )}
       {/* Header */}
       <div>
         <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 dark:text-white">Settings</h1>

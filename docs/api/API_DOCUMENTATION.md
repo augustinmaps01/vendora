@@ -4,7 +4,7 @@
 > **Swagger UI:** https://vendora-api.abedubas.dev/api/documentation#/
 > **OpenAPI Spec:** https://vendora-api.abedubas.dev/api/docs?api-docs.json
 > **API Version:** 1.0.0
-> **Last Updated:** 2026-03-04 (synced from live backend - includes Credits, Cash vs Credit, Profile Update, Change Password endpoints)
+> **Last Updated:** 2026-03-05 (comprehensive update - added ~90 missing endpoints across Auth, Orders, Payments, Products, Customers, Credits, Cart, Reports, Subscriptions, Settings, Admin, Webhooks, Food Menu)
 
 ---
 
@@ -204,6 +204,90 @@ POST /api/admin/vendors
 
 ---
 
+#### List Vendors (Admin only)
+```
+GET /api/admin/vendors
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| search | string | ❌ | Search by name or email |
+| status | string | ❌ | Filter by status |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: List of vendors
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Get Vendor (Admin only)
+```
+GET /api/admin/vendors/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Vendor details
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Vendor not found
+
+---
+
+#### Update Vendor (Admin only)
+```
+PUT /api/admin/vendors/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| business_name | string | ❌ | Business name |
+| status | string | ❌ | Vendor status |
+
+**Responses:**
+- **200**: Vendor updated
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Vendor not found
+- **422**: Validation error
+
+---
+
+#### Delete Vendor (Admin only)
+```
+DELETE /api/admin/vendors/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Vendor deleted
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Vendor not found
+
+---
+
 ### Auth
 
 #### Register
@@ -294,6 +378,104 @@ POST /api/auth/logout
 **Responses:**
 - **200**: Logged out successfully
 - **401**: Unauthenticated
+
+---
+
+#### Refresh Token
+```
+POST /api/auth/refresh
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| refresh_token | string | ✅ | The refresh token |
+
+**Responses:**
+- **200**: New access token + refresh token
+- **401**: Invalid refresh token
+
+---
+
+#### Verify 2FA
+```
+POST /api/auth/verify-2fa
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| code | string | ✅ | 2FA verification code |
+
+**Responses:**
+- **200**: 2FA verified
+- **422**: Invalid code
+
+---
+
+#### Forgot Password
+```
+POST /api/auth/forgot-password
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string (email) | ✅ | User email |
+
+**Responses:**
+- **200**: Password reset link sent
+- **422**: Validation error
+
+---
+
+#### Reset Password
+```
+POST /api/auth/reset-password
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| token | string | ✅ | Reset token from email |
+| password | string | ✅ | New password |
+| password_confirmation | string | ✅ | Confirm new password |
+
+**Responses:**
+- **200**: Password reset successful
+- **422**: Invalid token or validation error
+
+---
+
+#### Verify Email
+```
+POST /api/auth/verify-email
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| token | string | ✅ | Email verification token |
+
+**Responses:**
+- **200**: Email verified
+- **422**: Invalid token
+
+---
+
+#### Resend Verification Email
+```
+POST /api/auth/resend-verification
+```
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| email | string (email) | ✅ | User email |
+
+**Responses:**
+- **200**: Verification email resent
+- **422**: Validation error
 
 ---
 
@@ -543,6 +725,120 @@ DELETE /api/customers/{customer}
 
 ---
 
+#### Get Customer Orders
+```
+GET /api/customers/{id}/orders
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: List of customer orders
+- **401**: Unauthenticated
+- **404**: Customer not found
+
+---
+
+#### Get Customer Addresses
+```
+GET /api/customers/{id}/addresses
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: List of customer addresses
+- **401**: Unauthenticated
+- **404**: Customer not found
+
+---
+
+#### Create Customer Address
+```
+POST /api/customers/{id}/addresses
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| address_line_1 | string | ✅ | Street address |
+| address_line_2 | string | ❌ | Apt/Suite |
+| city | string | ✅ | City |
+| province | string | ✅ | Province |
+| postal_code | string | ✅ | Postal code |
+| is_default | boolean | ❌ | Set as default address |
+
+**Responses:**
+- **201**: Address created
+- **401**: Unauthenticated
+- **404**: Customer not found
+- **422**: Validation error
+
+---
+
+#### Update Customer Address
+```
+PUT /api/customers/{id}/addresses/{addressId}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+| addressId | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| address_line_1 | string | ❌ | Street address |
+| address_line_2 | string | ❌ | Apt/Suite |
+| city | string | ❌ | City |
+| province | string | ❌ | Province |
+| postal_code | string | ❌ | Postal code |
+| is_default | boolean | ❌ | Set as default address |
+
+**Responses:**
+- **200**: Address updated
+- **401**: Unauthenticated
+- **404**: Customer or address not found
+- **422**: Validation error
+
+---
+
+#### Delete Customer Address
+```
+DELETE /api/customers/{id}/addresses/{addressId}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+| addressId | integer | ✅ |
+
+**Responses:**
+- **200**: Address deleted
+- **401**: Unauthenticated
+- **404**: Customer or address not found
+
+---
+
 #### Get Customer Credit History
 ```
 GET /api/customers/{customer}/credits
@@ -632,6 +928,24 @@ POST /api/credits/{id}/payment
 - **401**: Unauthenticated
 - **404**: Credit not found
 - **422**: Validation error
+
+---
+
+#### Get Credit by ID
+```
+GET /api/credits/{id}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Credit details
+- **401**: Unauthenticated
+- **404**: Credit not found
 
 ---
 
@@ -1219,6 +1533,136 @@ DELETE /api/orders/{order}
 
 ---
 
+#### Update Order Status
+```
+PUT /api/orders/{id}/status
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| status | string | ✅ | New status (pending, processing, completed, cancelled) |
+
+**Responses:**
+- **200**: Order status updated
+- **401**: Unauthenticated
+- **404**: Order not found
+- **422**: Validation error
+
+---
+
+#### Update Order Payment Status
+```
+PUT /api/orders/{id}/payment-status
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| payment_status | string | ✅ | New payment status (unpaid, partial, paid) |
+
+**Responses:**
+- **200**: Payment status updated
+- **401**: Unauthenticated
+- **404**: Order not found
+- **422**: Validation error
+
+---
+
+#### Get Order Invoice
+```
+GET /api/orders/{id}/invoice
+```
+🔒 **Requires Authentication**
+
+> **Note:** Returns PDF blob. Use `axiosClient` directly with `responseType: 'blob'` -- do NOT use `api.get()` for blob responses.
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: PDF blob
+- **401**: Unauthenticated
+- **404**: Invoice not available
+
+---
+
+#### Get Order Receipt
+```
+GET /api/orders/{id}/receipt
+```
+🔒 **Requires Authentication**
+
+> **Note:** Returns PDF blob. Use `axiosClient` directly with `responseType: 'blob'` -- do NOT use `api.get()` for blob responses.
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: PDF blob
+- **401**: Unauthenticated
+- **404**: Receipt not available
+
+---
+
+#### Cancel Order
+```
+POST /api/orders/{id}/cancel
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Order cancelled
+- **401**: Unauthenticated
+- **404**: Order not found
+- **422**: Order cannot be cancelled
+
+---
+
+#### Refund Order
+```
+POST /api/orders/{id}/refund
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| reason | string | ❌ | Refund reason |
+
+**Responses:**
+- **200**: Refund initiated
+- **401**: Unauthenticated
+- **404**: Order not found
+
+---
+
 ### Payments
 
 #### List Payments
@@ -1341,6 +1785,148 @@ DELETE /api/payments/{payment}
 - **204**: Deleted
 - **401**: Unauthenticated
 - **404**: Not found
+
+---
+
+#### Get Payment Status
+```
+GET /api/payments/{id}/status
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Payment status details
+- **401**: Unauthenticated
+- **404**: Payment not found
+
+---
+
+#### Refund Payment
+```
+POST /api/payments/{id}/refund
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| amount | integer | ❌ | Partial refund amount (omit for full refund) |
+| reason | string | ❌ | Refund reason |
+
+**Responses:**
+- **200**: Refund processed
+- **401**: Unauthenticated
+- **404**: Payment not found
+
+---
+
+#### Process Payment
+```
+POST /api/payments/process
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order_id | integer | ✅ | Order ID |
+| method | string | ✅ | Payment method |
+| amount | integer | ✅ | Payment amount (integer) |
+
+**Responses:**
+- **200**: Payment processed
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Process GCash Payment
+```
+POST /api/payments/gcash
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order_id | integer | ✅ | Order ID |
+| amount | integer | ✅ | Payment amount |
+| phone | string | ✅ | GCash phone number |
+
+**Responses:**
+- **200**: GCash payment initiated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Process PayMaya Payment
+```
+POST /api/payments/paymaya
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order_id | integer | ✅ | Order ID |
+| amount | integer | ✅ | Payment amount |
+| phone | string | ✅ | PayMaya phone number |
+
+**Responses:**
+- **200**: PayMaya payment initiated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Process Stripe Payment
+```
+POST /api/payments/stripe
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order_id | integer | ✅ | Order ID |
+| amount | integer | ✅ | Payment amount |
+| token | string | ✅ | Stripe payment token |
+
+**Responses:**
+- **200**: Stripe payment processed
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Process Credit Payment
+```
+POST /api/payments/credit
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| order_id | integer | ✅ | Order ID |
+| customer_id | integer | ✅ | Customer ID |
+| amount | integer | ✅ | Credit amount |
+
+**Responses:**
+- **200**: Credit payment recorded
+- **401**: Unauthenticated
+- **422**: Validation error
 
 ---
 
@@ -1516,6 +2102,103 @@ POST /api/products/bulk-stock-decrement
 - **200**: Stock decremented
 - **401**: Unauthenticated
 - **422**: Validation error
+
+---
+
+#### Get Product by SKU
+```
+GET /api/products/sku/{sku}
+```
+
+**Path Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| sku | string | ✅ | Product SKU code |
+
+**Responses:**
+- **200**: Product details
+- **404**: Product not found
+
+---
+
+#### Get Product by Barcode
+```
+GET /api/products/barcode/{code}
+```
+
+**Path Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| code | string | ✅ | Product barcode |
+
+**Responses:**
+- **200**: Product details
+- **404**: Product not found
+
+---
+
+#### Get Product Variants
+```
+GET /api/products/{id}/variants
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: List of product variants
+- **401**: Unauthenticated
+- **404**: Product not found
+
+---
+
+#### Search Products
+```
+GET /api/products/search
+```
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| q | string | ✅ | Search query |
+| category_id | integer | ❌ | Filter by category |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: Matching products
+
+---
+
+#### Get Featured Products
+```
+GET /api/products/featured
+```
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| limit | integer | ❌ | Number of products (default: 10) |
+
+**Responses:**
+- **200**: List of featured products
+
+---
+
+#### Get Products by Category
+```
+GET /api/products/category/{categoryId}
+```
+
+**Path Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| categoryId | integer | ✅ | Category ID |
+
+**Responses:**
+- **200**: Products in the category
 
 ---
 
@@ -1964,6 +2647,946 @@ POST /api/user/change-password
 
 ---
 
+#### Upload Avatar
+```
+POST /api/user/avatar
+```
+🔒 **Requires Authentication**
+
+> Use `api.upload()` (multipart/form-data) for file upload.
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| avatar | file | ✅ | Avatar image file |
+
+**Responses:**
+- **200**: Avatar updated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Get Notifications
+```
+GET /api/user/notifications
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: List of notifications
+- **401**: Unauthenticated
+
+---
+
+#### Mark Notification as Read
+```
+PUT /api/user/notifications/{id}/read
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Notification marked as read
+- **401**: Unauthenticated
+- **404**: Notification not found
+
+---
+
+#### Mark All Notifications as Read
+```
+PUT /api/user/notifications/read-all
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: All notifications marked as read
+- **401**: Unauthenticated
+
+---
+
+### Cart
+
+#### Get Cart
+```
+GET /api/cart
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Cart contents with items, subtotal, tax, total
+- **401**: Unauthenticated
+
+---
+
+#### Add Item to Cart
+```
+POST /api/cart/items
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| product_id | integer | ✅ | Product ID |
+| quantity | integer | ✅ | Quantity to add |
+| variant_id | integer | ❌ | Variant ID if applicable |
+
+**Responses:**
+- **200**: Updated cart
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Update Cart Item
+```
+PUT /api/cart/items/{itemId}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| itemId | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| quantity | integer | ✅ | New quantity |
+
+**Responses:**
+- **200**: Updated cart
+- **401**: Unauthenticated
+- **404**: Cart item not found
+
+---
+
+#### Remove Cart Item
+```
+DELETE /api/cart/items/{itemId}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| itemId | integer | ✅ |
+
+**Responses:**
+- **200**: Updated cart
+- **401**: Unauthenticated
+- **404**: Cart item not found
+
+---
+
+#### Clear Cart
+```
+DELETE /api/cart
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Cart cleared
+- **401**: Unauthenticated
+
+---
+
+#### Apply Coupon
+```
+POST /api/cart/apply-coupon
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| code | string | ✅ | Coupon code |
+
+**Responses:**
+- **200**: Coupon applied
+- **401**: Unauthenticated
+- **422**: Invalid or expired coupon
+
+---
+
+#### Remove Coupon
+```
+DELETE /api/cart/remove-coupon
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Coupon removed
+- **401**: Unauthenticated
+
+---
+
+### Reports
+
+#### Sales Report
+```
+GET /api/reports/sales
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| date_from | string | ❌ | Start date (YYYY-MM-DD) |
+| date_to | string | ❌ | End date (YYYY-MM-DD) |
+| group_by | string | ❌ | Group by: day, week, month |
+
+**Responses:**
+- **200**: Sales report data
+- **401**: Unauthenticated
+
+---
+
+#### Revenue Report
+```
+GET /api/reports/revenue
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| date_from | string | ❌ | Start date (YYYY-MM-DD) |
+| date_to | string | ❌ | End date (YYYY-MM-DD) |
+| group_by | string | ❌ | Group by: day, week, month |
+
+**Responses:**
+- **200**: Revenue report data
+- **401**: Unauthenticated
+
+---
+
+#### Products Report
+```
+GET /api/reports/products
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Product performance report
+- **401**: Unauthenticated
+
+---
+
+#### Customers Report
+```
+GET /api/reports/customers
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Customer activity report
+- **401**: Unauthenticated
+
+---
+
+#### Inventory Report
+```
+GET /api/reports/inventory
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Inventory status report
+- **401**: Unauthenticated
+
+---
+
+#### Dashboard Report
+```
+GET /api/reports/dashboard
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Dashboard summary report
+- **401**: Unauthenticated
+
+---
+
+#### Export Report
+```
+POST /api/reports/export
+```
+🔒 **Requires Authentication**
+
+> **Note:** Returns blob. Use `axiosClient` directly with `responseType: 'blob'` -- do NOT use `api.get()` for blob responses.
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| type | string | ✅ | Report type (sales, revenue, products, customers, inventory) |
+| format | string | ✅ | Export format (csv, pdf, xlsx) |
+| date_from | string | ❌ | Start date (YYYY-MM-DD) |
+| date_to | string | ❌ | End date (YYYY-MM-DD) |
+
+**Responses:**
+- **200**: File download (blob)
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+### Subscriptions
+
+#### List Subscriptions
+```
+GET /api/subscriptions
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: List of subscriptions
+- **401**: Unauthenticated
+
+---
+
+#### Get Subscription Plans
+```
+GET /api/subscriptions/plans
+```
+
+**Responses:**
+- **200**: Available plans
+
+---
+
+#### Get Current Subscription
+```
+GET /api/subscriptions/current
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Current subscription details
+- **401**: Unauthenticated
+
+---
+
+#### Subscribe
+```
+POST /api/subscriptions/subscribe
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| plan_id | integer | ✅ | Plan to subscribe to |
+
+**Responses:**
+- **200**: Subscription created
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Upgrade Subscription
+```
+PUT /api/subscriptions/upgrade
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| plan_id | integer | ✅ | New plan ID |
+
+**Responses:**
+- **200**: Subscription upgraded
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Downgrade Subscription
+```
+PUT /api/subscriptions/downgrade
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| plan_id | integer | ✅ | New plan ID |
+
+**Responses:**
+- **200**: Subscription downgraded
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Cancel Subscription
+```
+POST /api/subscriptions/cancel
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Subscription cancelled
+- **401**: Unauthenticated
+
+---
+
+#### Resume Subscription
+```
+POST /api/subscriptions/resume
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Subscription resumed
+- **401**: Unauthenticated
+
+---
+
+### Settings
+
+#### Get Settings
+```
+GET /api/settings
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: General settings
+- **401**: Unauthenticated
+
+---
+
+#### Update Settings
+```
+PUT /api/settings
+```
+🔒 **Requires Authentication**
+
+**Request Body:** Settings key-value pairs
+
+**Responses:**
+- **200**: Settings updated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Get Store Settings
+```
+GET /api/settings/store
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Store-specific settings
+- **401**: Unauthenticated
+
+---
+
+#### Update Store Settings
+```
+PUT /api/settings/store
+```
+🔒 **Requires Authentication**
+
+**Request Body:** Store settings key-value pairs
+
+**Responses:**
+- **200**: Store settings updated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Get Payment Settings
+```
+GET /api/settings/payment
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Payment settings
+- **401**: Unauthenticated
+
+---
+
+#### Update Payment Settings
+```
+PUT /api/settings/payment
+```
+🔒 **Requires Authentication**
+
+**Request Body:** Payment settings key-value pairs
+
+**Responses:**
+- **200**: Payment settings updated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Get Shipping Settings
+```
+GET /api/settings/shipping
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: Shipping settings
+- **401**: Unauthenticated
+
+---
+
+#### Update Shipping Settings
+```
+PUT /api/settings/shipping
+```
+🔒 **Requires Authentication**
+
+**Request Body:** Shipping settings key-value pairs
+
+**Responses:**
+- **200**: Shipping settings updated
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+### Admin - Products
+
+#### List All Products (Admin only)
+```
+GET /api/admin/products
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| vendor_id | integer | ❌ | Filter by vendor |
+| search | string | ❌ | Search products |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: All products across vendors
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Get Product (Admin only)
+```
+GET /api/admin/products/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Product details
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Product not found
+
+---
+
+### Admin - Orders
+
+#### List All Orders (Admin only)
+```
+GET /api/admin/orders
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| vendor_id | integer | ❌ | Filter by vendor |
+| status | string | ❌ | Filter by status |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: All orders
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Get Order (Admin only)
+```
+GET /api/admin/orders/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Order details
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Order not found
+
+---
+
+#### Order Summary (Admin only)
+```
+GET /api/admin/orders/summary
+```
+🔒 **Requires Authentication (Admin)**
+
+**Responses:**
+- **200**: Order summary stats
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+### Admin - Analytics
+
+#### Analytics Overview (Admin only)
+```
+GET /api/admin/analytics/overview
+```
+🔒 **Requires Authentication (Admin)**
+
+**Responses:**
+- **200**: Platform-wide analytics overview
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Revenue Analytics (Admin only)
+```
+GET /api/admin/analytics/revenue
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| date_from | string | ❌ | Start date (YYYY-MM-DD) |
+| date_to | string | ❌ | End date (YYYY-MM-DD) |
+
+**Responses:**
+- **200**: Revenue analytics data
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Vendor Analytics (Admin only)
+```
+GET /api/admin/analytics/vendors
+```
+🔒 **Requires Authentication (Admin)**
+
+**Responses:**
+- **200**: Vendor performance analytics
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### User Analytics (Admin only)
+```
+GET /api/admin/analytics/users
+```
+🔒 **Requires Authentication (Admin)**
+
+**Responses:**
+- **200**: User activity analytics
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+### Admin - Payments
+
+#### List All Payments (Admin only)
+```
+GET /api/admin/payments
+```
+🔒 **Requires Authentication (Admin)**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| vendor_id | integer | ❌ | Filter by vendor |
+| method | string | ❌ | Filter by method |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: All payments
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+#### Get Payment (Admin only)
+```
+GET /api/admin/payments/{id}
+```
+🔒 **Requires Authentication (Admin)**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Payment details
+- **401**: Unauthenticated
+- **403**: Forbidden
+- **404**: Payment not found
+
+---
+
+#### Payment Summary (Admin only)
+```
+GET /api/admin/payments/summary
+```
+🔒 **Requires Authentication (Admin)**
+
+**Responses:**
+- **200**: Payment summary stats
+- **401**: Unauthenticated
+- **403**: Forbidden
+
+---
+
+### Webhooks
+
+#### Payment Webhook
+```
+POST /api/webhooks/payment
+```
+
+**Description:** Receives payment notifications from payment gateways (GCash, PayMaya, Stripe).
+
+**Request Body:** Varies by payment provider.
+
+**Responses:**
+- **200**: Webhook processed
+
+---
+
+### Food Menu
+
+#### List Menu Items
+```
+GET /api/food-menu
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| category | string | ❌ | Filter by category |
+| search | string | ❌ | Search by name/description |
+| is_available | boolean | ❌ | Filter by availability |
+| page | integer | ❌ | Page number |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: Paginated list of menu items
+- **401**: Unauthenticated
+
+---
+
+#### Get Menu Item
+```
+GET /api/food-menu/{id}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Menu item details
+- **401**: Unauthenticated
+- **404**: Menu item not found
+
+---
+
+#### Create Menu Item
+```
+POST /api/food-menu
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| name | string | ✅ | Item name |
+| description | string | ❌ | Item description |
+| category | string | ✅ | Category (Appetizer, Main Course, Dessert, Beverage, Snack, Soup, Salad, Combo) |
+| price | integer | ✅ | Price in PHP (integer) |
+| total_servings | integer | ✅ | Total available servings |
+| is_available | boolean | ✅ | Availability status |
+
+**Responses:**
+- **201**: Menu item created
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Update Menu Item
+```
+PUT /api/food-menu/{id}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:** Same as Create (all fields optional)
+
+**Responses:**
+- **200**: Menu item updated
+- **401**: Unauthenticated
+- **404**: Menu item not found
+- **422**: Validation error
+
+---
+
+#### Delete Menu Item
+```
+DELETE /api/food-menu/{id}
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Menu item deleted
+- **401**: Unauthenticated
+- **404**: Menu item not found
+
+---
+
+#### Toggle Availability
+```
+PATCH /api/food-menu/{id}/availability
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Responses:**
+- **200**: Availability toggled
+- **401**: Unauthenticated
+- **404**: Menu item not found
+
+---
+
+#### Get Menu Categories
+```
+GET /api/food-menu/categories
+```
+🔒 **Requires Authentication**
+
+**Responses:**
+- **200**: List of category strings
+- **401**: Unauthenticated
+
+---
+
+### Food Menu - Reservations
+
+#### List Reservations
+```
+GET /api/food-menu/reservations
+```
+🔒 **Requires Authentication**
+
+**Query Parameters:**
+| Param | Type | Required | Description |
+|-------|------|----------|-------------|
+| status | string | ❌ | Filter by status (pending, confirmed, cancelled) |
+| search | string | ❌ | Search by customer name |
+| page | integer | ❌ | Page number |
+| per_page | integer | ❌ | Items per page |
+
+**Responses:**
+- **200**: Paginated list of reservations
+- **401**: Unauthenticated
+
+---
+
+#### Create Reservation
+```
+POST /api/food-menu/reservations
+```
+🔒 **Requires Authentication**
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| menu_item_id | integer | ✅ | Menu item ID |
+| customer_name | string | ✅ | Customer name |
+| phone | string | ✅ | Phone number |
+| servings | integer | ✅ | Number of servings |
+| notes | string | ❌ | Special notes |
+
+**Responses:**
+- **201**: Reservation created
+- **401**: Unauthenticated
+- **422**: Validation error
+
+---
+
+#### Update Reservation Status
+```
+PATCH /api/food-menu/reservations/{id}/status
+```
+🔒 **Requires Authentication**
+
+**Path Parameters:**
+| Param | Type | Required |
+|-------|------|----------|
+| id | integer | ✅ |
+
+**Request Body:**
+| Field | Type | Required | Description |
+|-------|------|----------|-------------|
+| status | string | ✅ | New status (pending, confirmed, cancelled) |
+
+**Responses:**
+- **200**: Status updated
+- **401**: Unauthenticated
+- **404**: Reservation not found
+- **422**: Validation error
+
+---
+
 ## Error Responses
 
 All error responses follow this format:
@@ -1994,20 +3617,31 @@ All error responses follow this format:
 
 | Category | Endpoints | Auth Required |
 |----------|-----------|---------------|
-| Auth | 3 | Partial |
+| Auth | 9 | Partial |
 | Admin - Users | 6 | Admin only |
-| Admin - Vendors | 1 | Admin only |
+| Admin - Vendors | 5 | Admin only |
+| Admin - Products | 2 | Admin only |
+| Admin - Orders | 3 | Admin only |
+| Admin - Analytics | 4 | Admin only |
+| Admin - Payments | 3 | Admin only |
+| Cart | 7 | ✅ |
 | Categories | 5 | Partial (GET public) |
-| Credits | 3 | ✅ |
-| Customers | 7 | ✅ |
+| Credits | 4 | ✅ |
+| Customers | 12 | ✅ |
 | Dashboard | 10 | ✅ |
+| Food Menu | 7 | ✅ |
+| Food Menu - Reservations | 3 | ✅ |
 | Inventory | 6 | ✅ |
 | Ledger | 3 | ✅ |
-| Orders | 6 | ✅ |
-| Payments | 6 | ✅ |
-| Products | 7 | Partial (GET public) |
+| Orders | 12 | ✅ |
+| Payments | 13 | ✅ |
+| Products | 13 | Partial (GET public) |
+| Reports | 7 | ✅ |
+| Settings | 8 | ✅ |
 | Stores | 5 | ✅ |
 | Store Products | 6 | ✅ |
 | Store Staff | 6 | ✅ |
-| User | 3 | ✅ |
-| **Total** | **83** | |
+| Subscriptions | 8 | Partial |
+| User | 7 | ✅ |
+| Webhooks | 1 | ❌ |
+| **Total** | **~174** | |

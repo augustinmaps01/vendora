@@ -17,6 +17,7 @@ export * from "./ledger.service"
 export * from "./inventory.service"
 export * from "./store-staff.service"
 export * from "./credit.service"
+export * from "./food-menu.service"
 
 // Re-export types for convenience
 export type {
@@ -93,3 +94,14 @@ export type {
   CreditFilters,
   PaginatedCreditResponse,
 } from "./credit.service"
+
+export type {
+  FoodMenuItem,
+  FoodMenuFilters,
+  FoodMenuCreatePayload,
+  FoodMenuUpdatePayload,
+  PaginatedFoodMenuResponse,
+  FoodMenuReservation,
+  ReservationCreatePayload,
+  PaginatedReservationResponse,
+} from "./food-menu.service"

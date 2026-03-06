@@ -17,7 +17,7 @@ export function OfflineBanner({ isOnline, networkQuality, pendingCount }: Offlin
   // Don't render during SSR to avoid hydration mismatch
   // (network quality is only known after client-side check)
   if (!mounted) return null;
-  if (isOnline && networkQuality !== 'poor') return null;
+  if (isOnline) return null;
 
   const isOffline = !isOnline || networkQuality === 'offline';
 

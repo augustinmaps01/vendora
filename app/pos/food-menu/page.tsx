@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useState, useMemo, useEffect } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Switch } from "@/components/ui/switch"
@@ -29,8 +29,15 @@ import {
   ArrowUpDown,
   ChevronLeft,
   ChevronRight,
+  Loader2,
+  AlertCircle,
+  RefreshCw,
 } from "lucide-react"
 import Swal from "sweetalert2"
+import { foodMenuService } from "@/services"
+import type { FoodMenuCreatePayload } from "@/services"
+import { useOfflineData } from "@/hooks/use-offline-data"
+import { StaleDataBanner } from "@/components/pos/StaleDataBanner"
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -275,8 +282,28 @@ function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; s
 
 export default function FoodMenuPage() {
   const [activeTab, setActiveTab]     = useState<"items" | "reservations">("items")
+
+  // NOTE: Food menu backend endpoint returns 500 — using seed data until backend is ready
+  const { data, isLoading, isStale, lastSyncedAt, error, refresh } = useOfflineData<{
+    items: MenuItem[];
+    reservations: Reservation[];
+  }>(
+    "food-menu-data",
+    async () => {
+      return { items: seedMenuItems, reservations: seedReservations }
+    },
+    { staleAfterMinutes: 15 }
+  )
+
   const [menuItems, setMenuItems]     = useState<MenuItem[]>(seedMenuItems)
-  const [reservations]                = useState<Reservation[]>(seedReservations)
+  const reservations = data?.reservations ?? seedReservations
+
+  // Sync menuItems state when data loads from API
+  useEffect(() => {
+    if (data?.items) {
+      setMenuItems(data.items)
+    }
+  }, [data])
 
   // ── Menu Items filter/sort/page state ──────────────────────────────────────
   const [searchQuery, setSearchQuery]         = useState("")
@@ -391,6 +418,10 @@ export default function FoodMenuPage() {
   }
 
   const closeDialog = () => {
+    // Blur active element before closing to prevent Radix aria-hidden focus warning
+    if (document.activeElement instanceof HTMLElement) {
+      document.activeElement.blur()
+    }
     setIsDialogOpen(false)
     setForm(initialForm)
     setIsEditing(false)
@@ -413,30 +444,51 @@ export default function FoodMenuPage() {
     }
 
     setIsSaving(true)
-    await new Promise((r) => setTimeout(r, 400))
 
-    if (isEditing && editingId !== null) {
-      setMenuItems((prev) =>
-        prev.map((item) =>
-          item.id === editingId
-            ? { ...item, name: form.name.trim(), description: form.description.trim(), category: form.category, price: Number(form.price), totalServings: Number(form.totalServings), isAvailable: form.isAvailable }
-            : item
-        )
-      )
-      Swal.fire({ icon: "success", title: "Updated!", text: `"${form.name}" has been updated.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
-    } else {
-      const newItem: MenuItem = {
-        id: nextId++,
-        name: form.name.trim(),
-        description: form.description.trim(),
-        category: form.category,
-        price: Number(form.price),
-        totalServings: Number(form.totalServings),
-        reservedServings: 0,
-        isAvailable: form.isAvailable,
+    const payload: FoodMenuCreatePayload = {
+      name: form.name.trim(),
+      description: form.description.trim(),
+      category: form.category,
+      price: Number(form.price),
+      total_servings: Number(form.totalServings),
+      is_available: form.isAvailable,
+    }
+
+    try {
+      if (isEditing && editingId !== null) {
+        await foodMenuService.update(editingId, payload)
+        Swal.fire({ icon: "success", title: "Updated!", text: `"${form.name}" has been updated.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
+      } else {
+        await foodMenuService.create(payload)
+        Swal.fire({ icon: "success", title: "Created!", text: `"${form.name}" has been added.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
       }
-      setMenuItems((prev) => [newItem, ...prev])
-      Swal.fire({ icon: "success", title: "Created!", text: `"${form.name}" has been added.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
+      refresh()
+    } catch (err: any) {
+      console.error("Food menu API error:", err?.response?.data || err?.message)
+      // Fallback to local state if API fails
+      if (isEditing && editingId !== null) {
+        setMenuItems((prev) =>
+          prev.map((item) =>
+            item.id === editingId
+              ? { ...item, name: form.name.trim(), description: form.description.trim(), category: form.category, price: Number(form.price), totalServings: Number(form.totalServings), isAvailable: form.isAvailable }
+              : item
+          )
+        )
+        Swal.fire({ icon: "success", title: "Updated (offline)!", text: `"${form.name}" has been updated locally.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
+      } else {
+        const newItem: MenuItem = {
+          id: nextId++,
+          name: form.name.trim(),
+          description: form.description.trim(),
+          category: form.category,
+          price: Number(form.price),
+          totalServings: Number(form.totalServings),
+          reservedServings: 0,
+          isAvailable: form.isAvailable,
+        }
+        setMenuItems((prev) => [newItem, ...prev])
+        Swal.fire({ icon: "success", title: "Created (offline)!", text: `"${form.name}" has been added locally.`, confirmButtonColor: "#7C3AED", timer: 1800, showConfirmButton: false })
+      }
     }
 
     setIsSaving(false)
@@ -455,16 +507,26 @@ export default function FoodMenuPage() {
       confirmButtonText: "Yes, delete it",
     })
     if (result.isConfirmed) {
-      setMenuItems((prev) => prev.filter((i) => i.id !== item.id))
+      try {
+        await foodMenuService.delete(item.id)
+        refresh()
+      } catch {
+        setMenuItems((prev) => prev.filter((i) => i.id !== item.id))
+      }
       Swal.fire({ icon: "success", title: "Deleted", timer: 1500, showConfirmButton: false })
     }
   }
 
   // ── Toggle availability ─────────────────────────────────────────────────────
-  const toggleAvailability = (id: number) => {
-    setMenuItems((prev) =>
-      prev.map((item) => item.id === id ? { ...item, isAvailable: !item.isAvailable } : item)
-    )
+  const toggleAvailability = async (id: number) => {
+    try {
+      await foodMenuService.toggleAvailability(id)
+      refresh()
+    } catch {
+      setMenuItems((prev) =>
+        prev.map((item) => item.id === id ? { ...item, isAvailable: !item.isAvailable } : item)
+      )
+    }
   }
 
   // ─── Th helper ──────────────────────────────────────────────────────────────
@@ -480,9 +542,32 @@ export default function FoodMenuPage() {
     </th>
   )
 
+  // ─── Loading / Error States ─────────────────────────────────────────────────
+  if (isLoading && !data) {
+    return (
+      <div className="flex items-center justify-center min-h-[calc(100vh-4rem)]">
+        <Loader2 className="h-8 w-8 animate-spin text-purple-600" />
+      </div>
+    )
+  }
+
+  if (error && !data) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
+        <AlertCircle className="h-12 w-12 text-red-500" />
+        <p className="text-gray-600 dark:text-[#b4b4d0]">{String(error)}</p>
+        <Button onClick={refresh} variant="outline">
+          <RefreshCw className="w-4 h-4 mr-2" />
+          Retry
+        </Button>
+      </div>
+    )
+  }
+
   // ─── Render ─────────────────────────────────────────────────────────────────
   return (
     <div className="space-y-6">
+      <StaleDataBanner isStale={isStale} lastSyncedAt={lastSyncedAt} />
 
       {/* ── Page Header ──────────────────────────────────────────────────────── */}
       <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">

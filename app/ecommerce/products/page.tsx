@@ -27,6 +27,15 @@ import { Slider } from "@/components/ui/slider"
 
 
 // ---------------------------------------------------------------------------
+// Resolve image URL — handles relative paths from API storage
+const resolveImageUrl = (url: string | null | undefined): string | null => {
+    if (!url) return null
+    if (url.startsWith('http://') || url.startsWith('https://')) return url
+    const base = 'https://vendora-api.abedubas.dev'
+    return `${base}${url.startsWith('/') ? '' : '/'}${url}`
+}
+
+// ---------------------------------------------------------------------------
 // Map API product to UI-friendly shape
 // ---------------------------------------------------------------------------
 type UIProduct = {
@@ -76,7 +85,7 @@ function mapApiProduct(p: ApiProduct): UIProduct {
         price,
         originalPrice: cost && cost > price ? cost : undefined,
         category: p.category?.name || "Uncategorized",
-        image: p.image || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80",
+        image: resolveImageUrl(p.image) || "https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=1200&q=80",
         description: p.description,
         badge,
         badgeType,

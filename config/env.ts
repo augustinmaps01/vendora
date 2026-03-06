@@ -125,7 +125,7 @@ const createEnv = (): Environment => ({
 
   // Authentication
   auth: {
-    jwtSecret: getEnvVar("NEXT_PUBLIC_JWT_SECRET", ""),
+    jwtSecret: getOptionalEnvVar("NEXT_PUBLIC_JWT_SECRET", ""),
     tokenKey: getEnvVar("NEXT_PUBLIC_AUTH_TOKEN_KEY", "vendora_access_token"),
     refreshTokenKey: getEnvVar("NEXT_PUBLIC_REFRESH_TOKEN_KEY", "vendora_refresh_token"),
     sessionTimeout: getNumberEnvVar("NEXT_PUBLIC_SESSION_TIMEOUT", 60)
@@ -141,21 +141,21 @@ const createEnv = (): Environment => ({
   payment: {
     gcash: {
       enabled: getBoolEnvVar("NEXT_PUBLIC_GCASH_ENABLED", true),
-      publicKey: getEnvVar("NEXT_PUBLIC_GCASH_PUBLIC_KEY", ""),
+      publicKey: getOptionalEnvVar("NEXT_PUBLIC_GCASH_PUBLIC_KEY", ""),
     },
     paymaya: {
       enabled: getBoolEnvVar("NEXT_PUBLIC_PAYMAYA_ENABLED", true),
-      publicKey: getEnvVar("NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY", ""),
+      publicKey: getOptionalEnvVar("NEXT_PUBLIC_PAYMAYA_PUBLIC_KEY", ""),
     },
     stripe: {
-      publishableKey: getEnvVar("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
+      publishableKey: getOptionalEnvVar("NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY", ""),
     },
   },
 
   // Storage & Assets
   storage: {
     url: getEnvVar("NEXT_PUBLIC_STORAGE_URL", "http://localhost:8000/storage"),
-    cdnUrl: getEnvVar("NEXT_PUBLIC_CDN_URL", ""),
+    cdnUrl: getOptionalEnvVar("NEXT_PUBLIC_CDN_URL", ""),
   },
 
   // Feature Flags
@@ -168,9 +168,9 @@ const createEnv = (): Environment => ({
 
   // Third-party Services
   services: {
-    googleMapsApiKey: getEnvVar("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", ""),
-    gaTrackingId: getEnvVar("NEXT_PUBLIC_GA_TRACKING_ID", ""),
-    fbPixelId: getEnvVar("NEXT_PUBLIC_FB_PIXEL_ID", ""),
+    googleMapsApiKey: getOptionalEnvVar("NEXT_PUBLIC_GOOGLE_MAPS_API_KEY", ""),
+    gaTrackingId: getOptionalEnvVar("NEXT_PUBLIC_GA_TRACKING_ID", ""),
+    fbPixelId: getOptionalEnvVar("NEXT_PUBLIC_FB_PIXEL_ID", ""),
   },
 
   // Business Configuration
@@ -189,9 +189,9 @@ const createEnv = (): Environment => ({
 
   // Social Media
   social: {
-    facebook: getEnvVar("NEXT_PUBLIC_FACEBOOK_URL", ""),
-    instagram: getEnvVar("NEXT_PUBLIC_INSTAGRAM_URL", ""),
-    twitter: getEnvVar("NEXT_PUBLIC_TWITTER_URL", ""),
+    facebook: getOptionalEnvVar("NEXT_PUBLIC_FACEBOOK_URL", ""),
+    instagram: getOptionalEnvVar("NEXT_PUBLIC_INSTAGRAM_URL", ""),
+    twitter: getOptionalEnvVar("NEXT_PUBLIC_TWITTER_URL", ""),
   },
 
   // Development/Debug

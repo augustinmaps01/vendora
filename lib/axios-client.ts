@@ -171,13 +171,13 @@ const isAuthRequest = (url?: string): boolean => {
   return AUTH_PATHS.some((path) => url.includes(path))
 }
 
-const resolveLoginPath = (userType?: 'admin' | 'vendor' | null): string => {
+const resolveLoginPath = (userType?: 'admin' | 'vendor' | null): string | null => {
   if (userType === 'vendor') return '/pos/auth/login'
   if (userType === 'admin') return '/admin/auth/login'
   if (typeof window !== 'undefined') {
-    return window.location.pathname.startsWith('/pos')
-      ? '/pos/auth/login'
-      : '/admin/auth/login'
+    const path = window.location.pathname
+    if (path.startsWith('/ecommerce')) return null  // public area, never redirect to login
+    return path.startsWith('/pos') ? '/pos/auth/login' : '/admin/auth/login'
   }
   return '/admin/auth/login'
 }
@@ -254,7 +254,7 @@ axiosClient.interceptors.response.use(
       tokenManager.clearTokens()
       if (typeof window !== 'undefined') {
         const loginPath = resolveLoginPath(tokenManager.getUserType())
-        window.location.href = loginPath
+        if (loginPath) window.location.href = loginPath
       }
       return Promise.reject(error)
     }
@@ -289,10 +289,13 @@ axiosClient.interceptors.response.use(
     })
 
     if (!userType) {
-      console.warn('⚠️ No userType found - redirecting to login')
       tokenManager.clearTokens()
       if (typeof window !== 'undefined') {
-        window.location.href = resolveLoginPath(null)
+        const loginPath = resolveLoginPath(null)
+        if (loginPath) {
+          console.warn('⚠️ No userType found - redirecting to login')
+          window.location.href = loginPath
+        }
       }
       return Promise.reject(error)
     }
@@ -333,8 +336,11 @@ axiosClient.interceptors.response.use(
       tokenManager.clearTokens()
 
       if (typeof window !== 'undefined') {
-        console.log('🚪 Redirecting to login:', resolveLoginPath(userType))
-        window.location.href = resolveLoginPath(userType)
+        const loginPath = resolveLoginPath(userType)
+        if (loginPath) {
+          console.log('🚪 Redirecting to login:', loginPath)
+          window.location.href = loginPath
+        }
       }
 
       return Promise.reject(refreshError)
